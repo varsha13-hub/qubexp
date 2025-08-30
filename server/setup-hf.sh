@@ -17,10 +17,10 @@ fi
 # Check if HF_TOKEN is set
 if grep -q "HF_TOKEN=your_huggingface_token_here" .env; then
     echo "⚠️  Please update your .env file with your actual Hugging Face API token:"
-    echo "   HF_TOKEN=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"
+    echo "   HF_TOKEN=your_huggingface_token_here"
     echo ""
     echo "   You can edit the .env file manually or run:"
-    echo "   sed -i '' 's/HF_TOKEN=your_huggingface_token_here/HF_TOKEN=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/' .env"
+    echo "   sed -i '' 's/HF_TOKEN=your_huggingface_token_here/HF_TOKEN=your_actual_token_here/' .env"
 else
     echo "✅ Hugging Face API token appears to be configured"
 fi

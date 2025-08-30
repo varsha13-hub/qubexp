@@ -190,7 +190,7 @@ DEFAULT_TGT=hi
 
 #### Main Server (.env in server/)
 ```bash
-HF_TOKEN=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
+HF_TOKEN=your_huggingface_token_here
 AI4BHARAT_URL=http://localhost:8090
 ```
 
