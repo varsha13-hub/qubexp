@@ -1,0 +1,706 @@
+/* Base styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    color: #ffffff;
+    min-height: 100vh;
+}
+
+/* VR-specific styles */
+body.vr-page {
+    overflow: hidden;
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+}
+
+body.vr-page .container {
+    min-height: 100vh;
+}
+
+/* A-Frame specific styles */
+.a-canvas {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* Ensure VR pages take full viewport */
+body.vr-page a-scene {
+    width: 100vw;
+    height: 100vh;
+}
+
+/* Additional A-Frame fixes */
+body.vr-page {
+    position: relative;
+}
+
+body.vr-page a-scene {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+}
+
+/* Ensure loading screen is above A-Frame */
+#loadingScreen {
+    z-index: 10000;
+}
+
+/* Container */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Header */
+.header {
+    text-align: center;
+    margin-bottom: 40px;
+    padding: 20px 0;
+}
+
+.title {
+    font-size: 3.5rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+    background: linear-gradient(45deg, #00ff88, #00d4ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: 0 0 30px rgba(0, 255, 136, 0.3);
+}
+
+.subtitle {
+    font-size: 1.2rem;
+    color: #cccccc;
+    font-weight: 300;
+}
+
+/* Language Selector */
+.language-selector {
+    text-align: center;
+    margin-bottom: 40px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.language-selector label {
+    display: block;
+    margin-bottom: 10px;
+    font-size: 1.1rem;
+    color: #ffffff;
+}
+
+.language-dropdown {
+    padding: 12px 20px;
+    font-size: 1rem;
+    border: 2px solid #00ff88;
+    border-radius: 25px;
+    background: rgba(0, 255, 136, 0.1);
+    color: #ffffff;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 200px;
+}
+
+.language-dropdown:hover {
+    background: rgba(0, 255, 136, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 255, 136, 0.3);
+}
+
+.language-dropdown option {
+    background: #1a1a2e;
+    color: #ffffff;
+}
+
+/* Features Grid */
+.features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 40px;
+}
+
+.feature-card {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 30px;
+    border-radius: 15px;
+    text-align: center;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease;
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 255, 136, 0.2);
+    border-color: #00ff88;
+}
+
+.feature-icon {
+    font-size: 3rem;
+    margin-bottom: 15px;
+}
+
+.feature-card h3 {
+    font-size: 1.3rem;
+    margin-bottom: 10px;
+    color: #00ff88;
+}
+
+.feature-card p {
+    color: #cccccc;
+    line-height: 1.6;
+}
+
+/* CTA Section */
+.cta-section {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.cta-button, .secondary-button {
+    padding: 15px 30px;
+    font-size: 1.1rem;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin: 0 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.cta-button {
+    background: linear-gradient(45deg, #00ff88, #00d4ff);
+    color: #1a1a2e;
+    box-shadow: 0 5px 15px rgba(0, 255, 136, 0.3);
+}
+
+.cta-button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0, 255, 136, 0.4);
+}
+
+.secondary-button {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.secondary-button:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: #00ff88;
+    transform: translateY(-3px);
+}
+
+.button-icon {
+    font-size: 1.2rem;
+}
+
+/* Instructions */
+.instructions {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 30px;
+    border-radius: 15px;
+    margin-bottom: 40px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.instructions h3 {
+    color: #00ff88;
+    margin-bottom: 15px;
+    font-size: 1.3rem;
+}
+
+.instructions ul {
+    list-style: none;
+    padding: 0;
+}
+
+.instructions li {
+    padding: 8px 0;
+    color: #cccccc;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.instructions li strong {
+    color: #ffffff;
+}
+
+/* Footer */
+.footer {
+    margin-top: auto;
+    text-align: center;
+    padding: 20px 0;
+    color: #888888;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.footer-links {
+    margin-top: 10px;
+}
+
+.footer-link {
+    color: #00ff88;
+    text-decoration: none;
+    margin: 0 10px;
+    transition: color 0.3s ease;
+}
+
+.footer-link:hover {
+    color: #00d4ff;
+}
+
+/* Loading Overlay */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(26, 26, 46, 0.95);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    backdrop-filter: blur(5px);
+}
+
+.loading-content {
+    text-align: center;
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 3px solid rgba(0, 255, 136, 0.3);
+    border-top: 3px solid #00ff88;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Install Prompt */
+.install-prompt {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: rgba(26, 26, 46, 0.95);
+    padding: 20px;
+    border-radius: 15px;
+    border: 1px solid #00ff88;
+    backdrop-filter: blur(10px);
+    z-index: 1000;
+    max-width: 300px;
+}
+
+.install-content h3 {
+    color: #00ff88;
+    margin-bottom: 10px;
+}
+
+.install-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.install-button, .dismiss-button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.install-button {
+    background: #00ff88;
+    color: #1a1a2e;
+}
+
+.dismiss-button {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+}
+
+/* Desktop UI Styles */
+.desktop-ui {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    z-index: 1000;
+    pointer-events: auto;
+}
+
+.ui-panel {
+    background: rgba(26, 26, 46, 0.9);
+    border: 2px solid #00ff88;
+    border-radius: 15px;
+    padding: 20px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 8px 32px rgba(0, 255, 136, 0.3);
+    min-width: 300px;
+}
+
+.ui-panel h3 {
+    color: #00ff88;
+    margin-bottom: 10px;
+    font-size: 1.5rem;
+    text-align: center;
+}
+
+.ui-panel p {
+    color: #cccccc;
+    margin-bottom: 20px;
+    text-align: center;
+    font-size: 1rem;
+}
+
+.desktop-controls {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.ui-button {
+    background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
+    color: #1a1a2e;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 120px;
+    justify-content: center;
+}
+
+.ui-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 255, 136, 0.4);
+    background: linear-gradient(135deg, #00cc6a 0%, #00ff88 100%);
+}
+
+.ui-button:active {
+    transform: translateY(0);
+}
+
+/* Voice Overlay */
+.voice-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    backdrop-filter: blur(5px);
+}
+
+.voice-content {
+    text-align: center;
+    color: #ffffff;
+}
+
+.voice-indicator {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.voice-pulse {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #ff4444 0%, #cc0000 100%);
+    animation: pulse 1.5s ease-in-out infinite;
+    margin-bottom: 15px;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.2);
+        opacity: 0.7;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.voice-indicator span {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #ff4444;
+}
+
+#voiceText {
+    font-size: 1rem;
+    color: #cccccc;
+    max-width: 400px;
+    line-height: 1.5;
+}
+
+/* Notification styles */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 15px 20px;
+    border-radius: 10px;
+    color: #ffffff;
+    font-weight: 600;
+    z-index: 10000;
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+    max-width: 300px;
+    word-wrap: break-word;
+}
+
+.notification-error {
+    background: #ff4444;
+}
+
+.notification-success {
+    background: #00ff88;
+    color: #1a1a2e;
+}
+
+.notification-info {
+    background: #00d4ff;
+}
+
+/* Loading Screen */
+.loading-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+
+.loading-screen .loading-content {
+    text-align: center;
+}
+
+.loading-screen h2 {
+    color: #00ff88;
+    margin-bottom: 10px;
+    font-size: 1.5rem;
+}
+
+.loading-screen p {
+    color: #cccccc;
+    font-size: 1rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .container {
+        padding: 15px;
+    }
+    
+    .title {
+        font-size: 2.5rem;
+    }
+    
+    .features {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .feature-card {
+        padding: 20px;
+    }
+    
+    .cta-button, .secondary-button {
+        display: block;
+        margin: 10px auto;
+        width: 100%;
+        max-width: 300px;
+    }
+    
+    .desktop-ui {
+        top: 10px;
+        left: 10px;
+        right: 10px;
+    }
+    
+    .desktop-controls {
+        flex-direction: column;
+    }
+    
+    .ui-button {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .title {
+        font-size: 2rem;
+    }
+    
+    .subtitle {
+        font-size: 1rem;
+    }
+    
+    .language-dropdown {
+        width: 100%;
+        max-width: 250px;
+    }
+    
+    .install-prompt {
+        bottom: 10px;
+        right: 10px;
+        left: 10px;
+        max-width: none;
+    }
+}
+
+/* A-Frame specific styles */
+.a-enter-vr {
+    display: none !important;
+}
+
+/* Planet interaction styles */
+.planet {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.planet:hover {
+    transform: scale(1.1);
+}
+
+/* Loading screen */
+#loadingScreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    color: #ffffff;
+    font-family: Arial, sans-serif;
+}
+
+/* VR UI improvements */
+.ui-panel {
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.clickable {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.clickable:hover {
+    transform: scale(1.05);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #1a1a2e;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #00ff88;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #00cc6a;
+}
+
+/* Animation utilities */
+.fade-in {
+    animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.slide-in {
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(0); }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+    .feature-card {
+        border: 2px solid #ffffff;
+    }
+    
+    .cta-button {
+        border: 2px solid #ffffff;
+    }
+}
