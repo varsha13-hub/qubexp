@@ -207,15 +207,15 @@
         <a-assets>
             <!-- Sun texture -->
             <img id="sunTexture" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8ZGVmcz4KICAgIDxyYWRpYWxHcmFkaWVudCBpZD0ic3VuR3JhZGllbnQiIGN4PSI1MCUiIGN5PSI1MCUiIHI9IjUwJSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiNGRkQ3MDAiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSI3MCUiIHN0b3AtY29sb3I9IiNGRkE1MDAiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjRkY2NjAwIi8+CiAgICA8L3JhZGlhbEdyYWRpZW50PgogIDwvZGVmcz4KICA8Y2lyY2xlIGN4PSIyNTYiIGN5PSIyNTYiIHI9IjI1NiIgZmlsbD0idXJsKCNzdW5HcmFkaWVudCkiLz4KICA8Y2lyY2xlIGN4PSIyNTYiIGN5PSIyNTYiIHI9IjI0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRkZENzAwIiBzdHJva2Utd2lkdGg9IjE2IiBvcGFjaXR5PSIwLjMiLz4KICA8Y2lyY2xlIGN4PSIyNTYiIGN5PSIyNTYiIHI9IjIyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRkZBNTAwIiBzdHJva2Utd2lkdGg9IjEyIiBvcGFjaXR5PSIwLjIiLz4KPC9zdmc+">
-            <a-asset-item id="sun-model" src="assets/planets/Sun_1_1391000.glb"></a-asset-item>
-            <a-asset-item id="mercury-model" src="assets/planets/Mercury_1_4878.glb"></a-asset-item>
-            <a-asset-item id="venus-model" src="assets/planets/Venussurface_1_12103.glb"></a-asset-item>
-            <a-asset-item id="earth-model" src="assets/planets/Earth_1_12756.glb"></a-asset-item>
-            <a-asset-item id="mars-model" src="assets/planets/24881_Mars_1_6792.glb"></a-asset-item>
-            <a-asset-item id="jupiter-model" src="assets/planets/Jupiter_1_142984.glb"></a-asset-item>
-            <a-asset-item id="saturn-model" src="assets/planets/Saturn_1_120536.glb"></a-asset-item>
-            <a-asset-item id="uranus-model" src="assets/planets/Uranus_1_51118.glb"></a-asset-item>
-            <a-asset-item id="neptune-model" src="assets/planets/Neptune_1_49528.glb"></a-asset-item>
+            <a-asset-item id="sun-model" src="assets/planets/Sun.glb"></a-asset-item>
+            <a-asset-item id="mercury-model" src="assets/planets/Mercury.glb"></a-asset-item>
+            <a-asset-item id="venus-model" src="assets/planets/Venus.glb"></a-asset-item>
+            <a-asset-item id="earth-model" src="assets/planets/Earth.glb"></a-asset-item>
+            <a-asset-item id="mars-model" src="assets/planets/Mars.glb"></a-asset-item>
+            <a-asset-item id="jupiter-model" src="assets/planets/Jupiter.glb"></a-asset-item>
+            <a-asset-item id="saturn-model" src="assets/planets/Saturn.glb"></a-asset-item>
+            <a-asset-item id="uranus-model" src="assets/planets/Uranus.glb"></a-asset-item>
+            <a-asset-item id="neptune-model" src="assets/planets/Neptune.glb"></a-asset-item>
         </a-assets>
         
         <!-- Direct GLB model loading -->
@@ -796,15 +796,7 @@
                         }
                     });
                     
-                    // Check after 5 seconds if model hasn't loaded
-                    setTimeout(() => {
-                        if (gltfModel.getAttribute('visible') !== 'false') {
-                            console.log('⏰ Sun model taking too long, showing fallback');
-                            if (fallbackSphere) {
-                                fallbackSphere.setAttribute('visible', 'true');
-                            }
-                        }
-                    }, 5000);
+                    // Timeout check removed - let the model load naturally
                 } else {
                     console.error('❌ Sun GLTF model element not found');
                 }
