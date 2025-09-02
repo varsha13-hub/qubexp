@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -160,12 +161,122 @@
             background: #00cc6a;
             transform: scale(1.05);
         }
+        
+        /* Language Menu Styles */
+        .language-menu {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #0a0a0a, #1a1a2e, #16213e);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            font-family: 'Arial', sans-serif;
+        }
+
+        .menu-content {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 3rem;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .menu-content h2 {
+            color: #fff;
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .menu-content p {
+            color: #ccc;
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+        }
+
+        .language-options {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .lang-option {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .lang-option:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .lang-option.active {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+        }
+
+        .enter-vr-btn {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            border: none;
+            padding: 1.2rem 2.5rem;
+            border-radius: 12px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+        }
+
+        .enter-vr-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+        }
     </style>
 </head>
 <body>
-    <div class="loading" id="loading">
-        <div style="font-size: 2rem; margin-bottom: 1rem;">🌌 Loading Solar System...</div>
-        <div style="font-size: 1rem; color: #00ff88;">Enhanced with Indian Language TTS & Translation</div>
+    <!-- Pre-VR Language Selection Screen -->
+    <div id="languageMenu" class="language-menu">
+        <div class="menu-content">
+            <h2>🌍 Choose Your Language</h2>
+            <p>Select your preferred language before entering VR</p>
+            <div class="language-options">
+                <button class="lang-option active" data-lang="en">
+                    🇺🇸 English
+                </button>
+                <button class="lang-option" data-lang="hi">
+                    🇮🇳 हिंदी (Hindi)
+                </button>
+                <button class="lang-option" data-lang="kn">
+                    🇮🇳 ಕನ್ನಡ (Kannada)
+                </button>
+                <button class="lang-option" data-lang="ta">
+                    🇮🇳 தமிழ் (Tamil)
+                </button>
+                <button class="lang-option" data-lang="te">
+                    🇮🇳 తెలుగు (Telugu)
+                </button>
+                <button class="lang-option" data-lang="bn">
+                    🇮🇳 বাংলা (Bengali)
+                </button>
+            </div>
+            <button id="enterVRBtn" class="enter-vr-btn" disabled style="opacity: 0.5;">🚀 Enter VR Experience</button>
+        </div>
     </div>
 
     <div class="control-panel">
@@ -200,7 +311,7 @@
             <p>• Control panel is visible in VR mode (top right)</p>
         </div>
 
-    <a-scene background="color: #000011">
+    <a-scene background="color: #000011" style="display: none;">
         <!-- Space background -->
         <a-sky color="#000011"></a-sky>
         
@@ -225,17 +336,7 @@
         
 
         
-        <!-- Stars -->
-        <a-entity id="stars">
-            <a-sphere position="-20 10 -15" radius="0.1" color="#ffffff"></a-sphere>
-            <a-sphere position="30 15 -20" radius="0.1" color="#ffffff"></a-sphere>
-            <a-sphere position="-15 20 -25" radius="0.1" color="#ffffff"></a-sphere>
-            <a-sphere position="40 8 -18" radius="0.1" color="#ffffff"></a-sphere>
-            <a-sphere position="-25 12 -22" radius="0.1" color="#ffffff"></a-sphere>
-            <a-sphere position="50 18 -30" radius="0.1" color="#ffffff"></a-sphere>
-            <a-sphere position="-10 25 -35" radius="0.1" color="#ffffff"></a-sphere>
-            <a-sphere position="60 5 -28" radius="0.1" color="#ffffff"></a-sphere>
-        </a-entity>
+        <!-- Stars removed for cleaner planet visibility -->
         
         <!-- Sun - USING YOUR 3D MODEL -->
         <a-entity position="0 0 -12" class="planet" data-planet-id="sun" data-planet-name="Sun" data-planet-desc="The Sun is the star at the center of our Solar System. It is a massive ball of hydrogen and helium that provides light and heat to all the planets.">
@@ -324,10 +425,25 @@
         </a-sphere>
         <a-text value="Pluto" position="68 0.2 -12" align="center" color="#ffffff" scale="0.15 0.15 1"></a-text>
         
-        <!-- Camera -->
-        <a-camera position="0 2 8" rotation="-5 0 0">
-            <a-cursor></a-cursor>
-        </a-camera>
+        <!-- VR Rig with Movement Controls -->
+        <a-entity id="rig" movement-controls="fly: true">
+            <!-- Camera -->
+            <a-camera position="0 2 8" rotation="-5 0 0">
+                <a-cursor color="#00ff88" position="0 0 -1"></a-cursor>
+            </a-camera>
+            
+            <!-- VR Controllers with Laser Controls -->
+            <a-entity id="leftHand" hand-controls="hand: left" laser-controls="hand: left"></a-entity>
+            <a-entity id="rightHand" hand-controls="hand: right" laser-controls="hand: right"></a-entity>
+        </a-entity>
+        
+        <!-- Fallback VR Cursor for headset-only VR -->
+        <a-entity 
+            cursor="fuse: true; fuseTimeout: 1000" 
+            position="0 0 -1" 
+            geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03" 
+            material="color: cyan; shader: flat">
+        </a-entity>
         
         <!-- Lighting -->
         <a-light type="ambient" color="#404040" intensity="0.6"></a-light>
@@ -368,8 +484,22 @@
         document.addEventListener('DOMContentLoaded', () => {
             console.log('DOM loaded');
             
-            const statusElement = document.getElementById('vrStatus');
+            // Setup language selection first
+            setupLanguageSelection();
+            
+            // Hide VR scene initially
             const scene = document.querySelector('a-scene');
+            if (scene) {
+                scene.style.display = 'none';
+            }
+            
+            // Show language menu
+            const languageMenu = document.getElementById('languageMenu');
+            if (languageMenu) {
+                languageMenu.style.display = 'flex';
+            }
+            
+            const statusElement = document.getElementById('vrStatus');
             
             if (scene) {
                 console.log('Scene found');
@@ -760,6 +890,62 @@
             event.preventDefault();
         });
 
+        // Language Selection and VR Entry
+        function setupLanguageSelection() {
+            const languageMenu = document.getElementById('languageMenu');
+            const enterVRBtn = document.getElementById('enterVRBtn');
+            const langOptions = document.querySelectorAll('.lang-option');
+            
+            // Handle language selection
+            langOptions.forEach(option => {
+                option.addEventListener('click', () => {
+                    // Remove active class from all options
+                    langOptions.forEach(opt => opt.classList.remove('active'));
+                    // Add active class to clicked option
+                    option.classList.add('active');
+                    
+                    const selectedLang = option.getAttribute('data-lang');
+                    localStorage.setItem('selectedLanguage', selectedLang);
+                    console.log(`Language selected: ${selectedLang}`);
+                    
+                    // Enable the Enter VR button
+                    if (enterVRBtn) {
+                        enterVRBtn.disabled = false;
+                        enterVRBtn.style.opacity = '1';
+                    }
+                });
+            });
+            
+            // Handle VR entry
+            if (enterVRBtn) {
+                enterVRBtn.addEventListener('click', () => {
+                    console.log('Enter VR button clicked!');
+                    startVRExperience();
+                });
+            }
+        }
+        
+        function startVRExperience() {
+            const selectedLang = localStorage.getItem('selectedLanguage') || 'en';
+            console.log(`Starting VR with language: ${selectedLang}`);
+            
+            // Hide language menu
+            const languageMenu = document.getElementById('languageMenu');
+            if (languageMenu) {
+                languageMenu.style.display = 'none';
+            }
+            
+            // Show VR scene
+            const scene = document.querySelector('a-scene');
+            if (scene) {
+                scene.style.display = 'block';
+            }
+            
+            // Set language for VR
+            currentLanguage = selectedLang;
+            languageIndex = languages.findIndex(lang => lang.code === currentLanguage);
+        }
+        
         // Initialize camera when scene loads
         document.addEventListener('DOMContentLoaded', () => {
             console.log('🚀 DOM loaded - Cache bust version: 2024-12-19-SUN-FALLBACK-VISIBLE');
