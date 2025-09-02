@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -238,14 +239,14 @@
         
         <!-- Sun - USING YOUR 3D MODEL -->
         <a-entity position="0 0 -12" class="planet" data-planet-id="sun" data-planet-name="Sun" data-planet-desc="The Sun is the star at the center of our Solar System. It is a massive ball of hydrogen and helium that provides light and heat to all the planets.">
-            <!-- Your 3D Sun Model - HUGE SCALE -->
-            <a-entity gltf-model="#sun-model" position="0 0 0" scale="0.5 0.5 0.5"></a-entity>
+            <!-- Your 3D Sun Model - Proper scale -->
+            <a-entity gltf-model="#sun-model" position="0 0 0" scale="0.2 0.2 0.2"></a-entity>
             <!-- Fallback sphere (hidden by default, shown only if 3D model fails) -->
             <a-sphere position="0 0 0" radius="2.5" color="#FFD700" 
                 material="emissive: #FFD700; emissiveIntensity: 3.0; transparent: false" visible="false">
             </a-sphere>
             <!-- Light source for illumination -->
-            <a-light type="point" color="#FFD700" intensity="2" distance="50" decay="2"></a-light>I
+            <a-light type="point" color="#FFD700" intensity="2" distance="50" decay="2"></a-light>
             <a-animation attribute="rotation" to="0 360 0" dur="20000" repeat="indefinite"></a-animation>
         </a-entity>
         <a-text value="Sun" position="0 1.2 -12" align="center" color="#ffffff" scale="0.3 0.3 1">
@@ -253,68 +254,68 @@
         </a-text>
         
         <!-- Mercury -->
-        <a-entity gltf-model="#mercury-model" position="5 0 -12" scale="0.001 0.001 0.001" class="planet" data-planet-id="mercury" data-planet-name="Mercury" data-planet-desc="Mercury is the smallest and innermost planet in the Solar System. It has no moons and is covered in craters.">
+        <a-entity gltf-model="#mercury-model" position="3 0 -12" scale="0.0001 0.0001 0.0001" class="planet" data-planet-id="mercury" data-planet-name="Mercury" data-planet-desc="Mercury is the smallest and innermost planet in the Solar System. It has no moons and is covered in craters.">
             <a-animation attribute="rotation" to="0 360 0" dur="15000" repeat="indefinite"></a-animation>
             <!-- Fallback sphere in case GLTF fails -->
             <a-sphere position="0 0 0" radius="0.1" color="#8C7853"></a-sphere>
         </a-entity>
-        <a-text value="Mercury" position="5 0.3 -12" align="center" color="#ffffff" scale="0.2 0.2 1"></a-text>
+        <a-text value="Mercury" position="3 0.3 -12" align="center" color="#ffffff" scale="0.2 0.2 1"></a-text>
         
         <!-- Venus -->
-        <a-entity gltf-model="#venus-model" position="10 0 -12" scale="0.0025 0.0025 0.0025" class="planet" data-planet-id="venus" data-planet-name="Venus" data-planet-desc="Venus is the second planet from the Sun and is often called Earth's sister planet due to similar size and mass.">
+        <a-entity gltf-model="#venus-model" position="6 0 -12" scale="0.00015 0.00015 0.00015" class="planet" data-planet-id="venus" data-planet-name="Venus" data-planet-desc="Venus is the second planet from the Sun and is often called Earth's sister planet due to similar size and mass.">
             <a-animation attribute="rotation" to="0 360 0" dur="18000" repeat="indefinite"></a-animation>
             <!-- Fallback sphere in case GLTF fails -->
             <a-sphere position="0 0 0" radius="0.15" color="#FFC649"></a-sphere>
         </a-entity>
-        <a-text value="Venus" position="10 0.5 -12" align="center" color="#ffffff" scale="0.2 0.2 1"></a-text>
+        <a-text value="Venus" position="6 0.5 -12" align="center" color="#ffffff" scale="0.2 0.2 1"></a-text>
         
         <!-- Earth -->
-        <a-entity gltf-model="#earth-model" position="15 0 -12" scale="0.003 0.003 0.003" class="planet" data-planet-id="earth" data-planet-name="Earth" data-planet-desc="Earth is our home planet and the only known planet with life. It has one natural satellite, the Moon.">
+        <a-entity gltf-model="#earth-model" position="9 0 -12" scale="0.00016 0.00016 0.00016" class="planet" data-planet-id="earth" data-planet-name="Earth" data-planet-desc="Earth is our home planet and the only known planet with life. It has one natural satellite, the Moon.">
             <a-animation attribute="rotation" to="0 360 0" dur="16000" repeat="indefinite"></a-animation>
             <!-- Fallback sphere in case GLTF fails -->
             <a-sphere position="0 0 0" radius="0.15" color="#6B93D6"></a-sphere>
         </a-entity>
-        <a-text value="Earth" position="15 0.5 -12" align="center" color="#ffffff" scale="0.2 0.2 1"></a-text>
+        <a-text value="Earth" position="9 0.5 -12" align="center" color="#ffffff" scale="0.2 0.2 1"></a-text>
         
         <!-- Mars -->
-        <a-entity gltf-model="#mars-model" position="20 0 -12" scale="0.0015 0.0015 0.0015" class="planet" data-planet-id="mars" data-planet-name="Mars" data-planet-desc="Mars is the fourth planet from the Sun and is often called the Red Planet due to its reddish appearance.">
+        <a-entity gltf-model="#mars-model" position="12 0 -12" scale="0.00012 0.00012 0.00012" class="planet" data-planet-id="mars" data-planet-name="Mars" data-planet-desc="Mars is the fourth planet from the Sun and is often called the Red Planet due to its reddish appearance.">
             <a-animation attribute="rotation" to="0 360 0" dur="14000" repeat="indefinite"></a-animation>
             <!-- Fallback sphere in case GLTF fails -->
             <a-sphere position="0 0 0" radius="0.12" color="#CD5C5C"></a-sphere>
         </a-entity>
-        <a-text value="Mars" position="20 0.4 -12" align="center" color="#ffffff" scale="0.2 0.2 1"></a-text>
+        <a-text value="Mars" position="12 0.4 -12" align="center" color="#ffffff" scale="0.2 0.2 1"></a-text>
         
         <!-- Jupiter -->
-        <a-entity gltf-model="#jupiter-model" position="28 0 -12" scale="0.007 0.007 0.007" class="planet" data-planet-id="jupiter" data-planet-name="Jupiter" data-planet-desc="Jupiter is the largest planet in our Solar System and is a gas giant with no solid surface.">
+        <a-entity gltf-model="#jupiter-model" position="18 0 -12" scale="0.0005 0.0005 0.0005" class="planet" data-planet-id="jupiter" data-planet-name="Jupiter" data-planet-desc="Jupiter is the largest planet in our Solar System and is a gas giant with no solid surface.">
             <a-animation attribute="rotation" to="0 360 0" dur="22000" repeat="indefinite"></a-animation>
             <!-- Fallback sphere in case GLTF fails -->
             <a-sphere position="0 0 0" radius="0.3" color="#D8CA9D"></a-sphere>
         </a-entity>
-        <a-text value="Jupiter" position="28 0.9 -12" align="center" color="#ffffff" scale="0.25 0.25 1"></a-text>
+        <a-text value="Jupiter" position="18 0.9 -12" align="center" color="#ffffff" scale="0.25 0.25 1"></a-text>
         
         <!-- Saturn -->
-        <a-entity gltf-model="#saturn-model" position="38 0 -12" scale="0.006 0.006 0.006" class="planet" data-planet-id="saturn" data-planet-name="Saturn" data-planet-desc="Saturn is the sixth planet from the Sun and is famous for its spectacular ring system.">
+        <a-entity gltf-model="#saturn-model" position="24 0 -12" scale="0.00045 0.00045 0.00045" class="planet" data-planet-id="saturn" data-planet-name="Saturn" data-planet-desc="Saturn is the sixth planet from the Sun and is famous for its spectacular ring system.">
             <a-animation attribute="rotation" to="0 360 0" dur="25000" repeat="indefinite"></a-animation>
             <!-- Fallback sphere in case GLTF fails -->
             <a-sphere position="0 0 0" radius="0.25" color="#FAD5A5"></a-sphere>
         </a-entity>
-        <a-text value="Saturn" position="38 0.8 -12" align="center" color="#ffffff" scale="0.25 0.25 1"></a-text>
+        <a-text value="Saturn" position="24 0.8 -12" align="center" color="#ffffff" scale="0.25 0.25 1"></a-text>
         
         <!-- Uranus -->
-        <a-entity gltf-model="#uranus-model" position="48 0 -12" scale="0.004 0.004 0.004" class="planet" data-planet-id="uranus" data-planet-name="Uranus" data-planet-desc="Uranus is the seventh planet from the Sun and is an ice giant with a unique sideways rotation.">
+        <a-entity gltf-model="#uranus-model" position="30 0 -12" scale="0.00025 0.00025 0.00025" class="planet" data-planet-id="uranus" data-planet-name="Uranus" data-planet-desc="Uranus is the seventh planet from the Sun and is an ice giant with a unique sideways rotation.">
             <a-animation attribute="rotation" to="0 360 0" dur="28000" repeat="indefinite"></a-animation>
             <!-- Fallback sphere in case GLTF fails -->
             <a-sphere position="0 0 0" radius="0.18" color="#4FD0E7"></a-sphere>
         </a-entity>
-        <a-text value="Uranus" position="48 0.6 -12" align="center" color="#ffffff" scale="0.2 0.2 1"></a-text>
+        <a-text value="Uranus" position="30 0.6 -12" align="center" color="#ffffff" scale="0.2 0.2 1"></a-text>
         
         <!-- Neptune -->
-        <a-entity gltf-model="#neptune-model" position="58 0 -12" scale="0.003 0.003 0.003" class="planet" data-planet-id="neptune" data-planet-name="Neptune" data-planet-desc="Neptune is the eighth and farthest planet from the Sun. It's an ice giant with the strongest winds in the Solar System.">
+        <a-entity gltf-model="#neptune-model" position="36 0 -12" scale="0.00024 0.00024 0.00024" class="planet" data-planet-id="neptune" data-planet-name="Neptune" data-planet-desc="Neptune is the eighth and farthest planet from the Sun. It's an ice giant with the strongest winds in the Solar System.">
             <a-animation attribute="rotation" to="0 360 0" dur="30000" repeat="indefinite"></a-animation>
             <!-- Fallback sphere in case GLTF fails -->
             <a-sphere position="0 0 0" radius="0.15" color="#4B70DD"></a-sphere>
         </a-entity>
-        <a-text value="Neptune" position="58 0.6 -12" align="center" color="#ffffff" scale="0.2 0.2 1"></a-text>
+        <a-text value="Neptune" position="36 0.6 -12" align="center" color="#ffffff" scale="0.2 0.2 1"></a-text>
         
         <!-- Pluto -->
         <a-sphere position="68 0 -12" radius="0.05" color="#C0C0C0" class="planet" data-planet-id="pluto" data-planet-name="Pluto" data-planet-desc="Pluto is a dwarf planet in the Kuiper Belt. Though no longer classified as a planet, it remains an important celestial body.">
@@ -324,7 +325,7 @@
         <a-text value="Pluto" position="68 0.2 -12" align="center" color="#ffffff" scale="0.15 0.15 1"></a-text>
         
         <!-- Camera -->
-        <a-camera position="0 1.6 5">
+        <a-camera position="0 2 8" rotation="-5 0 0">
             <a-cursor></a-cursor>
         </a-camera>
         
