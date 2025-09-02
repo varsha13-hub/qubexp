@@ -8,10 +8,23 @@
     <title>Working SolarLearn VR - India</title>
     <!-- Cache bust: 2024-12-19-SUN-FALLBACK-VISIBLE -->
     
-    <!-- A-Frame for VR -->
-    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
-    <!-- A-Frame Extras for GLTF loader -->
-    <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
+            <!-- A-Frame for VR -->
+        <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+        
+        <!-- THREE.js compatibility shim for aframe-extras -->
+        <script>
+            // Fix THREE.Math.degToRad compatibility issue
+            if (typeof THREE !== 'undefined') {
+                if (!THREE.Math && THREE.MathUtils) {
+                    THREE.Math = THREE.Math || {};
+                    THREE.Math.degToRad = THREE.MathUtils.degToRad;
+                    THREE.Math.radToDeg = THREE.MathUtils.radToDeg;
+                }
+            }
+        </script>
+        
+        <!-- A-Frame Extras for GLTF loader -->
+        <script src="https://unpkg.com/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
     <style>
         body { margin: 0; padding: 0; }
         a-scene { width: 100%; height: 100vh; }
@@ -295,8 +308,7 @@
         </select>
         
         <h4>🎤 Voice Commands</h4>
-        <button id="speakBtn">🔊 Speak Planet Info</button>
-        <button id="translateBtn">🔄 Translate to Selected Language</button>
+        <p class="info-text">Click any planet to hear its description in your selected language</p>
         
         <h4>📊 Current Planet</h4>
         <p id="currentPlanet">None selected</p>
@@ -304,9 +316,8 @@
 
             <div class="info-panel">
             <h4>ℹ️ Instructions</h4>
-            <p>• Click on planets to select them</p>
-            <p>• Use "Speak Planet Info" to hear description</p>
-            <p>• Use "Translate" to get description in selected language</p>
+            <p>• Click on planets to select them and hear description</p>
+            <p>• Planets automatically speak in your selected language</p>
             <p>• Voice commands work in Hindi, Kannada, and other Indian languages</p>
             <p>• Control panel is visible in VR mode (top right)</p>
         </div>
@@ -425,16 +436,20 @@
         </a-sphere>
         <a-text value="Pluto" position="68 0.2 -12" align="center" color="#ffffff" scale="0.15 0.15 1"></a-text>
         
-        <!-- VR Rig with Movement Controls -->
-        <a-entity id="rig" movement-controls="fly: true">
-            <!-- Camera -->
-            <a-camera position="0 2 8" rotation="-5 0 0">
-                <a-cursor color="#00ff88" position="0 0 -1"></a-cursor>
-            </a-camera>
-            
-            <!-- VR Controllers with Laser Controls -->
-            <a-entity id="leftHand" hand-controls="hand: left" laser-controls="hand: left"></a-entity>
-            <a-entity id="rightHand" hand-controls="hand: right" laser-controls="hand: right"></a-entity>
+        <!-- VR Rig with Custom Movement Controls -->
+        <a-entity id="rig" position="0 1.6 0">
+            <!-- Camera (headset view) -->
+            <a-camera id="camera" wasd-controls-enabled="false"></a-camera>
+
+            <!-- Right-hand controller -->
+            <a-entity id="rightController"
+                      oculus-touch-controls="hand: right"
+                      raycaster="objects: .planet"
+                      line="color: #00FF00; opacity: 0.5">
+            </a-entity>
+
+            <!-- Left-hand controller (optional for later) -->
+            <a-entity id="leftController" oculus-touch-controls="hand: left"></a-entity>
         </a-entity>
         
         <!-- Fallback VR Cursor for headset-only VR -->
@@ -470,6 +485,7 @@
         let currentPlanet = null;
         let currentLanguage = 'en';
         let languageIndex = 0;
+        let vrStarted = false; // Flag to prevent auto-speak before VR starts
         const languages = [
             { code: 'en', name: '🇺🇸 English' },
             { code: 'hi', name: '🇮🇳 हिंदी' },
@@ -544,114 +560,66 @@
         let originalCameraPosition = { x: 0, y: 1.6, z: 5 };
         let originalCameraRotation = { x: 0, y: 0, z: 0 };
         
-        function zoomToPlanet(planet) {
-            const camera = document.querySelector('a-camera');
-            const planetPosition = planet.getAttribute('position');
-            
-            if (camera && planetPosition) {
-                const [x, y, z] = planetPosition.split(' ').map(Number);
-                const zoomX = x;
-                const zoomY = y;
-                const zoomZ = z + 1.5; // Move closer to planet
-                
-                console.log(`🔍 ZOOMING to ${planet.getAttribute('data-planet-name')}`);
-                
-                // Direct position change - no animation complications
-                camera.setAttribute('position', `${zoomX} ${zoomY} ${zoomZ}`);
-                
-                // Show reset button
-                showResetViewButton();
-            }
-        }
-        
-        function resetCameraView() {
-            const camera = document.querySelector('a-camera');
-            if (camera) {
-                console.log('🔄 Resetting camera');
-                camera.setAttribute('position', '0 1.6 5');
-                hideResetViewButton();
-            }
-        }
-        
-        function showResetViewButton() {
-            let resetBtn = document.getElementById('resetViewBtn');
-            if (!resetBtn) {
-                resetBtn = document.createElement('button');
-                resetBtn.id = 'resetViewBtn';
-                resetBtn.textContent = 'Reset View';
-                resetBtn.style.cssText = `
-                    position: fixed;
-                    top: 20px;
-                    right: 20px;
-                    z-index: 1000;
-                    background: #007bff;
-                    color: white;
-                    border: none;
-                    padding: 10px 20px;
-                    border-radius: 5px;
-                    cursor: pointer;
-                    font-size: 14px;
-                `;
-                resetBtn.onclick = resetCameraView;
-                document.body.appendChild(resetBtn);
-            }
-            resetBtn.style.display = 'block';
-        }
-        
-
-        
-        function hideResetViewButton() {
-            const resetBtn = document.getElementById('resetViewBtn');
-            if (resetBtn) {
-                resetBtn.style.display = 'none';
-            }
-        }
+        // Zoom functionality removed - planets now just show info without camera movement
         
         function setupPlanetInteractions() {
             const planets = document.querySelectorAll('.planet');
             planets.forEach(planet => {
                 planet.addEventListener('click', () => {
-                    const planetId = planet.getAttribute('data-planet-id');
-                    const planetName = planet.getAttribute('data-planet-name');
-                    const planetDesc = planet.getAttribute('data-planet-desc');
-                    
-                    currentPlanet = {
-                        id: planetId,
-                        name: planetName,
-                        description: planetDesc
-                    };
-                    
-                    // Update desktop display
-                    document.getElementById('currentPlanet').textContent = planetName;
-                    
-                    console.log('Selected planet:', planetName);
-                    console.log('Planet element:', planet);
-                    
-                    // Check if this is a GLTF model or sphere
-                    const gltfModel = planet.querySelector('a-gltf-model');
-                    const sphereModel = planet.tagName === 'A-SPHERE' ? planet : null;
-                    
-                    if (gltfModel) {
-                        console.log('This is a GLTF model planet');
-                        console.log('GLTF model src:', gltfModel.getAttribute('src'));
-                        console.log('GLTF model visible:', gltfModel.getAttribute('visible'));
-                        console.log('GLTF model loaded:', gltfModel.hasAttribute('loaded'));
-                    } else if (sphereModel) {
-                        console.log('This is a sphere planet (Pluto)');
-                    }
-                    
-
-                    
-                    // Zoom into the selected planet
-                    zoomToPlanet(planet);
-                    
-                    // Subtle visual feedback - just a slight scale increase
-                    planet.setAttribute('scale', '1.05 1.05 1.05');
-                    setTimeout(() => {
-                        planet.setAttribute('scale', '1 1 1');
-                    }, 300);
+                    handlePlanetSelection(planet);
                 });
             });
+        }
+
+        function handlePlanetSelection(planet) {
+            const planetId = planet.getAttribute('data-planet-id');
+            const planetName = planet.getAttribute('data-planet-name');
+            const planetDesc = planet.getAttribute('data-planet-desc');
+            
+            currentPlanet = {
+                id: planetId,
+                name: planetName,
+                description: planetDesc
+            };
+            
+            // Update desktop display
+            document.getElementById('currentPlanet').textContent = planetName;
+            
+            console.log('Selected planet:', planetName);
+            console.log('Planet element:', planet);
+            
+            // Check if this is a GLTF model or sphere
+            const gltfModel = planet.querySelector('a-gltf-model');
+            const sphereModel = planet.tagName === 'A-SPHERE' ? planet : null;
+            
+            if (gltfModel) {
+                console.log('This is a GLTF model planet');
+                console.log('GLTF model src:', gltfModel.getAttribute('src'));
+                console.log('GLTF model visible:', gltfModel.getAttribute('visible'));
+                console.log('GLTF model loaded:', gltfModel.hasAttribute('loaded'));
+            } else if (sphereModel) {
+                console.log('This is a sphere planet (Pluto)');
+            }
+            
+            // Subtle visual feedback - only scale the GLTF model, not the whole entity
+            if (gltfModel) {
+                const currentScale = gltfModel.getAttribute('scale');
+                if (currentScale) {
+                    const scaleArray = currentScale.split(' ').map(Number);
+                    const newScale = scaleArray.map(s => s * 1.05);
+                    gltfModel.setAttribute('scale', newScale.join(' '));
+                    setTimeout(() => {
+                        gltfModel.setAttribute('scale', currentScale);
+                    }, 300);
+                }
+            }
+            
+            // Auto-speak the planet info in selected language (only after VR starts)
+            if (vrStarted) {
+                setTimeout(() => {
+                    speakPlanetInfo();
+                }, 100);
+            }
         }
         
         function setupVRControls() {
@@ -667,24 +635,6 @@
                 languageIndex = languages.findIndex(lang => lang.code === currentLanguage);
                 updateVRLanguageDisplay();
                 console.log('Language changed to:', currentLanguage);
-            });
-            
-            // Speak button
-            document.getElementById('speakBtn').addEventListener('click', () => {
-                if (currentPlanet) {
-                    speakPlanetInfo();
-                } else {
-                    alert('Please select a planet first!');
-                }
-            });
-            
-            // Translate button
-            document.getElementById('translateBtn').addEventListener('click', () => {
-                if (currentPlanet) {
-                    translatePlanetInfo();
-                } else {
-                    alert('Please select a planet first!');
-                }
             });
         }
         
@@ -714,44 +664,70 @@
         
         async function speakPlanetInfo() {
             if (!currentPlanet) return;
+            if (!vrStarted) {
+                console.log('🔇 TTS blocked - VR not started yet');
+                return;
+            }
+            
+            console.log(`🔊 TTS Request - Language: ${currentLanguage}, Planet: ${currentPlanet.name}`);
             
             try {
-                // Use the main server TTS endpoint
-                const response = await fetch('/api/tts', {
+                // First translate the text to the selected language
+                const translationResponse = await fetch('/api/translate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         text: currentPlanet.description,
-                        language: currentLanguage
+                        sourceLang: 'en',
+                        targetLang: currentLanguage
                     })
                 });
                 
-                if (response.ok) {
-                    const result = await response.json();
+                if (translationResponse.ok) {
+                    const result = await translationResponse.json();
+                    const translatedText = result.translatedText || result.text || currentPlanet.description;
                     
-                    if (result.audio) {
-                        // Handle base64 audio from Sarvam TTS
-                        const audioData = result.audio;
-                        const audioBlob = new Blob([Uint8Array.from(atob(audioData), c => c.charCodeAt(0))], { type: 'audio/mp3' });
-                        const audioUrl = URL.createObjectURL(audioBlob);
-                        const audio = new Audio(audioUrl);
+                    console.log(`🔄 Translated text for TTS: ${translatedText}`);
+                    
+                    // Now use TTS with the translated text
+                    const ttsResponse = await fetch('/api/tts', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            text: translatedText,
+                            language: currentLanguage
+                        })
+                    });
+                    
+                    if (ttsResponse.ok) {
+                        const result = await ttsResponse.json();
                         
-                        // Ensure audio plays
-                        audio.volume = 1.0;
-                        await audio.play();
-                        
-                        console.log('Playing TTS for:', currentPlanet.name, 'in', currentLanguage, 'using', result.provider);
-                        showVRMessage(`Speaking ${currentPlanet.name} in ${languages[languageIndex].name}`);
+                        if (result.audio) {
+                            // Handle base64 audio from Sarvam TTS
+                            const audioData = result.audio;
+                            const audioBlob = new Blob([Uint8Array.from(atob(audioData), c => c.charCodeAt(0))], { type: 'audio/mp3' });
+                            const audioUrl = URL.createObjectURL(audioBlob);
+                            const audio = new Audio(audioUrl);
+                            
+                            // Ensure audio plays
+                            audio.volume = 1.0;
+                            await audio.play();
+                            
+                            console.log(`🎵 Playing TTS for: ${currentPlanet.name} in ${currentLanguage} using translated text`);
+                            showVRMessage(`Speaking ${currentPlanet.name} in ${languages[languageIndex].name}`);
+                        } else {
+                            throw new Error('No audio data received');
+                        }
                     } else {
-                        throw new Error('No audio data received');
+                        throw new Error('TTS service not available');
                     }
                 } else {
-                    throw new Error('TTS service not available');
+                    throw new Error('Translation service not available');
                 }
             } catch (error) {
                 console.error('TTS error:', error);
                 
-                // Fallback to browser speech synthesis
+                // Fallback to browser speech synthesis with original text
                 try {
                     const utterance = new SpeechSynthesisUtterance(currentPlanet.description);
                     utterance.lang = currentLanguage;
@@ -766,6 +742,8 @@
         
         async function translatePlanetInfo() {
             if (!currentPlanet) return;
+            
+            console.log(`🔄 Translation Request - Target Language: ${currentLanguage}, Planet: ${currentPlanet.name}`);
             
             try {
                 // Use the main server translation endpoint
@@ -941,9 +919,25 @@
                 scene.style.display = 'block';
             }
             
-            // Set language for VR
+            // Set language for VR and TTS system
             currentLanguage = selectedLang;
             languageIndex = languages.findIndex(lang => lang.code === currentLanguage);
+            
+            // Update the language selector in the control panel to match
+            const languageSelect = document.getElementById('languageSelect');
+            if (languageSelect) {
+                languageSelect.value = selectedLang;
+            }
+            
+            // Update the current language display
+            updateVRLanguageDisplay();
+            
+            // Set VR flag to enable auto-speak
+            vrStarted = true;
+            
+            console.log(`✅ VR started with language: ${selectedLang} (${languages[languageIndex].name})`);
+            console.log(`✅ TTS will now use: ${selectedLang}`);
+            console.log(`✅ Auto-speak enabled: ${vrStarted}`);
         }
         
         // Initialize camera when scene loads
@@ -1037,6 +1031,64 @@
                     console.error('❌ Venus element NOT FOUND!');
                 }
             }, 1000);
+        });
+        
+        // Movement + Selection in VR
+        function setupVRControllerMovement() {
+            const rig = document.querySelector("#rig");
+            const camera = document.querySelector("#camera");
+            const rightController = document.querySelector("#rightController");
+
+            if (!rig || !camera || !rightController) {
+                console.error('❌ VR elements not found for controller setup');
+                return;
+            }
+
+            console.log('🎮 Setting up VR controller movement and selection...');
+
+            // ---- Movement with Thumbstick ----
+            rightController.addEventListener("thumbstickmoved", (e) => {
+                const moveSpeed = 0.05; // adjust speed
+                const direction = new THREE.Vector3();
+
+                // Forward direction (where headset is looking)
+                camera.object3D.getWorldDirection(direction);
+
+                // Move forward/back
+                rig.object3D.position.addScaledVector(direction, -e.detail.y * moveSpeed);
+
+                // (Optional) Strafe left/right
+                // rig.object3D.position.add(
+                //   new THREE.Vector3(direction.z, 0, -direction.x).multiplyScalar(e.detail.x * moveSpeed)
+                // );
+            });
+
+            // ---- Planet Selection with Trigger ----
+            rightController.addEventListener("triggerdown", () => {
+                const raycaster = rightController.components.raycaster;
+                const intersection = raycaster.intersections[0]; // first object hit
+
+                if (intersection && intersection.object.el.classList.contains("planet")) {
+                    const planetEl = intersection.object.el;
+                    console.log("🌍 Planet selected in VR:", planetEl.dataset.planetName);
+                    handlePlanetSelection(planetEl); // <-- your function that shows info / TTS
+                }
+            });
+
+            console.log('✅ VR controller movement and selection setup complete');
+        }
+        
+        // Initialize custom VR controls when scene loads
+        document.addEventListener('DOMContentLoaded', () => {
+            // Wait for scene to load, then setup custom controls
+            const scene = document.querySelector('a-scene');
+            if (scene) {
+                scene.addEventListener('loaded', () => {
+                    setTimeout(() => {
+                        setupVRControllerMovement();
+                    }, 2000); // Give controllers time to initialize
+                });
+            }
         });
     </script>
 </body>
