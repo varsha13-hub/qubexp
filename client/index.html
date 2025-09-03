@@ -444,8 +444,8 @@
             <!-- Right-hand controller -->
             <a-entity id="rightController"
                       oculus-touch-controls="hand: right"
-                      raycaster="objects: .planet"
-                      line="color: #00FF00; opacity: 0.5">
+                      raycaster="objects: .planet; far: 100; near: 0.1"
+                      line="color: #00FF00; opacity: 1.0; visible: true">
             </a-entity>
 
             <!-- Left-hand controller (optional for later) -->
@@ -458,6 +458,42 @@
             position="0 0 -1" 
             geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03" 
             material="color: cyan; shader: flat">
+        </a-entity>
+
+        <!-- Debug pointer for VR controllers -->
+        <a-entity id="debugPointer" 
+                  position="0 0 -1" 
+                  geometry="primitive: sphere; radius: 0.02" 
+                  material="color: red; shader: flat"
+                  visible="false">
+        </a-entity>
+
+        <!-- Visual feedback for controller trigger -->
+        <a-entity id="triggerFeedback" 
+                  position="0 0 -1" 
+                  geometry="primitive: sphere; radius: 0.05" 
+                  material="color: yellow; shader: flat; transparent: true; opacity: 0.8"
+                  visible="false">
+        </a-entity>
+
+        <!-- Enhanced pointer cursor for better visibility -->
+        <a-entity id="pointerCursor" 
+                  position="0 0 -1" 
+                  geometry="primitive: sphere; radius: 0.03" 
+                  material="color: #00FF00; shader: flat; emissive: #00FF00; emissiveIntensity: 0.5"
+                  visible="false">
+        </a-entity>
+
+        <!-- Custom visible pointer line -->
+        <a-entity id="customPointer" 
+                  position="0 0 0" 
+                  visible="false">
+            <a-cylinder position="0 0 -50" 
+                        radius="0.005" 
+                        height="100" 
+                        material="color: #00FF00; emissive: #00FF00; emissiveIntensity: 0.3; transparent: true; opacity: 0.8"
+                        rotation="90 0 0">
+            </a-cylinder>
         </a-entity>
         
         <!-- Lighting -->
@@ -714,7 +750,7 @@
                             await audio.play();
                             
                             console.log(`🎵 Playing TTS for: ${currentPlanet.name} in ${currentLanguage} using translated text`);
-                            showVRMessage(`Speaking ${currentPlanet.name} in ${languages[languageIndex].name}`);
+                            console.log(`🎵 Speaking ${currentPlanet.name} in ${languages[languageIndex].name}`);
                         } else {
                             throw new Error('No audio data received');
                         }
@@ -932,12 +968,16 @@
             // Update the current language display
             updateVRLanguageDisplay();
             
-            // Set VR flag to enable auto-speak
+            // Set VR flag to enable auto-speak (but don't auto-select any planet)
             vrStarted = true;
+            
+            // Clear any previously selected planet
+            currentPlanet = null;
             
             console.log(`✅ VR started with language: ${selectedLang} (${languages[languageIndex].name})`);
             console.log(`✅ TTS will now use: ${selectedLang}`);
             console.log(`✅ Auto-speak enabled: ${vrStarted}`);
+            console.log(`✅ No planet auto-selected on VR start`);
         }
         
         // Initialize camera when scene loads
@@ -1046,6 +1086,25 @@
 
             console.log('🎮 Setting up VR controller movement and selection...');
 
+            // Make custom pointer always visible and follow controller
+            const customPointer = document.getElementById('customPointer');
+            if (customPointer) {
+                customPointer.setAttribute('visible', 'true');
+                
+                // Update pointer position every frame to follow controller
+                function updatePointer() {
+                    if (customPointer && rightController) {
+                        const controllerPos = rightController.getAttribute('position');
+                        const controllerRot = rightController.getAttribute('rotation');
+                        
+                        customPointer.setAttribute('position', controllerPos);
+                        customPointer.setAttribute('rotation', controllerRot);
+                    }
+                    requestAnimationFrame(updatePointer);
+                }
+                updatePointer();
+            }
+
             // ---- Movement with Thumbstick ----
             rightController.addEventListener("thumbstickmoved", (e) => {
                 const moveSpeed = 0.05; // adjust speed
@@ -1056,23 +1115,83 @@
 
                 // Move forward/back
                 rig.object3D.position.addScaledVector(direction, -e.detail.y * moveSpeed);
-
-                // (Optional) Strafe left/right
-                // rig.object3D.position.add(
-                //   new THREE.Vector3(direction.z, 0, -direction.x).multiplyScalar(e.detail.x * moveSpeed)
-                // );
             });
 
             // ---- Planet Selection with Trigger ----
             rightController.addEventListener("triggerdown", () => {
-                const raycaster = rightController.components.raycaster;
-                const intersection = raycaster.intersections[0]; // first object hit
-
-                if (intersection && intersection.object.el.classList.contains("planet")) {
-                    const planetEl = intersection.object.el;
-                    console.log("🌍 Planet selected in VR:", planetEl.dataset.planetName);
-                    handlePlanetSelection(planetEl); // <-- your function that shows info / TTS
+                console.log('🎯 Trigger pressed - checking for planet selection');
+                
+                // Show visual feedback
+                const triggerFeedback = document.getElementById('triggerFeedback');
+                if (triggerFeedback) {
+                    triggerFeedback.setAttribute('visible', 'true');
+                    triggerFeedback.setAttribute('position', rightController.getAttribute('position'));
+                    setTimeout(() => {
+                        triggerFeedback.setAttribute('visible', 'false');
+                    }, 200);
                 }
+                
+                // Method 1: Try raycaster first
+                const raycaster = rightController.components.raycaster;
+                if (raycaster && raycaster.intersections && raycaster.intersections.length > 0) {
+                    const intersection = raycaster.intersections[0];
+                    const planetEl = intersection.object.el;
+                    
+                    if (planetEl && planetEl.classList.contains("planet")) {
+                        console.log("🌍 Planet selected via raycaster:", planetEl.dataset.planetName);
+                        handlePlanetSelection(planetEl);
+                        return;
+                    }
+                }
+
+                // Method 2: Find closest planet to controller (simplified)
+                console.log('🎯 Raycaster failed, using simple proximity method');
+                const controllerPosition = rightController.getAttribute('position');
+                const planets = document.querySelectorAll('.planet');
+                let closestPlanet = null;
+                let closestDistance = Infinity;
+
+                planets.forEach(planet => {
+                    const planetPosition = planet.getAttribute('position');
+                    const distance = Math.sqrt(
+                        Math.pow(controllerPosition.x - planetPosition.x, 2) +
+                        Math.pow(controllerPosition.y - planetPosition.y, 2) +
+                        Math.pow(controllerPosition.z - planetPosition.z, 2)
+                    );
+                    
+                    // Only consider planets within 10 units and in front of controller
+                    if (distance < 10) {
+                        const controllerRotation = rightController.getAttribute('rotation');
+                        const forwardVector = new THREE.Vector3(0, 0, -1);
+                        forwardVector.applyEuler(new THREE.Euler(0, THREE.MathUtils.degToRad(controllerRotation.y), 0));
+                        
+                        const toPlanet = new THREE.Vector3(
+                            planetPosition.x - controllerPosition.x,
+                            planetPosition.y - controllerPosition.y,
+                            planetPosition.z - controllerPosition.z
+                        ).normalize();
+                        
+                        const dotProduct = forwardVector.dot(toPlanet);
+                        
+                        // Only select planets that are clearly in front (dot product > 0.7)
+                        if (dotProduct > 0.7 && distance < closestDistance) {
+                            closestDistance = distance;
+                            closestPlanet = planet;
+                        }
+                    }
+                });
+
+                if (closestPlanet) {
+                    console.log(`🌍 Proximity method: Planet found: ${closestPlanet.dataset.planetName} at distance ${closestDistance}`);
+                    handlePlanetSelection(closestPlanet);
+                } else {
+                    console.log("🎯 No planets found in front within 10 units");
+                }
+            });
+
+            // Add click event as backup for desktop testing
+            rightController.addEventListener('click', () => {
+                console.log('🎯 Controller clicked - this should work in VR');
             });
 
             console.log('✅ VR controller movement and selection setup complete');

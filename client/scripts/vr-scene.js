@@ -484,8 +484,6 @@ class VRSceneController {
             }
         }
     }
-        this.highlightPlanet(planetId);
-    }
 
     showPlanetInfo(planet) {
         const planetTitle = document.getElementById('planetTitle');
