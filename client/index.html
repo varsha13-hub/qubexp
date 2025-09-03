@@ -260,6 +260,48 @@
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
         }
+        
+        .tour-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            margin: 10px 0;
+        }
+        
+        .tour-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+        }
+        
+        .tour-btn:active {
+            transform: translateY(0);
+        }
+        
+        .test-btn {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+            margin: 5px 0;
+        }
+        
+        .test-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
     </style>
 </head>
 <body>
@@ -289,6 +331,14 @@
                 </button>
             </div>
             <button id="enterVRBtn" class="enter-vr-btn" disabled style="opacity: 0.5;">🚀 Enter VR Experience</button>
+            
+            <h4>🎬 Guided Tour</h4>
+            <button id="startTourBtn" class="tour-btn">Start Guided Tour</button>
+            <p class="info-text">Experience a cinematic journey through the Solar System</p>
+            
+            <h4>🧪 Test TTS</h4>
+            <button id="testTTSBtn" class="test-btn">Test TTS in Selected Language</button>
+            <p class="info-text">Test text-to-speech in your chosen language</p>
         </div>
     </div>
 
@@ -312,6 +362,10 @@
         
         <h4>📊 Current Planet</h4>
         <p id="currentPlanet">None selected</p>
+        
+        <h4>🎤 Test TTS</h4>
+        <button id="testCurrentPlanetTTS" class="test-btn">Speak Current Planet</button>
+        <p class="info-text">Test TTS for the currently selected planet</p>
     </div>
 
             <div class="info-panel">
@@ -350,91 +404,91 @@
         <!-- Stars removed for cleaner planet visibility -->
         
         <!-- Sun - USING YOUR 3D MODEL -->
-        <a-entity position="0 0 -12" class="planet" data-planet-id="sun" data-planet-name="Sun" data-planet-desc="The Sun is the star at the center of our Solar System. It is a massive ball of hydrogen and helium that provides light and heat to all the planets.">
+        <a-entity position="0 0 -30" class="planet" data-planet-id="sun" data-planet-name="Sun" data-planet-desc="The Sun is the star at the center of our Solar System. It is a massive ball of hydrogen and helium that provides light and heat to all the planets.">
             <!-- Your 3D Sun Model - Proper scale -->
-            <a-entity gltf-model="#sun-model" position="0 0 0" scale="0.2 0.2 0.2"></a-entity>
+            <a-entity gltf-model="#sun-model" position="0 0 0" scale="0.6 0.6 0.6"></a-entity>
             <!-- Fallback sphere (hidden by default, shown only if 3D model fails) -->
-            <a-sphere position="0 0 0" radius="2.5" color="#FFD700" 
+            <a-sphere position="0 0 0" radius="7.5" color="#FFD700" 
                 material="emissive: #FFD700; emissiveIntensity: 3.0; transparent: false" visible="false">
             </a-sphere>
             <!-- Light source for illumination -->
-            <a-light type="point" color="#FFD700" intensity="2" distance="50" decay="2"></a-light>
+            <a-light type="point" color="#FFD700" intensity="2" distance="125" decay="2"></a-light>
             <a-animation attribute="rotation" to="0 360 0" dur="20000" repeat="indefinite"></a-animation>
         </a-entity>
-        <a-text value="Sun" position="0 1.2 -12" align="center" color="#ffffff" scale="0.3 0.3 1">
-            <a-animation attribute="position" to="0 1.5 -12" dur="2000" repeat="indefinite" direction="alternate"></a-animation>
+        <a-text value="Sun" position="0 3.0 -30" align="center" color="#ffffff" scale="0.75 0.75 1">
+            <a-animation attribute="position" to="0 3.75 -30" dur="2000" repeat="indefinite" direction="alternate"></a-animation>
         </a-text>
         
         <!-- Mercury -->
-        <a-entity gltf-model="#mercury-model" position="3 0 -12" scale="0.0001 0.0001 0.0001" class="planet" data-planet-id="mercury" data-planet-name="Mercury" data-planet-desc="Mercury is the smallest and innermost planet in the Solar System. It has no moons and is covered in craters.">
+        <a-entity gltf-model="#mercury-model" position="7.5 0 -30" scale="0.0003 0.0003 0.0003" class="planet" data-planet-id="mercury" data-planet-name="Mercury" data-planet-desc="Mercury is the smallest and innermost planet in the Solar System. It has no moons and is covered in craters.">
             <a-animation attribute="rotation" to="0 360 0" dur="15000" repeat="indefinite"></a-animation>
             <!-- Fallback sphere in case GLTF fails -->
-            <a-sphere position="0 0 0" radius="0.1" color="#8C7853"></a-sphere>
+            <a-sphere position="0 0 0" radius="0.3" color="#8C7853"></a-sphere>
         </a-entity>
-        <a-text value="Mercury" position="3 0.3 -12" align="center" color="#ffffff" scale="0.2 0.2 1"></a-text>
+        <a-text value="Mercury" position="7.5 0.75 -30" align="center" color="#ffffff" scale="0.5 0.5 1"></a-text>
         
         <!-- Venus -->
-        <a-entity gltf-model="#venus-model" position="6 0 -12" scale="0.00015 0.00015 0.00015" class="planet" data-planet-id="venus" data-planet-name="Venus" data-planet-desc="Venus is the second planet from the Sun and is often called Earth's sister planet due to similar size and mass.">
+        <a-entity gltf-model="#venus-model" position="15 0 -30" scale="0.00045 0.00045 0.00045" class="planet" data-planet-id="venus" data-planet-name="Venus" data-planet-desc="Venus is the second planet from the Sun and is often called Earth's sister planet due to similar size and mass.">
             <a-animation attribute="rotation" to="0 360 0" dur="18000" repeat="indefinite"></a-animation>
             <!-- Fallback sphere in case GLTF fails -->
-            <a-sphere position="0 0 0" radius="0.15" color="#FFC649"></a-sphere>
+            <a-sphere position="0 0 0" radius="0.45" color="#FFC649"></a-sphere>
         </a-entity>
-        <a-text value="Venus" position="6 0.5 -12" align="center" color="#ffffff" scale="0.2 0.2 1"></a-text>
+        <a-text value="Venus" position="15 1.25 -30" align="center" color="#ffffff" scale="0.5 0.5 1"></a-text>
         
         <!-- Earth -->
-        <a-entity gltf-model="#earth-model" position="9 0 -12" scale="0.00016 0.00016 0.00016" class="planet" data-planet-id="earth" data-planet-name="Earth" data-planet-desc="Earth is our home planet and the only known planet with life. It has one natural satellite, the Moon.">
+        <a-entity gltf-model="#earth-model" position="22.5 0 -30" scale="0.00048 0.00048 0.00048" class="planet" data-planet-id="earth" data-planet-name="Earth" data-planet-desc="Earth is our home planet and the only known planet with life. It has one natural satellite, the Moon.">
             <a-animation attribute="rotation" to="0 360 0" dur="16000" repeat="indefinite"></a-animation>
             <!-- Fallback sphere in case GLTF fails -->
-            <a-sphere position="0 0 0" radius="0.15" color="#6B93D6"></a-sphere>
+            <a-sphere position="0 0 0" radius="0.45" color="#6B93D6"></a-sphere>
         </a-entity>
-        <a-text value="Earth" position="9 0.5 -12" align="center" color="#ffffff" scale="0.2 0.2 1"></a-text>
+        <a-text value="Earth" position="22.5 1.25 -30" align="center" color="#ffffff" scale="0.5 0.5 1"></a-text>
         
         <!-- Mars -->
-        <a-entity gltf-model="#mars-model" position="12 0 -12" scale="0.00012 0.00012 0.00012" class="planet" data-planet-id="mars" data-planet-name="Mars" data-planet-desc="Mars is the fourth planet from the Sun and is often called the Red Planet due to its reddish appearance.">
+        <a-entity gltf-model="#mars-model" position="30 0 -30" scale="0.00036 0.00036 0.00036" class="planet" data-planet-id="mars" data-planet-name="Mars" data-planet-desc="Mars is the fourth planet from the Sun and is often called the Red Planet due to its reddish appearance.">
             <a-animation attribute="rotation" to="0 360 0" dur="14000" repeat="indefinite"></a-animation>
             <!-- Fallback sphere in case GLTF fails -->
-            <a-sphere position="0 0 0" radius="0.12" color="#CD5C5C"></a-sphere>
+            <a-sphere position="0 0 0" radius="0.36" color="#CD5C5C"></a-sphere>
         </a-entity>
-        <a-text value="Mars" position="12 0.4 -12" align="center" color="#ffffff" scale="0.2 0.2 1"></a-text>
+        <a-text value="Mars" position="30 1.0 -30" align="center" color="#ffffff" scale="0.5 0.5 1"></a-text>
         
         <!-- Jupiter -->
-        <a-entity gltf-model="#jupiter-model" position="18 0 -12" scale="0.0005 0.0005 0.0005" class="planet" data-planet-id="jupiter" data-planet-name="Jupiter" data-planet-desc="Jupiter is the largest planet in our Solar System and is a gas giant with no solid surface.">
+        <a-entity gltf-model="#jupiter-model" position="45 0 -30" scale="0.0015 0.0015 0.0015" class="planet" data-planet-id="jupiter" data-planet-name="Jupiter" data-planet-desc="Jupiter is the largest planet in our Solar System and is a gas giant with no solid surface.">
             <a-animation attribute="rotation" to="0 360 0" dur="22000" repeat="indefinite"></a-animation>
             <!-- Fallback sphere in case GLTF fails -->
-            <a-sphere position="0 0 0" radius="0.3" color="#D8CA9D"></a-sphere>
+            <a-sphere position="0 0 0" radius="0.9" color="#D8CA9D"></a-sphere>
         </a-entity>
-        <a-text value="Jupiter" position="18 0.9 -12" align="center" color="#ffffff" scale="0.25 0.25 1"></a-text>
+        <a-text value="Jupiter" position="45 2.25 -30" align="center" color="#ffffff" scale="0.625 0.625 1"></a-text>
         
         <!-- Saturn -->
-        <a-entity gltf-model="#saturn-model" position="24 0 -12" scale="0.00045 0.00045 0.00045" class="planet" data-planet-id="saturn" data-planet-name="Saturn" data-planet-desc="Saturn is the sixth planet from the Sun and is famous for its spectacular ring system.">
+        <a-entity gltf-model="#saturn-model" position="60 0 -30" scale="0.00135 0.00135 0.00135" class="planet" data-planet-id="saturn" data-planet-name="Saturn" data-planet-desc="Saturn is the sixth planet from the Sun and is famous for its spectacular ring system.">
             <a-animation attribute="rotation" to="0 360 0" dur="25000" repeat="indefinite"></a-animation>
             <!-- Fallback sphere in case GLTF fails -->
-            <a-sphere position="0 0 0" radius="0.25" color="#FAD5A5"></a-sphere>
+            <a-sphere position="0 0 0" radius="0.75" color="#FAD5A5"></a-sphere>
         </a-entity>
-        <a-text value="Saturn" position="24 0.8 -12" align="center" color="#ffffff" scale="0.25 0.25 1"></a-text>
+        <a-text value="Saturn" position="60 2.0 -30" align="center" color="#ffffff" scale="0.625 0.625 1"></a-text>
         
         <!-- Uranus -->
-        <a-entity gltf-model="#uranus-model" position="30 0 -12" scale="0.00025 0.00025 0.00025" class="planet" data-planet-id="uranus" data-planet-name="Uranus" data-planet-desc="Uranus is the seventh planet from the Sun and is an ice giant with a unique sideways rotation.">
+        <a-entity gltf-model="#uranus-model" position="75 0 -30" scale="0.00075 0.00075 0.00075" class="planet" data-planet-id="uranus" data-planet-name="Uranus" data-planet-desc="Uranus is the seventh planet from the Sun and is an ice giant with a unique sideways rotation.">
             <a-animation attribute="rotation" to="0 360 0" dur="28000" repeat="indefinite"></a-animation>
             <!-- Fallback sphere in case GLTF fails -->
-            <a-sphere position="0 0 0" radius="0.18" color="#4FD0E7"></a-sphere>
+            <a-sphere position="0 0 0" radius="0.54" color="#4FD0E7"></a-sphere>
         </a-entity>
-        <a-text value="Uranus" position="30 0.6 -12" align="center" color="#ffffff" scale="0.2 0.2 1"></a-text>
+        <a-text value="Uranus" position="75 1.5 -30" align="center" color="#ffffff" scale="0.5 0.5 1"></a-text>
         
         <!-- Neptune -->
-        <a-entity gltf-model="#neptune-model" position="36 0 -12" scale="0.00024 0.00024 0.00024" class="planet" data-planet-id="neptune" data-planet-name="Neptune" data-planet-desc="Neptune is the eighth and farthest planet from the Sun. It's an ice giant with the strongest winds in the Solar System.">
+        <a-entity gltf-model="#neptune-model" position="90 0 -30" scale="0.00072 0.00072 0.00072" class="planet" data-planet-id="neptune" data-planet-name="Neptune" data-planet-desc="Neptune is the eighth and farthest planet from the Sun. It's an ice giant with the strongest winds in the Solar System.">
             <a-animation attribute="rotation" to="0 360 0" dur="30000" repeat="indefinite"></a-animation>
             <!-- Fallback sphere in case GLTF fails -->
-            <a-sphere position="0 0 0" radius="0.15" color="#4B70DD"></a-sphere>
+            <a-sphere position="0 0 0" radius="0.45" color="#4B70DD"></a-sphere>
         </a-entity>
-        <a-text value="Neptune" position="36 0.6 -12" align="center" color="#ffffff" scale="0.2 0.2 1"></a-text>
+        <a-text value="Neptune" position="90 1.5 -30" align="center" color="#ffffff" scale="0.5 0.5 1"></a-text>
         
         <!-- Pluto -->
-        <a-sphere position="68 0 -12" radius="0.05" color="#C0C0C0" class="planet" data-planet-id="pluto" data-planet-name="Pluto" data-planet-desc="Pluto is a dwarf planet in the Kuiper Belt. Though no longer classified as a planet, it remains an important celestial body.">
+        <a-sphere position="170 0 -30" radius="0.15" color="#C0C0C0" class="planet" data-planet-id="pluto" data-planet-name="Pluto" data-planet-desc="Pluto is a dwarf planet in the Kuiper Belt. Though no longer classified as a planet, it remains an important celestial body.">
             <a-animation attribute="rotation" to="0 360 0" dur="35000" repeat="indefinite"></a-animation>
 
         </a-sphere>
-        <a-text value="Pluto" position="68 0.2 -12" align="center" color="#ffffff" scale="0.15 0.15 1"></a-text>
+        <a-text value="Pluto" position="170 0.5 -30" align="center" color="#ffffff" scale="0.375 0.375 1"></a-text>
         
         <!-- VR Rig with Custom Movement Controls -->
         <a-entity id="rig" position="0 1.6 0">
@@ -484,16 +538,14 @@
                   visible="false">
         </a-entity>
 
-        <!-- Custom visible pointer line -->
+        <!-- Simple green sphere selector -->
         <a-entity id="customPointer" 
                   position="0 0 0" 
                   visible="false">
-            <a-cylinder position="0 0 -50" 
-                        radius="0.005" 
-                        height="100" 
-                        material="color: #00FF00; emissive: #00FF00; emissiveIntensity: 0.3; transparent: true; opacity: 0.8"
-                        rotation="90 0 0">
-            </a-cylinder>
+            <a-sphere position="0 0 -0.5" 
+                      radius="0.03" 
+                      material="color: #00FF00; emissive: #00FF00; emissiveIntensity: 1.0; transparent: true; opacity: 1.0">
+            </a-sphere>
         </a-entity>
         
         <!-- Lighting -->
@@ -536,6 +588,14 @@
         document.addEventListener('DOMContentLoaded', () => {
             console.log('DOM loaded');
             
+            // Debug: Check if custom pointer exists
+            const customPointer = document.getElementById('customPointer');
+            console.log('🎯 Custom pointer found:', customPointer);
+            if (customPointer) {
+                console.log('🎯 Pointer initial visibility:', customPointer.getAttribute('visible'));
+                console.log('🎯 Pointer initial position:', customPointer.getAttribute('position'));
+            }
+            
             // Setup language selection first
             setupLanguageSelection();
             
@@ -567,7 +627,10 @@
                         if (loadingScreen) {
                             loadingScreen.style.display = 'none';
                         }
-                        document.getElementById('loading').style.display = 'none';
+                        const loadingElement = document.getElementById('loading');
+                        if (loadingElement) {
+                            loadingElement.style.display = 'none';
+                        }
                         console.log('Loading screen hidden');
                     }, 1000);
                     
@@ -580,7 +643,10 @@
         setTimeout(() => {
             if (statusElement.textContent === 'Loading...') {
                 statusElement.textContent = 'Ready (timeout)';
-                document.getElementById('loading').style.display = 'none';
+                const loadingElement = document.getElementById('loading');
+                if (loadingElement) {
+                    loadingElement.style.display = 'none';
+                }
                 setupPlanetInteractions();
                 setupVRControls();
                 setupDesktopControls();
@@ -650,11 +716,10 @@
                 }
             }
             
-            // Auto-speak the planet info in selected language (only after VR starts)
+            // Auto-speak the planet info in selected language (only after VR starts and user interaction)
             if (vrStarted) {
-                setTimeout(() => {
-                    speakPlanetInfo();
-                }, 100);
+                // Don't auto-play audio - wait for user interaction
+                console.log(`🌍 Planet selected: ${planetName} (TTS ready for user interaction)`);
             }
         }
         
@@ -672,6 +737,19 @@
                 updateVRLanguageDisplay();
                 console.log('Language changed to:', currentLanguage);
             });
+            
+            // Test TTS button for current planet
+            const testCurrentPlanetTTSBtn = document.getElementById('testCurrentPlanetTTS');
+            if (testCurrentPlanetTTSBtn) {
+                testCurrentPlanetTTSBtn.addEventListener('click', () => {
+                    if (currentPlanet) {
+                        console.log('Testing TTS for current planet:', currentPlanet.name);
+                        speakPlanetInfo();
+                    } else {
+                        alert('Please select a planet first');
+                    }
+                });
+            }
         }
         
         function cycleLanguage() {
@@ -705,7 +783,9 @@
                 return;
             }
             
-            console.log(`🔊 TTS Request - Language: ${currentLanguage}, Planet: ${currentPlanet.name}`);
+            // Get the selected language from localStorage
+            const selectedLang = localStorage.getItem('selectedLanguage') || 'en';
+            console.log(`🔊 TTS Request - Language: ${selectedLang}, Planet: ${currentPlanet.name}`);
             
             try {
                 // First translate the text to the selected language
@@ -731,7 +811,7 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             text: translatedText,
-                            language: currentLanguage
+                            language: selectedLang
                         })
                     });
                     
@@ -766,10 +846,10 @@
                 // Fallback to browser speech synthesis with original text
                 try {
                     const utterance = new SpeechSynthesisUtterance(currentPlanet.description);
-                    utterance.lang = currentLanguage;
+                    utterance.lang = selectedLang;
                     utterance.volume = 1.0;
                     speechSynthesis.speak(utterance);
-                    console.log('Using browser TTS as fallback for:', currentLanguage);
+                    console.log('Using browser TTS as fallback for:', selectedLang);
                 } catch (fallbackError) {
                     console.error('Fallback TTS also failed:', fallbackError);
                 }
@@ -920,7 +1000,8 @@
                     
                     const selectedLang = option.getAttribute('data-lang');
                     localStorage.setItem('selectedLanguage', selectedLang);
-                    console.log(`Language selected: ${selectedLang}`);
+                    console.log(`🌍 Language selected: ${selectedLang}`);
+                    console.log(`🌍 Language stored in localStorage: ${localStorage.getItem('selectedLanguage')}`);
                     
                     // Enable the Enter VR button
                     if (enterVRBtn) {
@@ -935,6 +1016,24 @@
                 enterVRBtn.addEventListener('click', () => {
                     console.log('Enter VR button clicked!');
                     startVRExperience();
+                });
+            }
+            
+            // Handle guided tour start
+            const startTourBtn = document.getElementById('startTourBtn');
+            if (startTourBtn) {
+                startTourBtn.addEventListener('click', () => {
+                    console.log('Start tour button clicked!');
+                    startGuidedTour();
+                });
+            }
+            
+            // Handle test TTS button
+            const testTTSBtn = document.getElementById('testTTSBtn');
+            if (testTTSBtn) {
+                testTTSBtn.addEventListener('click', () => {
+                    console.log('Test TTS button clicked!');
+                    testTTSInSelectedLanguage();
                 });
             }
         }
@@ -1090,6 +1189,7 @@
             const customPointer = document.getElementById('customPointer');
             if (customPointer) {
                 customPointer.setAttribute('visible', 'true');
+                console.log('🎯 Custom pointer enabled and visible');
                 
                 // Update pointer position every frame to follow controller
                 function updatePointer() {
@@ -1097,12 +1197,24 @@
                         const controllerPos = rightController.getAttribute('position');
                         const controllerRot = rightController.getAttribute('rotation');
                         
-                        customPointer.setAttribute('position', controllerPos);
+                        // Position pointer slightly in front of controller for visibility
+                        const forwardOffset = new THREE.Vector3(0, 0, -0.2);
+                        forwardOffset.applyEuler(new THREE.Euler(0, THREE.MathUtils.degToRad(controllerRot.y), 0));
+                        
+                        const pointerPos = {
+                            x: controllerPos.x + forwardOffset.x,
+                            y: controllerPos.y + forwardOffset.y,
+                            z: controllerPos.z + forwardOffset.z
+                        };
+                        
+                        customPointer.setAttribute('position', pointerPos);
                         customPointer.setAttribute('rotation', controllerRot);
                     }
                     requestAnimationFrame(updatePointer);
                 }
                 updatePointer();
+            } else {
+                console.error('❌ Custom pointer not found!');
             }
 
             // ---- Movement with Thumbstick ----
@@ -1197,8 +1309,548 @@
             console.log('✅ VR controller movement and selection setup complete');
         }
         
+        // ===== GUIDED TOUR SYSTEM =====
+        
+        // Narration data in multiple languages
+        const tourData = {
+            overview: {
+                en: "Welcome to the Solar System. Let us take a journey through the planets orbiting our Sun. From the scorching heat of Mercury to the icy depths of Neptune, each world has its own unique story to tell.",
+                hi: "सौर मंडल में आपका स्वागत है। आइए हमारे सूर्य के चारों ओर घूमने वाले ग्रहों की यात्रा करें। बुध की जलती हुई गर्मी से लेकर नेपच्यून की बर्फीली गहराई तक, हर दुनिया की अपनी अनूठी कहानी है।",
+                kn: "ಸೌರವ್ಯೂಹಕ್ಕೆ ಸುಸ್ವಾಗತ. ನಮ್ಮ ಸೂರ್ಯನ ಸುತ್ತಲು ಸುತ್ತುತ್ತಿರುವ ಗ್ರಹಗಳ ಮೂಲಕ ಪ್ರಯಾಣ ಮಾಡೋಣ. ಬುಧದ ಸುಡುತ್ತಿರುವ ಶಾಖದಿಂದ ನೆಪ್ಚೂನ್ನ ಹಿಮದ ಆಳಕ್ಕೆ, ಪ್ರತಿ ಜಗತ್ತಿಗೂ ತನ್ನದೇ ಆದ ವಿಶಿಷ್ಟ ಕಥೆ ಇದೆ.",
+                ta: "சூரிய குடும்பத்திற்கு வரவேற்கிறோம். நமது சூரியனைச் சுற்றி வரும் கோள்கள் வழியாக ஒரு பயணத்தை மேற்கொள்வோம். புதனின் சுடும் வெப்பத்திலிருந்து நெப்டியூனின் பனி ஆழங்கள் வரை, ஒவ்வொரு உலகத்திற்கும் அதன் சொந்த தனித்துவமான கதை உள்ளது.",
+                te: "సౌర వ్యవస్థకు స్వాగతం. మన సూర్యుని చుట్టూ తిరిగే గ్రహాల ద్వారా ఒక ప్రయాణాన్ని చేద్దాం. బుధుని మండే వేడి నుండి నెప్ట్యూన్ యొక్క మంచు లోతు వరకు, ప్రతి ప్రపంచానికి దాని స్వంత ప్రత్యేక కథ ఉంది.",
+                bn: "সৌরজগতে স্বাগতম। আসুন আমাদের সূর্যের চারপাশে ঘূর্ণায়মান গ্রহগুলির মধ্য দিয়ে একটি যাত্রা করি। বুধের জ্বলন্ত তাপ থেকে নেপচুনের বরফের গভীরতা পর্যন্ত, প্রতিটি জগতের নিজস্ব অনন্য গল্প রয়েছে।"
+            },
+            sun: {
+                en: "The Sun is the heart of our Solar System. This massive ball of hydrogen and helium provides light and heat to all the planets. Without it, life as we know it would not exist.",
+                hi: "सूर्य हमारे सौर मंडल का हृदय है। हाइड्रोजन और हीलियम का यह विशाल गोला सभी ग्रहों को प्रकाश और गर्मी प्रदान करता है। इसके बिना, जीवन जैसा हम जानते हैं, वह मौजूद नहीं होगा।",
+                kn: "ಸೂರ್ಯನು ನಮ್ಮ ಸೌರವ್ಯೂಹದ ಹೃದಯ. ಜಲಜನಕ ಮತ್ತು ಹೀಲಿಯಮ್‌ನ ಈ ಭಾರಿ ಚೆಂಡು ಎಲ್ಲಾ ಗ್ರಹಗಳಿಗೆ ಬೆಳಗು ಮತ್ತು ಶಾಖವನ್ನು ಒದಗಿಸುತ್ತದೆ. ಇದು ಇಲ್ಲದಿದ್ದರೆ, ನಾವು ತಿಳಿದಿರುವ ಜೀವನ ಅಸ್ತಿತ್ವದಲ್ಲಿರುವುದಿಲ್ಲ.",
+                ta: "சூரியன் நமது சூரிய குடும்பத்தின் இதயம். ஹைட்ரஜன் மற்றும் ஹீலியத்தின் இந்த பெரிய பந்து அனைத்து கோள்களுக்கும் ஒளி மற்றும் வெப்பத்தை வழங்குகிறது. இது இல்லாமல், நாம் அறிந்த வாழ்க்கை இருக்காது.",
+                te: "సూర్యుడు మన సౌర వ్యవస్థ యొక్క గుండె. హైడ్రోజన్ మరియు హీలియం యొక్క ఈ భారీ బంతి అన్ని గ్రహాలకు కాంతి మరియు వేడిని అందిస్తుంది. దీని లేకపోవడం వల్ల, మనం తెలిసిన జీవితం ఉండదు.",
+                bn: "সূর্য আমাদের সৌরজগতের হৃদয়। হাইড্রোজেন এবং হিলিয়ামের এই বিশাল বল সমস্ত গ্রহকে আলো এবং তাপ প্রদান করে। এটি ছাড়া, আমরা যেমন জানি তেমন জীবন বিদ্যমান থাকবে না।"
+            },
+            mercury: {
+                en: "Mercury, the smallest and innermost planet. This rocky world is covered in craters and experiences extreme temperature changes, from scorching hot to freezing cold.",
+                hi: "बुध, सबसे छोटा और सबसे भीतरी ग्रह। यह चट्टानी दुनिया क्रेटरों से ढकी है और चरम तापमान परिवर्तनों का अनुभव करती है, जलती हुई गर्मी से लेकर जमने वाली ठंड तक।",
+                kn: "ಬುಧ, ಚಿಕ್ಕ ಮತ್ತು ಒಳಗಿನ ಗ್ರಹ. ಈ ಬಂಡೆ ಜಗತ್ತು ಕುಳಿಗಳಿಂದ ಆವೃತವಾಗಿದೆ ಮತ್ತು ತೀವ್ರ ತಾಪಮಾನ ಬದಲಾವಣೆಗಳನ್ನು ಅನುಭವಿಸುತ್ತದೆ, ಸುಡುತ್ತಿರುವ ಬಿಸಿಯಿಂದ ಹಿಮದ ಶೀತತೆ ವರೆಗೆ.",
+                ta: "புதன், மிகச் சிறிய மற்றும் உள்ளேயுள்ள கோள். இந்த பாறை உலகம் குழிகளால் மூடப்பட்டுள்ளது மற்றும் தீவிர வெப்பநிலை மாற்றங்களை அனுபவிக்கிறது, சுடும் வெப்பத்திலிருந்து உறைந்த குளிர் வரை.",
+                te: "బుధుడు, చిన్న మరియు లోపలి గ్రహం. ఈ రాతి ప్రపంచం గోతులతో కప్పబడి ఉంది మరియు తీవ్రమైన ఉష్ణోగ್ರత మార్పులను అనుభవిస్తుంది, మండే వేడి నుండి ఘనీభవించే చలి వరకు.",
+                bn: "বুধ, সবচেয়ে ছোট এবং সবচেয়ে ভিতরের গ্রহ। এই পাথুরে জগতটি গর্তে আবৃত এবং চরম তাপমাত্রার পরিবর্তন অনুভব করে, জ্বলন্ত গরম থেকে হিমশীতল ঠান্ডা পর্যন্ত।"
+            },
+            venus: {
+                en: "Venus, Earth's sister planet. This beautiful world is shrouded in thick clouds of sulfuric acid, creating a runaway greenhouse effect that makes it the hottest planet in our Solar System.",
+                hi: "शुक्र, पृथ्वी की बहन ग्रह। यह सुंदर दुनिया सल्फ्यूरिक एसिड के घने बादलों से ढकी है, जो एक भगोड़ा ग्रीनहाउस प्रभाव पैदा करती है जो इसे हमारे सौर मंडल का सबसे गर्म ग्रह बनाती है।",
+                kn: "ಶುಕ್ರ, ಭೂಮಿಯ ಸಹೋದರಿ ಗ್ರಹ. ಈ ಸುಂದರವಾದ ಜಗತ್ತು ಸಲ್ಫ್ಯೂರಿಕ್ ಆಮ್ಲದ ದಟ್ಟವಾದ ಮೋಡಗಳಿಂದ ಆವೃತವಾಗಿದೆ, ಇದು ಓಡಿಹೋಗುವ ಹಸಿರುಮನೆ ಪರಿಣಾಮವನ್ನು ಸೃಷ್ಟಿಸುತ್ತದೆ ಮತ್ತು ಇದು ನಮ್ಮ ಸೌರವ್ಯೂಹದ ಅತ್ಯಂತ ಬಿಸಿ ಗ್ರಹವಾಗಿದೆ.",
+                ta: "வெள்ளி, பூமியின் சகோதரி கோள். இந்த அழகான உலகம் கந்தக அமிலத்தின் அடர்ந்த மேகங்களால் மூடப்பட்டுள்ளது, இது ஒரு தப்பியோடும் கிரீன்ஹவுஸ் விளைவை உருவாக்குகிறது, இது இதை நமது சூரிய குடும்பத்தின் வெப்பமான கோளாக ஆக்குகிறது.",
+                te: "శుక్రుడు, భూమి యొక్క సోదరి గ్రహం. ఈ అందమైన ప్రపంచం సల్ఫ్యూరిక్ యాసిడ్ యొక్క దట్టమైన మేఘాలతో కప్పబడి ఉంది, ఇది ఓడిపోయే గ్రీన్‌హౌస్ ప్రభావాన్ని సృష్టిస్తుంది మరియు దీనిని మన సౌర వ్యవస్థలో అత్యంత వేడి గ్రహంగా చేస్తుంది.",
+                bn: "শুক্র, পৃথিবীর বোন গ্রহ। এই সুন্দর জগতটি সালফিউরিক অ্যাসিডের ঘন মেঘে আবৃত, যা একটি পালিয়ে যাওয়া গ্রিনহাউস প্রভাব সৃষ্টি করে এবং এটিকে আমাদের সৌরজগতের সবচেয়ে গরম গ্রহ করে তোলে।"
+            },
+            earth: {
+                en: "Earth, our home planet. This blue and green world is the only known planet with life, featuring vast oceans, diverse continents, and a protective atmosphere that sustains all living things.",
+                hi: "पृथ्वी, हमारा घर ग्रह। यह नीला और हरा संसार जीवन के साथ एकमात्र ज्ञात ग्रह है, जिसमें विशाल महासागर, विविध महाद्वीप और एक सुरक्षात्मक वायुमंडल है जो सभी जीवित चीजों को बनाए रखता है।",
+                kn: "ಭೂಮಿ, ನಮ್ಮ ಮನೆ ಗ್ರಹ. ಈ ನೀಲಿ ಮತ್ತು ಹಸಿರು ಜಗತ್ತು ಜೀವನದೊಂದಿಗೆ ಏಕೈಕ ತಿಳಿದಿರುವ ಗ್ರಹವಾಗಿದೆ, ಇದು ವಿಶಾಲ ಸಾಗರಗಳು, ವೈವಿಧ್ಯಮಯ ಖಂಡಗಳು ಮತ್ತು ಎಲ್ಲಾ ಜೀವಿಗಳನ್ನು ನಿರ್ವಹಿಸುವ ರಕ್ಷಣಾತ್ಮಕ ವಾಯುಮಂಡಲವನ್ನು ಹೊಂದಿದೆ.",
+                ta: "பூமி, நமது வீட்டு கோள். இந்த நீல மற்றும் பச்சை உலகம் வாழ்க்கையுடன் கூடிய ஒரே அறியப்பட்ட கோளாகும், இதில் பரந்த கடல்கள், பல்வேறு கண்டங்கள் மற்றும் அனைத்து உயிரினங்களையும் பராமரிக்கும் ஒரு பாதுகாப்பு வளிமண்டலம் உள்ளது.",
+                te: "భూమి, మన ఇంటి గ్రహం. ఈ నీలం మరియు ఆకుపచ్చ ప్రపంచం జీవితంతో కూడిన ఏకైక తెలిసిన గ్రహం, ఇందులో విశాలమైన మహాసముద్రాలు, వైవిధ్యమైన ఖండాలు మరియు అన్ని జీవులను నిర్వహించే రక్షణ వాతావరణం ఉంది.",
+                bn: "পৃথিবী, আমাদের বাড়ির গ্রহ। এই নীল এবং সবুজ জগতটি জীবনের সাথে একমাত্র পরিচিত গ্রহ, যেখানে বিশাল মহাসাগর, বৈচিত্র্যময় মহাদেশ এবং একটি সুরক্ষামূলক বায়ুমণ্ডল রয়েছে যা সমস্ত জীবিত জিনিসকে বজায় রাখে।"
+            },
+            mars: {
+                en: "Mars, the Red Planet. This dusty world has the largest volcano in the Solar System, Olympus Mons, and shows evidence of ancient water flows. Scientists believe Mars may have once supported life.",
+                hi: "मंगल, लाल ग्रह। इस धूल भरी दुनिया में सौर मंडल का सबसे बड़ा ज्वालामुखी, ओलंपस मॉन्स है, और प्राचीन जल प्रवाह के साक्ष्य दिखाता है। वैज्ञानिकों का मानना है कि मंगल ने कभी जीवन का समर्थन किया होगा।",
+                kn: "ಮಂಗಳ, ಕೆಂಪು ಗ್ರಹ. ಈ ಧೂಳಿನ ಜಗತ್ತು ಸೌರವ್ಯೂಹದ ಅತ್ಯಂತ ದೊಡ್ಡ ಜ್ವಾಲಾಮುಖಿ, ಒಲಿಂಪಸ್ ಮಾನ್ಸ್ ಅನ್ನು ಹೊಂದಿದೆ ಮತ್ತು ಪ್ರಾಚೀನ ನೀರಿನ ಹರಿವಿನ ಪುರಾವೆಗಳನ್ನು ತೋರಿಸುತ್ತದೆ. ವಿಜ್ಞಾನಿಗಳು ಮಂಗಳವು ಒಮ್ಮೆ ಜೀವನವನ್ನು ಬೆಂಬಲಿಸಿರಬಹುದು ಎಂದು ನಂಬುತ್ತಾರೆ.",
+                ta: "செவ்வாய், சிவப்பு கோள். இந்த தூசி நிறைந்த உலகம் சூரிய குடும்பத்தின் மிகப்பெரிய எரிமலை, ஒலிம்பஸ் மான்ஸ் மற்றும் பண்டைய நீர் ஓட்டத்தின் சான்றுகளைக் காட்டுகிறது. செவ்வாய் ஒரு காலத்தில் வாழ்க்கையை ஆதரித்திருக்கலாம் என்று விஞ்ஞானிகள் நம்புகிறார்கள்.",
+                te: "మార్స్, ఎరుపు గ్రహం. ఈ దుమ్ము నిండిన ప్రపంచం సౌర వ్యవస్థలో అతిపెద్ద అగ్నిపర్వతం, ఒలింపస్ మాన్స్ ని కలిగి ఉంది మరియు ప్రాచీన నీటి ప్రవాహాల సాక్ష్యాలను చూపిస్తుంది. మార్స్ ఒకప్పుడు జీవితానికి మద్దతు ఇచ్చి ఉండవచ్చు అని శాస్త్రవేత్తలు నమ్ముతున్నారు.",
+                bn: "মঙ্গল, লাল গ্রহ। এই ধূলিময় জগতে সৌরজগতের বৃহত্তম আগ্নেয়গিরি, অলিম্পাস মনস রয়েছে এবং প্রাচীন জল প্রবাহের প্রমাণ দেখায়। বিজ্ঞানীরা বিশ্বাস করেন যে মঙ্গল একসময় জীবনকে সমর্থন করেছিল।"
+            },
+            jupiter: {
+                en: "Jupiter, the largest planet in our Solar System. This gas giant has a Great Red Spot, a storm that has raged for over 400 years. Jupiter's powerful gravity protects the inner planets from dangerous asteroids.",
+                hi: "बृहस्पति, हमारे सौर मंडल का सबसे बड़ा ग्रह। इस गैसीय विशालकाय में एक महान लाल धब्बा है, एक तूफान जो 400 से अधिक वर्षों से चल रहा है। बृहस्पति का शक्तिशाली गुरुत्वाकर्षण आंतरिक ग्रहों को खतरनाक क्षुद्रग्रहों से बचाता है।",
+                kn: "ಗುರು, ನಮ್ಮ ಸೌರವ್ಯೂಹದ ಅತ್ಯಂತ ದೊಡ್ಡ ಗ್ರಹ. ಈ ಅನಿಲ ದೈತ್ಯನು 400 ವರ್ಷಗಳಿಗಿಂತ ಹೆಚ್ಚು ಕಾಲ ಸಂಭವಿಸಿದ ಮಹಾನ್ ಕೆಂಪು ಚುಕ್ಕೆಯನ್ನು ಹೊಂದಿದೆ. ಗುರುವಿನ ಶಕ್ತಿಶಾಲಿ ಗುರುತ್ವಾಕರ್ಷಣೆಯು ಒಳಗಿನ ಗ್ರಹಗಳನ್ನು ಅಪಾಯಕಾರಿ ಕ್ಷುದ್ರಗ್ರಹಗಳಿಂದ ರಕ್ಷಿಸುತ್ತದೆ.",
+                ta: "வியாழன், நமது சூரிய குடும்பத்தின் மிகப்பெரிய கோள். இந்த வாயு மாபெரும் கோளில் ஒரு பெரிய சிவப்பு புள்ளி உள்ளது, 400 ஆண்டுகளுக்கும் மேலாக வீசும் புயல். வியாழனின் சக்திவாய்ந்த ஈர்ப்பு விசை உள் கோள்களை ஆபத்தான சிறுகோள்களிலிருந்து பாதுகாக்கிறது.",
+                te: "గురుడు, మన సౌర వ్యవస్థలో అతిపెద్ద గ్రహం. ఈ వాయు మహాగ్రహానికి గొప్ప ఎరుపు మచ్చ ఉంది, ఇది 400 సంవత్సరాలకు పైగా ఉగ్రంగా ఉంది. గురుడు యొక్క శక్తివంతమైన గురుత్వాకర్షణ ఒత్తిడి లోపలి గ్రహాలను ప్రమాదకరమైన గ్రహశకలాల నుండి రక్షిస్తుంది.",
+                bn: "বৃহস্পতি, আমাদের সৌরজগতের বৃহত্তম গ্রহ। এই গ্যাসীয় দৈত্যের একটি মহান লাল দাগ রয়েছে, একটি ঝড় যা 400 বছরেরও বেশি সময় ধরে চলছে। বৃহস্পতির শক্তিশালী মাধ্যাকর্ষণ অভ্যন্তরীণ গ্রহগুলিকে বিপজ্জনক গ্রহাণু থেকে রক্ষা করে।"
+            },
+            saturn: {
+                en: "Saturn, famous for its spectacular ring system. These beautiful rings are made of ice, rock, and dust, orbiting the planet in perfect harmony. Saturn's rings are one of the most stunning sights in our Solar System.",
+                hi: "शनि, अपने शानदार वलय प्रणाली के लिए प्रसिद्ध। ये सुंदर वलय बर्फ, पत्थर और धूल से बने हैं, जो ग्रह के चारों ओर पूर्ण सामंजस्य में घूमते हैं। शनि के वलय हमारे सौर मंडल के सबसे आकर्षक दृश्यों में से एक हैं।",
+                kn: "ಶನಿ, ಅದರ ಅದ್ಭುತ ಉಂಗುರ ವ್ಯವಸ್ಥೆಗೆ ಹೆಸರುವಾಸಿ. ಈ ಸುಂದರವಾದ ಉಂಗುರಗಳು ಮಂಜು, ಕಲ್ಲು ಮತ್ತು ಧೂಳಿನಿಂದ ಮಾಡಲ್ಪಟ್ಟಿವೆ, ಗ್ರಹದ ಸುತ್ತಲೂ ಪರಿಪೂರ್ಣ ಸಾಮರಸ್ಯದಲ್ಲಿ ಸುತ್ತುತ್ತಿವೆ. ಶನಿಯ ಉಂಗುರಗಳು ನಮ್ಮ ಸೌರವ್ಯೂಹದ ಅತ್ಯಂತ ಆಕರ್ಷಕ ದೃಶ್ಯಗಳಲ್ಲಿ ಒಂದಾಗಿವೆ.",
+                ta: "சனி, அதன் கண்கொள்ளும் வளைய அமைப்புக்கு பிரபலமானது. இந்த அழகான வளையங்கள் பனி, பாறை மற்றும் தூசியால் ஆனவை, கோளைச் சுற்றி சரியான ஒத்திசைவில் சுழல்கின்றன. சனியின் வளையங்கள் நமது சூரிய குடும்பத்தின் மிகவும் கவர்ச்சிகரமான காட்சிகளில் ஒன்று.",
+                te: "శని, దాని అద్భుతమైన ఉంగరాల వ్యవస్థకు ప్రసిద్ధి చెందింది. ఈ అందమైన ఉంగరాలు మంచు, రాతి మరియు దుమ్ముతో తయారు చేయబడ్డాయి, గ్రహం చుట్టూ పరిపూర్ణ సామరస్యంతో సుత్తున్నాయి. శని ఉంగరాలు మన సౌర వ్యవస్థలో అత్యంత ఆకర్షణీయమైన దృశ్యాలలో ఒకటి.",
+                bn: "শনি, তার চমৎকার বলয় ব্যবস্থার জন্য বিখ্যাত। এই সুন্দর বলয়গুলি বরফ, পাথর এবং ধূলো দিয়ে তৈরি, যা গ্রহের চারপাশে নিখুঁত সাদৃশ্যের সাথে ঘুরছে। শনির বলয়গুলি আমাদের সৌরজগতের সবচেয়ে চমৎকার দৃশ্যগুলির মধ্যে একটি।"
+            },
+            uranus: {
+                en: "Uranus, the ice giant with a unique sideways rotation. This planet rotates on its side, making it appear to roll through space like a giant blue marble. Uranus has faint rings and 27 known moons.",
+                hi: "अरुण, एक अनूठे पार्श्व घूर्णन के साथ बर्फीला विशालकाय। यह ग्रह अपनी तरफ घूमता है, जिससे यह अंतरिक्ष में एक विशाल नीले संगमरमर की तरह लुढ़कता हुआ दिखाई देता है। अरुण के पास हल्के वलय और 27 ज्ञात चंद्रमा हैं।",
+                kn: "ಅರಣ, ವಿಶಿಷ್ಟವಾದ ಪಾರ್ಶ್ವ ಭ್ರಮಣೆಯೊಂದಿಗೆ ಹಿಮ ದೈತ್ಯ. ಈ ಗ್ರಹವು ಅದರ ಬದಿಯಲ್ಲಿ ತಿರುಗುತ್ತದೆ, ಇದು ಬಾಹ್ಯಾಕಾಶದಲ್ಲಿ ಒಂದು ದೈತ್ಯ ನೀಲಿ ಗುಂಡುಗಳಂತೆ ಉರುಳುತ್ತಿರುವಂತೆ ಕಾಣಿಸುತ್ತದೆ. ಅರಣನಿಗೆ ಮಸುಕಾದ ಉಂಗುರಗಳು ಮತ್ತು 27 ತಿಳಿದಿರುವ ಚಂದ್ರರಿಗಳಿವೆ.",
+                ta: "யுரேனஸ், தனித்துவமான பக்கவாட்டு சுழற்சியுடன் கூடிய பனி மாபெரும் கோள். இந்த கோள் அதன் பக்கவாட்டில் சுழல்கிறது, இது ஒரு பெரிய நீல பளிங்கு போல விண்வெளியில் உருளுவதைப் போல தோன்றுகிறது. யுரேனஸுக்கு மங்கலான வளையங்கள் மற்றும் 27 அறியப்பட்ட நிலாக்கள் உள்ளன.",
+                te: "యురేనస్, ఒక ప్రత్యేకమైన పార్శ్వ భ్రమణంతో హిమ దైత్యుడు. ఈ గ్రహం దాని వైపు తిరుగుతుంది, ఇది ఒక పెద్ద నీలం గోళిక వలె అంతరిక్షంలో రోల్ అవుతున్నట్లు కనిపిస్తుంది. యురేనస్కు మసక మసకగా ఉంగరాలు మరియు 27 తెలిసిన చంద్రులు ఉన్నారు.",
+                bn: "ইউরেনাস, একটি অনন্য পার্শ্বীয় ঘূর্ণন সহ বরফের দৈত্য। এই গ্রহটি তার পাশে ঘোরে, যা এটিকে একটি বিশাল নীল মার্বেলের মতো মহাকাশে গড়িয়ে যেতে দেখা যায়। ইউরেনাসের অস্পষ্ট বলয় এবং 27টি পরিচিত চাঁদ রয়েছে।"
+            },
+            neptune: {
+                en: "Neptune, the farthest planet from the Sun. This deep blue ice giant has the strongest winds in the Solar System, reaching speeds of over 2,000 kilometers per hour. Neptune's mysterious dark spots are massive storms.",
+                hi: "नेपच्यून, सूर्य से सबसे दूर का ग्रह। इस गहरे नीले बर्फीले विशालकाय में सौर मंडल की सबसे तेज हवाएं हैं, जो प्रति घंटे 2,000 किलोमीटर से अधिक की गति तक पहुंचती हैं। नेपच्यून के रहस्यमय काले धब्बे बड़े तूफान हैं।",
+                kn: "ನೆಪ್ಚೂನ್, ಸೂರ್ಯನಿಂದ ಅತ್ಯಂತ ದೂರದ ಗ್ರಹ. ಈ ಆಳವಾದ ನೀಲಿ ಹಿಮ ದೈತ್ಯನು ಸೌರವ್ಯೂಹದ ಅತ್ಯಂತ ಬಲವಾದ ಗಾಳಿಗಳನ್ನು ಹೊಂದಿದೆ, ಇದು ಗಂಟೆಗೆ 2,000 ಕಿಲೋಮೀಟರ್‌ಗಿಂತ ಹೆಚ್ಚು ವೇಗವನ್ನು ತಲುಪುತ್ತದೆ. ನೆಪ್ಚೂನ್‌ನ ರಹಸ್ಯಮಯ ಕಪ್ಪು ಚುಕ್ಕೆಗಳು ಬೃಹತ್ ಚಂಡಮಾರುತಗಳಾಗಿವೆ.",
+                ta: "நெப்டியூன், சூரியனிலிருந்து மிக தொலைவில் உள்ள கோள். இந்த ஆழமான நீல பனி மாபெரும் கோளில் சூரிய குடும்பத்தின் மிகவும் வலுவான காற்றுகள் உள்ளன, இது மணிக்கு 2,000 கிலோமீட்டர் வேகத்தை எட்டுகிறது. நெப்டியூனின் மர்மமான கருப்பு புள்ளிகள் பெரிய புயல்கள்.",
+                te: "నెప్ట్యూన్, సూర్యుని నుండి అత్యంత దూరంలో ఉన్న గ్రహం. ఈ లోతైన నీలం హిమ దైత్యుడికి సౌర వ్యవస్థలో అత్యంత బలమైన గాలులు ఉన్నాయి, ఇవి గంటకు 2,000 కిలోమీటర్ల వేగాన్ని చేరుకుంటాయి. నెప్ట్యూన్ యొక్క మర్మమైన చీకటి మచ్చలు భారీ తుఫాన్లు.",
+                bn: "নেপচুন, সূর্য থেকে সবচেয়ে দূরে গ্রহ। এই গভীর নীল বরফের দৈত্যের সৌরজগতের সবচেয়ে শক্তিশালী বাতাস রয়েছে, যা প্রতি ঘণ্টায় 2,000 কিলোমিটারেরও বেশি গতিতে পৌঁছায়। নেপচুনের রহস্যময় কালো দাগগুলি বিশাল ঝড়।"
+            },
+            pluto: {
+                en: "Pluto, once considered the ninth planet, is now classified as a dwarf planet. This distant world is covered in frozen nitrogen and has a heart-shaped region on its surface. Pluto's orbit is highly elliptical, taking it far beyond Neptune.",
+                hi: "प्लूटो, जिसे कभी नौवां ग्रह माना जाता था, अब एक बौना ग्रह के रूप में वर्गीकृत किया गया है। यह दूर का संसार जमे हुए नाइट्रोजन से ढका है और इसकी सतह पर एक दिल के आकार का क्षेत्र है। प्लूटो की कक्षा अत्यधिक अंडाकार है, जो इसे नेपच्यून से बहुत दूर ले जाती है।",
+                kn: "ಪ್ಲೂಟೋ, ಒಮ್ಮೆ ಒಂಬತ್ತನೇ ಗ್ರಹವೆಂದು ಪರಿಗಣಿಸಲ್ಪಟ್ಟಿದ್ದು, ಈಗ ಕುಬ್ಜ ಗ್ರಹವೆಂದು ವರ್ಗೀಕರಿಸಲ್ಪಟ್ಟಿದೆ. ಈ ದೂರದ ಜಗತ್ತು ಹೆಪ್ಪುಗಟ್ಟಿದ ಸಾರಜನಕದಿಂದ ಆವೃತವಾಗಿದೆ ಮತ್ತು ಅದರ ಮೇಲ್ಮೈಯಲ್ಲಿ ಹೃದಯದ ಆಕಾರದ ಪ್ರದೇಶವನ್ನು ಹೊಂದಿದೆ. ಪ್ಲೂಟೋದ ಕಕ್ಷೆಯು ಅತ್ಯಂತ ದೀರ್ಘವೃತ್ತಾಕಾರದ್ದಾಗಿದೆ, ಇದು ಅದನ್ನು ನೆಪ್ಚೂನ್‌ನಿಂದ ಬಹಳ ದೂರಕ್ಕೆ ಕೊಂಡೊಯ್ಯುತ್ತದೆ.",
+                ta: "புளூட்டோ, ஒரு காலத்தில் ஒன்பதாவது கோளாகக் கருதப்பட்டது, இப்போது ஒரு குள்ள கோளாக வகைப்படுத்தப்பட்டுள்ளது. இந்த தொலைதூர உலகம் உறைந்த நைட்ரஜனால் மூடப்பட்டுள்ளது மற்றும் அதன் மேற்பரப்பில் இதய வடிவ பிராந்தியத்தைக் கொண்டுள்ளது. புளூட்டோவின் சுற்றுப்பாதை மிகவும் நீள்வட்ட வடிவமானது, இது அதை நெப்டியூனிலிருந்து மிகவும் தொலைவில் கொண்டு செல்கிறது.",
+                te: "ప్లూటో, ఒకప్పుడు తొమ్మిదవ గ్రహంగా పరిగణించబడింది, ఇప్పుడు ఒక మరుగుజ్జు గ్రహంగా వర్గీకరించబడింది. ఈ దూరపు ప్రపంచం గడ్డకట్టిన నైట్రోజన్‌తో కప్పబడి ఉంది మరియు దాని ఉపరితలంపై హృదయ ఆకారంలో ఉన్న ప్రాంతాన్ని కలిగి ఉంది. ప్లూటో యొక్క కక్ష్య చాలా దీర్ఘవృత్తాకారంగా ఉంది, ఇది దానిని నెప్ట్యూన్ నుండి చాలా దూరంగా తీసుకువెళుతుంది.",
+                bn: "প্লুটো, একসময় নবম গ্রহ হিসেবে বিবেচিত, এখন একটি বামন গ্রহ হিসেবে শ্রেণীবদ্ধ। এই দূরবর্তী জগতটি হিমায়িত নাইট্রোজেন দিয়ে আবৃত এবং এর পৃষ্ঠে একটি হৃদয় আকৃতির অঞ্চল রয়েছে। প্লুটোর কক্ষপথ অত্যন্ত উপবৃত্তাকার, যা এটিকে নেপচুন থেকে অনেক দূরে নিয়ে যায়।"
+            },
+            conclusion: {
+                en: "This concludes our guided tour of the Solar System. You've witnessed the Sun's power, explored all the planets from Mercury to Pluto, and discovered the incredible diversity of worlds in our cosmic neighborhood. Now you can freely explore and interact with all the planets using your VR controllers.",
+                hi: "यह हमारे सौर मंडल के निर्देशित दौरे का समापन करता है। आपने सूर्य की शक्ति देखी है, बुध से प्लूटो तक सभी ग्रहों की खोज की है, और हमारे ब्रह्मांडीय पड़ोस में दुनियाओं की अविश्वसनीय विविधता की खोज की है। अब आप अपने VR कंट्रोलर का उपयोग करके सभी ग्रहों के साथ स्वतंत्र रूप से खोज और बातचीत कर सकते हैं।",
+                kn: "ಇದು ನಮ್ಮ ಸೌರವ್ಯೂಹದ ಮಾರ್ಗದರ್ಶಿತ ಪ್ರವಾಸವನ್ನು ಮುಕ್ತಾಯಗೊಳಿಸುತ್ತದೆ. ನೀವು ಸೂರ್ಯನ ಶಕ್ತಿಯನ್ನು ನೋಡಿದ್ದೀರಿ, ಬುಧದಿಂದ ಪ್ಲೂಟೋ ವರೆಗೆ ಎಲ್ಲಾ ಗ್ರಹಗಳನ್ನು ಅನ್ವೇಷಿಸಿದ್ದೀರಿ, ಮತ್ತು ನಮ್ಮ ಬ್ರಹ್ಮಾಂಡದ ನೆರೆಹೊರೆಯಲ್ಲಿ ಜಗತ್ತುಗಳ ಅನನ್ಯ ವೈವಿಧ್ಯತೆಯನ್ನು ಕಂಡುಕೊಂಡಿದ್ದೀರಿ. ಈಗ ನೀವು ನಿಮ್ಮ VR ಕಂಟ್ರೋಲರ್‌ಗಳನ್ನು ಬಳಸಿಕೊಂಡು ಎಲ್ಲಾ ಗ್ರಹಗಳೊಂದಿಗೆ ಸ್ವತಂತ್ರವಾಗಿ ಅನ್ವೇಷಿಸಬಹುದು ಮತ್ತು ಸಂವಹನ ನಡೆಸಬಹುದು.",
+                ta: "இது நமது சூரிய குடும்பத்தின் வழிகாட்டப்பட்ட சுற்றுப்பயணத்தை முடிக்கிறது. நீங்கள் சூரியனின் சக்தியைக் கண்டீர்கள், புதனிலிருந்து புளூட்டோ வரை அனைத்து கோள்களையும் ஆராய்ந்தீர்கள், மற்றும் நமது அண்டப் புறத்தில் உலகங்களின் நம்பமுடியாத பன்முகத்தன்மையைக் கண்டுபிடித்தீர்கள். இப்போது நீங்கள் உங்கள் VR கட்டுப்பாட்டாளர்களைப் பயன்படுத்தி அனைத்து கோள்களுடனும் சுதந்திரமாக ஆராய்ந்து தொடர்பு கொள்ளலாம்.",
+                te: "ఇది మన సౌర వ్యవస్థ యొక్క మార్గదర్శక పర్యటనను ముగిస్తుంది. మీరు సూర్యుని శక్తిని చూసారు, బుధుడు నుండి ప్లూటో వరకు అన్ని గ్రహాలను అన్వేషించారు, మరియు మన విశ్వ పొరుగు ప్రాంతంలో ప్రపంచాల యొక్క నమ్మశక్యం కాని వైవిధ్యాన్ని కనుగొన్నారు. ఇప్పుడు మీరు మీ VR కంట్రోలర్లను ఉపయోగించి అన్ని గ್ರహాలతో స్వేచ్ఛగా అన్వೇಷించవచ్చు మరియు సంకర్షణ చేయవచ్చు.",
+                bn: "এটি আমাদের সৌরজগতের নির্দেশিত ভ্রমণের সমাপ্তি ঘটায়। আপনি সূর্যের শক্তি প্রত্যক্ষ করেছেন, বুধ থেকে প্লুটো পর্যন্ত সমস্ত গ্রহ অন্বেষণ করেছেন, এবং আমাদের মহাজাগতিক প্রতিবেশে বিশ্বের অবিশ্বাস্য বৈচিত্র্য আবিষ্কার করেছেন। এখন আপনি আপনার VR কন্ট্রোলার ব্যবহার করে সমস্ত গ্রহের সাথে স্বাধীনভাবে অন্বেষণ এবং যোগাযোগ করতে পারেন।"
+            }
+        };
+
+        // Tour state management
+        let isTourActive = false;
+        let currentTourLanguage = 'en';
+        
+        // Add tour status indicator
+        function showTourStatus(message) {
+            // Create or update tour status element
+            let tourStatus = document.getElementById('tourStatus');
+            if (!tourStatus) {
+                tourStatus = document.createElement('div');
+                tourStatus.id = 'tourStatus';
+                tourStatus.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    background: rgba(0, 0, 0, 0.8);
+                    color: white;
+                    padding: 15px 25px;
+                    border-radius: 25px;
+                    font-size: 18px;
+                    font-weight: bold;
+                    z-index: 10000;
+                    text-align: center;
+                    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+                `;
+                document.body.appendChild(tourStatus);
+            }
+            tourStatus.textContent = message;
+            tourStatus.style.display = 'block';
+        }
+        
+        function hideTourStatus() {
+            const tourStatus = document.getElementById('tourStatus');
+            if (tourStatus) {
+                tourStatus.style.display = 'none';
+            }
+        }
+
+        // Start the guided tour
+        async function startGuidedTour() {
+            console.log('🎬 Starting guided tour...');
+            isTourActive = true;
+            currentTourLanguage = localStorage.getItem('selectedLanguage') || 'en';
+            
+            console.log(`🎬 Tour language: ${currentTourLanguage}`);
+            console.log(`🎬 Available languages:`, Object.keys(tourData.overview));
+            
+            // Hide language menu and show VR scene
+            document.getElementById('languageMenu').style.display = 'none';
+            document.querySelector('a-scene').style.display = 'block';
+            
+            // Start tour sequence
+            await runTourSequence(currentTourLanguage);
+        }
+
+        // Run the complete tour sequence
+        async function runTourSequence(language) {
+            console.log(`🎬 Running tour in ${language}`);
+            
+            try {
+                // 1. Overview
+                console.log('🎬 Tour Stage 1/11: Overview');
+                await showOverview(language);
+                
+                // 2. Visit Sun
+                console.log('🎬 Tour Stage 2/11: Sun');
+                await visitPlanet('sun', language);
+                
+                // 3. Visit inner planets (terrestrial)
+                console.log('🎬 Tour Stage 3/11: Mercury');
+                await visitPlanet('mercury', language);
+                console.log('🎬 Tour Stage 4/11: Venus');
+                await visitPlanet('venus', language);
+                console.log('🎬 Tour Stage 5/11: Earth');
+                await visitPlanet('earth', language);
+                console.log('🎬 Tour Stage 6/11: Mars');
+                await visitPlanet('mars', language);
+                
+                // 4. Visit outer planets (gas giants)
+                console.log('🎬 Tour Stage 7/11: Jupiter');
+                await visitPlanet('jupiter', language);
+                console.log('🎬 Tour Stage 8/11: Saturn');
+                await visitPlanet('saturn', language);
+                console.log('🎬 Tour Stage 9/11: Uranus');
+                await visitPlanet('uranus', language);
+                console.log('🎬 Tour Stage 10/11: Neptune');
+                await visitPlanet('neptune', language);
+                
+                // 5. Visit dwarf planet
+                console.log('🎬 Tour Stage 11/11: Pluto');
+                await visitPlanet('pluto', language);
+                
+                // 6. Show conclusion
+                console.log('🎬 Tour Stage: Conclusion');
+                await showConclusion(language);
+                
+                // 7. Enable interactive mode
+                console.log('🎬 Tour Complete! Enabling interactive mode...');
+                enableInteractiveMode();
+                
+            } catch (error) {
+                console.error('❌ Tour error:', error);
+                console.log('🎬 Tour failed, enabling interactive mode...');
+                enableInteractiveMode();
+            }
+        }
+
+        // Show overview scene with cinematic introduction
+        async function showOverview(language) {
+            console.log('🌍 Showing overview...');
+            showTourStatus('🌍 Overview - Welcome to the Solar System');
+            
+            const rig = document.querySelector('#rig');
+            
+            // Start from a dramatic angle
+            await moveToPosition(rig, { x: 0, y: 25, z: 30 });
+            
+            // Brief pause for dramatic effect
+            await wait(1000);
+            
+            // Move to overview position (far back to see all planets)
+            await moveToPosition(rig, { x: 0, y: 15, z: 20 });
+            
+            // Play overview narration
+            await speakText(tourData.overview[language] || tourData.overview.en, language);
+            
+            // Wait for narration to complete with extra time for dramatic effect
+            await wait(7000);
+        }
+
+        // Show conclusion scene with dramatic finale
+        async function showConclusion(language) {
+            console.log('🎬 Showing conclusion...');
+            showTourStatus('🎬 Tour Conclusion - Thank you for exploring with us!');
+            
+            const rig = document.querySelector('#rig');
+            
+            // Move to a dramatic high angle for conclusion
+            await moveToPosition(rig, { x: 0, y: 25, z: 25 });
+            
+            // Brief pause for dramatic effect
+            await wait(1000);
+            
+            // Move back to overview position for conclusion
+            await moveToPosition(rig, { x: 0, y: 15, z: 20 });
+            
+            // Play conclusion narration
+            await speakText(tourData.conclusion[language] || tourData.conclusion.en, language);
+            
+            // Wait for narration to complete
+            await wait(6000);
+            
+            // Final dramatic pause
+            await wait(2000);
+        }
+
+        // Visit a specific planet with cinematic approach
+        async function visitPlanet(planetId, language) {
+            console.log(`🌍 Visiting ${planetId}...`);
+            
+            const planetEl = document.querySelector(`[data-planet-id="${planetId}"]`);
+            if (!planetEl) {
+                console.warn(`Planet ${planetId} not found`);
+                return;
+            }
+            
+            const planetName = planetEl.getAttribute('data-planet-name') || planetId;
+            showTourStatus(`🌍 Visiting ${planetName}`);
+            
+            const rig = document.querySelector('#rig');
+            const planetPos = planetEl.getAttribute('position');
+            
+            // Approach from a dramatic angle first
+            await moveToPosition(rig, { 
+                x: planetPos.x + 5, 
+                y: planetPos.y + 8, 
+                z: planetPos.z + 15 
+            });
+            
+            // Brief pause for dramatic effect
+            await wait(1000);
+            
+            // Highlight the planet being visited
+            highlightPlanet(planetEl);
+            
+            // Move camera close to planet for intimate view
+            await moveToPosition(rig, { 
+                x: planetPos.x, 
+                y: planetPos.y + 3, 
+                z: planetPos.z + 8 
+            });
+            
+            // Play planet narration
+            await speakText(tourData[planetId]?.[language] || tourData[planetId]?.en || `Visiting ${planetId}`, language);
+            
+            // Wait for narration to complete
+            await wait(8000);
+            
+            // Remove highlight
+            removePlanetHighlight(planetEl);
+            
+            // Brief pause before moving to next planet
+            await wait(1000);
+        }
+
+        // Move camera to specific position smoothly with cinematic effects
+        async function moveToPosition(rig, position) {
+            return new Promise((resolve) => {
+                const currentPos = rig.getAttribute('position');
+                const distance = Math.sqrt(
+                    Math.pow(position.x - currentPos.x, 2) + 
+                    Math.pow(position.y - currentPos.y, 2) + 
+                    Math.pow(position.z - currentPos.z, 2)
+                );
+                
+                // Adjust duration based on distance for more natural movement
+                const duration = Math.max(2000, Math.min(5000, distance * 200));
+                
+                console.log(`🎬 Moving camera to ${position.x}, ${position.y}, ${position.z} over ${duration}ms`);
+                
+                rig.setAttribute('animation__move', {
+                    property: 'position',
+                    to: `${position.x} ${position.y} ${position.z}`,
+                    dur: duration,
+                    easing: 'easeInOutCubic'
+                });
+                
+                setTimeout(resolve, duration);
+            });
+        }
+
+        // Enhanced text-to-speech with proper language support
+        async function speakText(text, language) {
+            console.log(`🗣️ Speaking in ${language}: ${text.substring(0, 50)}...`);
+            
+            try {
+                // Use the existing TTS manager which handles Indian languages properly
+                if (window.ttsManager && window.ttsManager.speak) {
+                    console.log(`🎯 Using TTS manager for ${language}`);
+                    await window.ttsManager.speak(text, language);
+                    return;
+                }
+                
+                // Fallback to browser TTS if TTS manager not available
+                console.log(`⚠️ TTS manager not available, using browser TTS for ${language}`);
+                const utterance = new SpeechSynthesisUtterance(text);
+                
+                // Set proper language code
+                if (language === 'en') {
+                    utterance.lang = 'en-US';
+                } else if (['hi', 'kn', 'ta', 'te', 'bn'].includes(language)) {
+                    // For Indian languages, try to find appropriate voice
+                    const voices = speechSynthesis.getVoices();
+                    const indianVoice = voices.find(v => v.lang.startsWith(language));
+                    if (indianVoice) {
+                        utterance.lang = indianVoice.lang;
+                        utterance.voice = indianVoice;
+                    } else {
+                        utterance.lang = language;
+                    }
+                } else {
+                    utterance.lang = language;
+                }
+                
+                utterance.rate = 0.8;
+                utterance.pitch = 1.0;
+                
+                // Wait for TTS to complete
+                return new Promise((resolve, reject) => {
+                    utterance.onend = resolve;
+                    utterance.onerror = reject;
+                    speechSynthesis.speak(utterance);
+                });
+                
+            } catch (error) {
+                console.error('❌ TTS error:', error);
+                
+                // Final fallback to browser TTS with English
+                console.log(`🔄 Final fallback to English TTS`);
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'en-US';
+                utterance.rate = 0.8;
+                
+                return new Promise((resolve, reject) => {
+                    utterance.onend = resolve;
+                    utterance.onerror = reject;
+                    speechSynthesis.speak(utterance);
+                });
+            }
+        }
+
+        // Utility function to wait
+        function wait(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // Highlight a planet during tour with cinematic effects
+        function highlightPlanet(planetEl) {
+            console.log(`✨ Highlighting planet: ${planetEl.getAttribute('data-planet-name')}`);
+            
+            // Store original scale for restoration
+            const gltfModel = planetEl.querySelector('[gltf-model]');
+            if (gltfModel) {
+                const currentScale = gltfModel.getAttribute('scale');
+                // Convert Vector3 to string for storage
+                const scaleString = `${currentScale.x} ${currentScale.y} ${currentScale.z}`;
+                planetEl.setAttribute('data-original-scale', scaleString);
+                
+                // Scale up with smooth animation
+                const newScale = `${currentScale.x * 1.3} ${currentScale.y * 1.3} ${currentScale.z * 1.3}`;
+                
+                gltfModel.setAttribute('animation__highlight', {
+                    property: 'scale',
+                    to: newScale,
+                    dur: 1500,
+                    easing: 'easeOutElastic'
+                });
+                
+                // Add pulsing glow effect
+                const pulseScale = `${currentScale.x * 1.4} ${currentScale.y * 1.4} ${currentScale.z * 1.4}`;
+                gltfModel.setAttribute('animation__pulse', {
+                    property: 'scale',
+                    to: pulseScale,
+                    dur: 2000,
+                    dir: 'alternate',
+                    loop: 'indefinite',
+                    easing: 'easeInOutSine'
+                });
+                
+                // Add rotation animation for more dynamic effect
+                gltfModel.setAttribute('animation__rotate', {
+                    property: 'rotation',
+                    to: '0 360 0',
+                    dur: 8000,
+                    loop: 'indefinite',
+                    easing: 'linear'
+                });
+            }
+            
+            // Add ambient light around the planet for dramatic effect
+            const planetPos = planetEl.getAttribute('position');
+            const highlightLight = document.createElement('a-light');
+            highlightLight.setAttribute('type', 'point');
+            highlightLight.setAttribute('color', '#FFD700');
+            highlightLight.setAttribute('intensity', '2');
+            highlightLight.setAttribute('distance', '10');
+            highlightLight.setAttribute('position', planetPos);
+            highlightLight.setAttribute('id', 'planetHighlightLight');
+            
+            planetEl.appendChild(highlightLight);
+        }
+
+        // Remove planet highlight and clean up effects
+        function removePlanetHighlight(planetEl) {
+            console.log(`✨ Removing highlight from planet: ${planetEl.getAttribute('data-planet-name')}`);
+            
+            const gltfModel = planetEl.querySelector('[gltf-model]');
+            if (gltfModel) {
+                // Remove all animations
+                gltfModel.removeAttribute('animation__highlight');
+                gltfModel.removeAttribute('animation__pulse');
+                gltfModel.removeAttribute('animation__rotate');
+                
+                // Restore original scale with smooth animation
+                const originalScale = planetEl.getAttribute('data-original-scale') || '0.0001 0.0001 0.0001';
+                gltfModel.setAttribute('animation__restore', {
+                    property: 'scale',
+                    to: originalScale,
+                    dur: 1000,
+                    easing: 'easeInOutCubic'
+                });
+                
+                // Clean up after animation
+                setTimeout(() => {
+                    gltfModel.removeAttribute('animation__restore');
+                }, 1000);
+            }
+            
+            // Remove highlight light
+            const highlightLight = planetEl.querySelector('#planetHighlightLight');
+            if (highlightLight) {
+                highlightLight.remove();
+            }
+        }
+
+        // Enable interactive mode after tour
+        function enableInteractiveMode() {
+            console.log('🎮 Enabling interactive mode...');
+            isTourActive = false;
+            
+            // Hide tour status
+            hideTourStatus();
+            
+            // Show control panel
+            document.querySelector('.control-panel').style.display = 'block';
+            
+            // Enable planet selection
+            document.querySelectorAll('.planet').forEach(planet => {
+                planet.style.pointerEvents = 'auto';
+            });
+            
+            console.log('✅ Interactive mode enabled');
+        }
+
+        // Test TTS in selected language
+        async function testTTSInSelectedLanguage() {
+            const selectedLang = localStorage.getItem('selectedLanguage') || 'en';
+            console.log(`🧪 Testing TTS in ${selectedLang}`);
+            
+            // Get test text in selected language
+            const testText = tourData.overview[selectedLang] || tourData.overview.en;
+            console.log(`🧪 Test text: ${testText.substring(0, 100)}...`);
+            
+            try {
+                await speakText(testText, selectedLang);
+                console.log('✅ TTS test completed successfully');
+            } catch (error) {
+                console.error('❌ TTS test failed:', error);
+                alert(`TTS test failed: ${error.message}`);
+            }
+        }
+
         // Initialize custom VR controls when scene loads
         document.addEventListener('DOMContentLoaded', () => {
+            // Test tour system
+            console.log('🎬 Tour system test:');
+            console.log('🎬 Tour data available:', tourData ? 'Yes' : 'No');
+            console.log('🎬 Available languages:', tourData ? Object.keys(tourData.overview) : 'None');
+            console.log('🎬 Selected language:', localStorage.getItem('selectedLanguage') || 'en');
+            
+            // Test TTS system
+            console.log('🗣️ TTS system test:');
+            console.log('🗣️ TTS Manager available:', window.ttsManager ? 'Yes' : 'No');
+            if (window.ttsManager) {
+                console.log('🗣️ TTS Manager methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(window.ttsManager)));
+                console.log('🗣️ TTS Manager speak method:', typeof window.ttsManager.speak);
+            }
+            console.log('🗣️ Speech Synthesis available:', window.speechSynthesis ? 'Yes' : 'No');
+            
             // Wait for scene to load, then setup custom controls
             const scene = document.querySelector('a-scene');
             if (scene) {

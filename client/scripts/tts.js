@@ -76,10 +76,10 @@ class TTSManager {
         try {
             console.log(`Requesting server TTS for ${languageCode}:`, text.substring(0, 50) + '...');
             
-            const resp = await fetch('/api/ai/tts', {
+            const resp = await fetch('/api/tts', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text, lang: languageCode })
+                body: JSON.stringify({ text, language: languageCode })
             });
             
             // Check if response is successful
@@ -126,7 +126,13 @@ class TTSManager {
                 
                 // If it's a successful JSON response with audio data
                 if (jsonData.audio) {
-                    const blob = new Blob([jsonData.audio], { type: 'audio/mpeg' });
+                    // Convert base64 to blob
+                    const audioData = atob(jsonData.audio);
+                    const audioArray = new Uint8Array(audioData.length);
+                    for (let i = 0; i < audioData.length; i++) {
+                        audioArray[i] = audioData.charCodeAt(i);
+                    }
+                    const blob = new Blob([audioArray], { type: 'audio/mpeg' });
                     const url = URL.createObjectURL(blob);
                     console.log(`✅ Server TTS successful for ${languageCode} (JSON response)`);
                     return url;
@@ -164,11 +170,27 @@ class TTSManager {
 
     async playAudioUrl(url) {
         return new Promise((resolve, reject) => {
+            console.log(`🎵 Playing audio from URL: ${url.substring(0, 50)}...`);
             const audio = new Audio();
             audio.src = url;
-            audio.onended = () => { URL.revokeObjectURL(url); resolve(); };
-            audio.onerror = reject;
-            audio.play().catch(reject);
+            
+            audio.onloadstart = () => console.log('🎵 Audio loading started');
+            audio.oncanplay = () => console.log('🎵 Audio can play');
+            audio.onplay = () => console.log('🎵 Audio playback started');
+            audio.onended = () => { 
+                console.log('🎵 Audio playback ended');
+                URL.revokeObjectURL(url); 
+                resolve(); 
+            };
+            audio.onerror = (e) => {
+                console.error('🎵 Audio playback error:', e);
+                reject(e);
+            };
+            
+            audio.play().catch((error) => {
+                console.error('🎵 Audio play() failed:', error);
+                reject(error);
+            });
         });
     }
 
