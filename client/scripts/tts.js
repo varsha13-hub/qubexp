@@ -108,13 +108,15 @@ class TTSManager {
                 
                 const url = URL.createObjectURL(blob);
                 console.log(`✅ Server TTS successful for ${languageCode}`);
+                // Actually play the audio
+                await this.playAudioUrl(url);
                 return url;
             }
             
             // Handle JSON response (fallback case)
             if (contentType.includes('application/json')) {
                 const jsonData = await resp.json();
-                console.warn('Server returned JSON response:', jsonData);
+                console.log('Server returned JSON response:', jsonData);
                 
                 if (jsonData.error) {
                     throw new Error(jsonData.error);
@@ -126,16 +128,11 @@ class TTSManager {
                 
                 // If it's a successful JSON response with audio data
                 if (jsonData.audio) {
-                    // Convert base64 to blob
-                    const audioData = atob(jsonData.audio);
-                    const audioArray = new Uint8Array(audioData.length);
-                    for (let i = 0; i < audioData.length; i++) {
-                        audioArray[i] = audioData.charCodeAt(i);
-                    }
-                    const blob = new Blob([audioArray], { type: 'audio/mpeg' });
-                    const url = URL.createObjectURL(blob);
+                    console.log(`🎵 Converting base64 audio to blob and playing...`);
+                    // Convert base64 to blob and play it
+                    await this.playAudioBase64(jsonData.audio, jsonData.format || 'mp3');
                     console.log(`✅ Server TTS successful for ${languageCode} (JSON response)`);
-                    return url;
+                    return;
                 }
                 
                 throw new Error('Unexpected JSON response from server TTS');
@@ -147,6 +144,8 @@ class TTSManager {
                 if (blob.size > 0) {
                     const url = URL.createObjectURL(blob);
                     console.log(`✅ Server TTS successful for ${languageCode} (unknown content type)`);
+                    // Actually play the audio
+                    await this.playAudioUrl(url);
                     return url;
                 }
             } catch (e) {
@@ -166,6 +165,35 @@ class TTSManager {
             // For other errors, try to provide helpful message
             throw new Error(`Server TTS failed: ${error.message}`);
         }
+    }
+
+    // Helper method to play base64 audio data
+    async playAudioBase64(base64Data, format = 'mp3') {
+        try {
+            console.log(`🎵 Converting base64 audio (${format}) to blob and playing...`);
+            
+            // Convert base64 to blob
+            const audioBlob = this.base64ToBlob(base64Data, `audio/${format}`);
+            const audioUrl = URL.createObjectURL(audioBlob);
+            
+            // Play the audio
+            await this.playAudioUrl(audioUrl);
+            
+        } catch (error) {
+            console.error('❌ Base64 audio playback failed:', error);
+            throw error;
+        }
+    }
+
+    // Helper method to convert base64 to blob
+    base64ToBlob(base64, mime) {
+        const byteChars = atob(base64);
+        const byteNumbers = new Array(byteChars.length);
+        for (let i = 0; i < byteChars.length; i++) {
+            byteNumbers[i] = byteChars.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        return new Blob([byteArray], { type: mime });
     }
 
     async playAudioUrl(url) {
@@ -252,9 +280,8 @@ class TTSManager {
         if (indianLanguages.includes(lang)) {
             try {
                 console.log(`Using server TTS for ${lang}:`, text);
-                const url = await this.fetchServerTTS(text, lang);
                 this.isSpeaking = true;
-                await this.playAudioUrl(url);
+                await this.fetchServerTTS(text, lang); // fetchServerTTS now handles playback internally
                 this.isSpeaking = false;
                 return;
             } catch (e) {
@@ -313,7 +340,7 @@ class TTSManager {
 
     async translateText(text, targetLanguage) {
         try {
-            const response = await fetch('/api/ai/translate', {
+            const response = await fetch('/api/translate', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

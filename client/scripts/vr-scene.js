@@ -254,7 +254,7 @@ class VRSceneController {
 
     async loadPlanets() {
         try {
-            const response = await fetch('/api/planets');
+            const response = await fetch('http://localhost:8080/api/planets');
             if (!response.ok) {
                 throw new Error('Failed to load planets');
             }
@@ -420,7 +420,7 @@ class VRSceneController {
         
         // Always try to translate planet info for better user experience
         try {
-            const response = await fetch('/api/translate', {
+            const response = await fetch('http://localhost:8080/api/translate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -576,70 +576,28 @@ class VRSceneController {
     async speakPlanetInfo() {
         if (this.currentPlanet) {
             try {
-                // Use enhanced TTS for Indian languages
+                // Always use Sarvam TTS for all languages
                 const text = this.currentPlanet.description;
                 const language = this.currentLanguage;
                 
                 console.log(`🎤 Speaking planet info in ${language}: ${text.substring(0, 50)}...`);
                 
-                // Try enhanced TTS first
-                const audio = await this.getEnhancedTTS(text, language);
-                if (audio) {
-                    await this.playAudio(audio);
-                    return;
-                }
-                
-                // Fallback to existing TTS manager
-                if (window.ttsManager) {
-                    window.ttsManager.speak(text, language);
+                // Always use Sarvam TTS via ttsManager
+                if (window.ttsManager && window.ttsManager.fetchServerTTS) {
+                    console.log(`🎯 Using Sarvam TTS for ${language}`);
+                    await window.ttsManager.fetchServerTTS(text, language);
+                    console.log(`✅ Sarvam TTS completed for ${language}`);
+                } else {
+                    throw new Error('TTS Manager not available');
                 }
             } catch (error) {
-                console.error('TTS Error:', error);
-                // Fallback to existing TTS
-                if (window.ttsManager) {
-                    window.ttsManager.speak(this.currentPlanet.description, this.currentLanguage);
-                }
+                console.error('❌ Sarvam TTS Error:', error);
+                console.log('❌ TTS failed - no fallback available');
             }
         }
     }
 
-    async getEnhancedTTS(text, language) {
-        try {
-            const response = await fetch('/api/tts', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    text: text,
-                    language: language
-                })
-            });
-
-            if (response.ok) {
-                const audioBlob = await response.blob();
-                return audioBlob;
-            }
-        } catch (error) {
-            console.error('Enhanced TTS failed:', error);
-        }
-        return null;
-    }
-
-    async playAudio(audioBlob) {
-        try {
-            const audioUrl = URL.createObjectURL(audioBlob);
-            const audio = new Audio(audioUrl);
-            
-            audio.onended = () => {
-                URL.revokeObjectURL(audioUrl);
-            };
-            
-            await audio.play();
-        } catch (error) {
-            console.error('Audio playback error:', error);
-        }
-    }
+    // Removed getEnhancedTTS and playAudio functions - now using only Sarvam TTS via ttsManager
 
     showLanguageSelector() {
         // Create a simple language selector modal
@@ -854,7 +812,7 @@ class VRSceneController {
     // Translation method
     async translateText(text, sourceLang, targetLang) {
         try {
-            const response = await fetch('/api/translate', {
+            const response = await fetch('http://localhost:8080/api/translate', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
