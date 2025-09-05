@@ -135,6 +135,18 @@ class TTSManager {
                     return;
                 }
                 
+                // If audio is null, this means server TTS failed and we should fall back to browser TTS
+                if (jsonData.audio === null) {
+                    console.log(`⚠️ Server TTS returned null audio for ${languageCode}, falling back to browser TTS`);
+                    throw new Error('SERVER_FALLBACK_TO_CLIENT');
+                }
+                
+                // If provider is browser, this means server TTS failed and we should use browser TTS
+                if (jsonData.provider === 'browser') {
+                    console.log(`⚠️ Server TTS provider is browser for ${languageCode}, using browser TTS directly`);
+                    throw new Error('SERVER_FALLBACK_TO_CLIENT');
+                }
+                
                 throw new Error('Unexpected JSON response from server TTS');
             }
             
@@ -223,11 +235,6 @@ class TTSManager {
     }
 
     async speak(text, languageCode = null) {
-        if (!this.synthesis) {
-            console.warn('Speech synthesis not supported');
-            return;
-        }
-
         if (this.isSpeaking) {
             this.stop();
         }
@@ -235,86 +242,91 @@ class TTSManager {
         // Set language if provided
         if (languageCode && languageCode !== this.currentLanguage) {
             this.currentLanguage = languageCode;
-            this.setVoiceForLanguage(languageCode);
         }
 
         const lang = languageCode || this.currentLanguage;
         const indianLanguages = ['hi','kn','ta','te','mr','bn','gu','ur','ml','pa','or','as'];
 
-        // Create utterance for native speech synthesis
-        const utterance = new SpeechSynthesisUtterance(text);
+        // 1) For English, use Sarvam TTS (en-IN) - no browser fallback
+        if (lang === 'en') {
+            try {
+                console.log(`Using Sarvam TTS for English (en-IN):`, text);
+                this.isSpeaking = true;
+                await this.fetchServerTTS(text, 'en'); // Server will map 'en' to 'en-IN' for Sarvam
+                this.isSpeaking = false;
+                return;
+            } catch (e) {
+                console.error(`Sarvam TTS failed for English:`, e.message);
+                this.isSpeaking = false;
+                // Don't fallback to browser TTS - let the error propagate
+                throw e;
+            }
+        }
 
-        // 1) If we have a native voice for the target language, use it
-        const nativeVoice = this.voices?.find(v =>
+        // 2) For Indian languages, use server TTS (Sarvam)
+        if (indianLanguages.includes(lang)) {
+            try {
+                console.log(`Using server TTS for ${lang}:`, text);
+                this.isSpeaking = true;
+                await this.fetchServerTTS(text, lang);
+                this.isSpeaking = false;
+                return;
+            } catch (e) {
+                console.error(`Server TTS failed for ${lang}:`, e.message);
+                this.isSpeaking = false;
+                // Don't fallback to browser TTS - let the error propagate
+                throw e;
+            }
+        }
+
+        // 3) Browser TTS fallback for other languages or when server TTS fails
+        if (!this.synthesis) {
+            console.warn('Speech synthesis not supported');
+            this.isSpeaking = false;
+            return;
+        }
+
+        const utterance = new SpeechSynthesisUtterance(text);
+        
+        // Try to find a native voice for the target language
+        let nativeVoice = this.voices?.find(v =>
             v.lang && (v.lang.toLowerCase().startsWith(lang.toLowerCase()))
         );
+
+        // For English, try to find Indian English voice first
+        if (lang === 'en' && !nativeVoice) {
+            nativeVoice = this.voices?.find(v => 
+                v.lang && (v.lang.toLowerCase().includes('en-in') || v.lang.toLowerCase().includes('india'))
+            );
+        }
 
         if (nativeVoice) {
             utterance.lang = nativeVoice.lang;
             utterance.voice = nativeVoice;
             utterance.rate = 0.95;
             utterance.pitch = 1.0;
-            
-            // Event handlers
-            utterance.onstart = () => {
-                console.log('TTS started (native):', text);
-                this.isSpeaking = true;
-            };
-
-            utterance.onend = () => {
-                console.log('TTS ended (native)');
-                this.isSpeaking = false;
-            };
-
-            utterance.onerror = (event) => {
-                console.error('TTS error (native):', event.error);
-                this.isSpeaking = false;
-                this.handleTTSError(event.error);
-            };
-
-            this.synthesis.speak(utterance);
-            return;
+            console.log(`Using browser voice: ${nativeVoice.name} (${nativeVoice.lang})`);
+        } else {
+            // Fallback to English voice
+            utterance.lang = 'en-US';
+            utterance.rate = 0.9;
+            utterance.pitch = 1.0;
+            console.log(`Using fallback browser voice: en-US`);
         }
-
-        // 2) If it's an Indian language and no native voice exists → use server TTS
-        if (indianLanguages.includes(lang)) {
-            try {
-                console.log(`Using server TTS for ${lang}:`, text);
-                this.isSpeaking = true;
-                await this.fetchServerTTS(text, lang); // fetchServerTTS now handles playback internally
-                this.isSpeaking = false;
-                return;
-            } catch (e) {
-                console.warn(`Server TTS failed for ${lang}, falling back to browser TTS:`, e.message);
-                
-                // If server explicitly suggests client fallback, continue to browser TTS
-                if (e.message === 'SERVER_FALLBACK_TO_CLIENT') {
-                    console.log('Server suggested client fallback, using browser TTS');
-                } else {
-                    // For other errors, show a user-friendly message but don't block
-                    console.log(`Server TTS unavailable for ${lang}. Using browser TTS instead.`);
-                }
-            }
-        }
-
-        // 3) Final fallback: English voice (so something is audible)
-        utterance.lang = 'en-US';
-        utterance.rate = 0.9;
-        utterance.pitch = 1.0;
         
-        // Event handlers for fallback
+        // Event handlers
         utterance.onstart = () => {
-            console.log('TTS started (fallback):', text);
+            console.log('TTS started (browser fallback):', text);
             this.isSpeaking = true;
         };
 
         utterance.onend = () => {
-            console.log('TTS ended (fallback)');
+            console.log('TTS ended (browser fallback)');
             this.isSpeaking = false;
         };
 
         utterance.onerror = (event) => {
-            console.error('TTS error (fallback):', event.error);
+            console.error('TTS error (browser fallback):', event.error);
             this.isSpeaking = false;
             this.handleTTSError(event.error);
         };
@@ -333,7 +345,8 @@ class TTSManager {
             return translatedText;
         } catch (error) {
             console.error('Error in speakTranslated:', error);
-            // Fallback to speaking original text
+            // Fallback to speaking original text in English
+            console.log(`⚠️ Translation failed, speaking original text in English`);
             await this.speak(text, 'en');
         }
     }
@@ -360,7 +373,9 @@ class TTSManager {
             return result.translatedText;
         } catch (error) {
             console.error('Translation error:', error);
-            throw error;
+            console.log(`⚠️ Translation service unavailable, using original text for ${targetLanguage}`);
+            // Fallback: return original text if translation fails
+            return text;
         }
     }
 
@@ -505,6 +520,7 @@ class TTSManager {
         if (languageCode && languageCode !== 'en') {
             await this.speakTranslated(text, languageCode);
         } else {
+            // Use Sarvam TTS for English (en-IN)
             await this.speak(text, languageCode || this.currentLanguage);
         }
     }
@@ -518,6 +534,7 @@ class TTSManager {
         if (languageCode && languageCode !== 'en') {
             await this.speakTranslated(text, languageCode);
         } else {
+            // Use Sarvam TTS for English (en-IN)
             await this.speak(text, languageCode || this.currentLanguage);
         }
     }

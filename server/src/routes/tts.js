@@ -252,8 +252,8 @@ router.post('/', async (req, res) => {
         });
 
         // Try providers in order of preference
-        // For regional languages, try Sarvam first
-        const regionalLanguages = ['hi', 'kn', 'ta', 'te', 'mr', 'bn', 'gu', 'ur'];
+        // For regional languages and English, try Sarvam first
+        const regionalLanguages = ['hi', 'kn', 'ta', 'te', 'mr', 'bn', 'gu', 'ur', 'en'];
         const providers = regionalLanguages.includes(language) 
             ? ['sarvam', 'google', 'azure', 'browser']
             : ['google', 'azure', 'browser'];
