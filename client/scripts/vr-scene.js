@@ -465,23 +465,18 @@ class VRSceneController {
         try {
             console.log(`🎤 Speaking planet info in ${this.currentLanguage}: ${text.substring(0, 50)}...`);
             
-            // Try enhanced TTS first
-            const audio = await this.getEnhancedTTS(text, this.currentLanguage);
-            if (audio) {
-                await this.playAudio(audio);
-                return;
-            }
-            
-            // Fallback to existing TTS manager
-            if (window.ttsManager) {
-                window.ttsManager.speak(text, this.currentLanguage);
+            // Use Sarvam TTS via ttsManager with separated fetch/play
+            if (window.ttsManager && window.ttsManager.fetchServerTTSAudio) {
+                console.log(`🎯 Fetching Sarvam TTS for ${this.currentLanguage}`);
+                const audioData = await window.ttsManager.fetchServerTTSAudio(text, this.currentLanguage);
+                console.log(`🎵 Playing TTS in ${this.currentLanguage} using Sarvam API`);
+                await window.ttsManager.playServerTTSAudio(audioData);
+            } else {
+                throw new Error('TTS Manager not available');
             }
         } catch (error) {
             console.error('TTS Error:', error);
-            // Final fallback
-            if (window.ttsManager) {
-                window.ttsManager.speak(text, this.currentLanguage);
-            }
+            console.log('❌ TTS failed - no fallback available');
         }
     }
 

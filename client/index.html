@@ -842,11 +842,12 @@
                     
                     console.log(`🔄 Translated text for TTS: ${translatedText}`);
                     
-                    // Always use Sarvam TTS via ttsManager
-                    if (window.ttsManager && window.ttsManager.fetchServerTTS) {
-                        console.log(`🎯 Using Sarvam TTS for ${selectedLang}`);
-                        await window.ttsManager.fetchServerTTS(translatedText, selectedLang);
+                    // Always use Sarvam TTS via ttsManager with separated fetch/play
+                    if (window.ttsManager && window.ttsManager.fetchServerTTSAudio) {
+                        console.log(`🎯 Fetching Sarvam TTS for ${selectedLang}`);
+                        const audioData = await window.ttsManager.fetchServerTTSAudio(translatedText, selectedLang);
                         console.log(`🎵 Playing TTS for: ${currentPlanet.name} in ${selectedLang} using Sarvam API`);
+                        await window.ttsManager.playServerTTSAudio(audioData);
                     } else {
                         throw new Error('TTS Manager not available');
                     }

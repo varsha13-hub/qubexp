@@ -71,8 +71,8 @@ class TTSManager {
         console.log(`Set voice for language ${languageCode}:`, voice ? voice.name : 'none');
     }
 
-    // Helper method to fetch and play server TTS audio
-    async fetchServerTTS(text, languageCode) {
+    // Helper method to fetch server TTS audio (without playing)
+    async fetchServerTTSAudio(text, languageCode) {
         try {
             console.log(`Requesting server TTS for ${languageCode}:`, text.substring(0, 50) + '...');
             
@@ -107,10 +107,8 @@ class TTSManager {
                 }
                 
                 const url = URL.createObjectURL(blob);
-                console.log(`✅ Server TTS successful for ${languageCode}`);
-                // Actually play the audio
-                await this.playAudioUrl(url);
-                return url;
+                console.log(`✅ Server TTS audio fetched for ${languageCode}`);
+                return { type: 'url', data: url, format: 'audio' };
             }
             
             // Handle JSON response (fallback case)
@@ -128,11 +126,8 @@ class TTSManager {
                 
                 // If it's a successful JSON response with audio data
                 if (jsonData.audio) {
-                    console.log(`🎵 Converting base64 audio to blob and playing...`);
-                    // Convert base64 to blob and play it
-                    await this.playAudioBase64(jsonData.audio, jsonData.format || 'mp3');
-                    console.log(`✅ Server TTS successful for ${languageCode} (JSON response)`);
-                    return;
+                    console.log(`🎵 Server TTS audio fetched for ${languageCode} (JSON response)`);
+                    return { type: 'base64', data: jsonData.audio, format: jsonData.format || 'mp3' };
                 }
                 
                 // If audio is null, this means server TTS failed and we should fall back to browser TTS
@@ -195,6 +190,23 @@ class TTSManager {
             console.error('❌ Base64 audio playback failed:', error);
             throw error;
         }
+    }
+
+    // Helper method to play fetched server TTS audio
+    async playServerTTSAudio(audioData) {
+        if (audioData.type === 'url') {
+            await this.playAudioUrl(audioData.data);
+        } else if (audioData.type === 'base64') {
+            await this.playAudioBase64(audioData.data, audioData.format);
+        } else {
+            throw new Error('Unknown audio data type');
+        }
+    }
+
+    // Helper method to fetch and play server TTS audio (for backward compatibility)
+    async fetchServerTTS(text, languageCode) {
+        const audioData = await this.fetchServerTTSAudio(text, languageCode);
+        await this.playServerTTSAudio(audioData);
     }
 
     // Helper method to convert base64 to blob
