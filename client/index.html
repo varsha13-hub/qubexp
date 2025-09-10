@@ -335,6 +335,8 @@
             
             <h4>🎬 Guided Tour</h4>
             <button id="startTourBtn" class="tour-btn">Start Guided Tour</button>
+            <button id="pauseBtn" class="tour-btn" style="display: none;">Pause</button>
+            <button id="resumeBtn" class="tour-btn" style="display: none;" disabled>Resume</button>
             <p class="info-text">Experience a cinematic journey through the Solar System</p>
             
             <h4>🧪 Test TTS</h4>
@@ -1036,6 +1038,27 @@
                     console.log('Start tour button clicked!');
                     unlockAudio(); // Unlock audio on user interaction
                     startGuidedTour();
+                    
+                    // Show pause button when tour starts
+                    document.getElementById('pauseBtn').style.display = 'inline-block';
+                });
+            }
+            
+            // Handle pause button
+            const pauseBtn = document.getElementById('pauseBtn');
+            if (pauseBtn) {
+                pauseBtn.addEventListener('click', () => {
+                    console.log('Pause button clicked!');
+                    pauseTour();
+                });
+            }
+            
+            // Handle resume button
+            const resumeBtn = document.getElementById('resumeBtn');
+            if (resumeBtn) {
+                resumeBtn.addEventListener('click', () => {
+                    console.log('Resume button clicked!');
+                    resumeTour();
                 });
             }
             
@@ -1444,7 +1467,47 @@
 
         // Tour state management
         let isTourActive = false;
+        let tourPaused = false;
         let currentTourLanguage = 'en';
+        
+        // Helper function to wait with pause support
+        async function waitWithPauseCheck(duration) {
+            const startTime = Date.now();
+            while (Date.now() - startTime < duration) {
+                if (tourPaused) {
+                    // Wait until tour is resumed
+                    while (tourPaused) {
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                    }
+                }
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+        }
+        
+        // Pause and Resume Tour Functions
+        function pauseTour() {
+            console.log('⏸️ Pausing tour...');
+            tourPaused = true;
+            
+            // Update button states
+            document.getElementById('pauseBtn').style.display = 'none';
+            document.getElementById('resumeBtn').style.display = 'inline-block';
+            document.getElementById('resumeBtn').disabled = false;
+            
+            showTourStatus('Tour Paused');
+        }
+        
+        function resumeTour() {
+            console.log('▶️ Resuming tour...');
+            tourPaused = false;
+            
+            // Update button states
+            document.getElementById('pauseBtn').style.display = 'inline-block';
+            document.getElementById('resumeBtn').style.display = 'none';
+            document.getElementById('resumeBtn').disabled = true;
+            
+            showTourStatus('Tour Resumed');
+        }
         
         // Add tour status indicator
         function showTourStatus(message) {
@@ -1650,7 +1713,7 @@
 
         // Move camera to specific position smoothly with cinematic effects
         async function moveToPosition(rig, position) {
-            return new Promise((resolve) => {
+            return new Promise(async (resolve) => {
                 const currentPos = rig.getAttribute('position');
                 const distance = Math.sqrt(
                     Math.pow(position.x - currentPos.x, 2) + 
@@ -1670,13 +1733,20 @@
                     easing: 'easeInOutCubic'
                 });
                 
-                setTimeout(resolve, duration);
+                // Use pause-aware wait instead of setTimeout
+                await wait(duration);
+                resolve();
             });
         }
 
         // Enhanced text-to-speech using only Sarvam TTS
         async function speakText(text, language) {
             console.log(`🗣️ Speaking in ${language}: ${text.substring(0, 50)}...`);
+            
+            // Wait for pause to be cleared before speaking
+            while (tourPaused && isTourActive) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
             
             try {
                 // Always use Sarvam TTS via ttsManager
@@ -1696,9 +1766,13 @@
             }
         }
 
-        // Utility function to wait
+        // Utility function to wait (with pause support during tours)
         function wait(ms) {
-            return new Promise(resolve => setTimeout(resolve, ms));
+            if (isTourActive) {
+                return waitWithPauseCheck(ms);
+            } else {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
         }
 
         // Highlight a planet during tour with cinematic effects
