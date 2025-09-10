@@ -335,8 +335,6 @@
             
             <h4>🎬 Guided Tour</h4>
             <button id="startTourBtn" class="tour-btn">Start Guided Tour</button>
-            <button id="pauseBtn" class="tour-btn" style="display: none;">Pause</button>
-            <button id="resumeBtn" class="tour-btn" style="display: none;" disabled>Resume</button>
             <p class="info-text">Experience a cinematic journey through the Solar System</p>
             
             <h4>🧪 Test TTS</h4>
@@ -348,6 +346,11 @@
     <div class="control-panel">
         <h4>🎮 VR Controls</h4>
         <p>Status: <span id="vrStatus" class="status">Loading...</span></p>
+        
+        <h4>🎬 Tour Controls</h4>
+        <button id="pauseBtn" class="test-btn" style="display: none;">⏸️ Pause Tour</button>
+        <button id="resumeBtn" class="test-btn" style="display: none;" disabled>▶️ Resume Tour</button>
+        <p class="info-text">Control the guided tour</p>
         
         <h4>🌍 Language</h4>
         <select id="languageSelect">
@@ -818,6 +821,18 @@
         function showVRMessage(message) {
             // Show message using alert for simplicity
             alert(message);
+        }
+        
+        // VR Debug Dialog function for AI Q&A feedback
+        function showVRDebugDialog(message, color = '#00ff88', duration = 3000) {
+            console.log(`🔍 VR Debug: ${message}`);
+            
+            // For now, use console.log and alert for debugging
+            // In a full VR implementation, this would show a 3D dialog in VR space
+            if (message.includes('🎤') || message.includes('🤖') || message.includes('❌')) {
+                // Show important AI Q&A messages as alerts
+                alert(message);
+            }
         }
         
         async function speakPlanetInfo() {
