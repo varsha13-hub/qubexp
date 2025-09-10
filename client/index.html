@@ -18,10 +18,6 @@
                 if (!THREE.Math && THREE.MathUtils) {
                     THREE.Math = THREE.Math || {}
                     
-                    
-                    
-                    
-                    \;
                     THREE.Math.degToRad = THREE.MathUtils.degToRad;
                     THREE.Math.radToDeg = THREE.MathUtils.radToDeg;
                 }
@@ -371,6 +367,10 @@
         <h4>🎤 Test TTS</h4>
         <button id="testCurrentPlanetTTS" class="test-btn">Speak Current Planet</button>
         <p class="info-text">Test TTS for the currently selected planet</p>
+        
+        <h4>🤖 AI Q&A</h4>
+        <button id="askQuestionBtn" class="test-btn">Ask a Question 🎤</button>
+        <p class="info-text">Ask any question about the Solar System using voice</p>
     </div>
 
             <div class="info-panel">
@@ -1046,6 +1046,16 @@
                     console.log('Test TTS button clicked!');
                     unlockAudio(); // Unlock audio on user interaction
                     testTTSInSelectedLanguage();
+                });
+            }
+            
+            // Handle AI Q&A button
+            const askQuestionBtn = document.getElementById('askQuestionBtn');
+            if (askQuestionBtn) {
+                askQuestionBtn.addEventListener('click', () => {
+                    console.log('Ask Question button clicked!');
+                    unlockAudio(); // Unlock audio on user interaction
+                    startVoiceQuestion();
                 });
             }
         }
@@ -1823,6 +1833,147 @@
             }
         }
 
+        // AI Q&A Functions
+        let speechRecognition = null;
+        
+        function startVoiceQuestion() {
+            console.log('🎤 Starting voice question...');
+            
+            // Check if speech recognition is supported
+            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                alert('Speech recognition is not supported in this browser. Please use Chrome or Edge.');
+                return;
+            }
+            
+            // Initialize speech recognition
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            speechRecognition = new SpeechRecognition();
+            
+            // Configure recognition
+            const selectedLang = localStorage.getItem('selectedLanguage') || 'en';
+            speechRecognition.lang = getSpeechRecognitionLang(selectedLang);
+            speechRecognition.continuous = false;
+            speechRecognition.interimResults = false;
+            
+            console.log(`🎤 Speech recognition language set to: ${speechRecognition.lang}`);
+            
+            // Set up event handlers
+            setupSpeechRecognition();
+            
+            // Start recognition
+            speechRecognition.start();
+            console.log('🎤 Listening for question...');
+            
+            // Show listening indicator
+            showVRDebugDialog('🎤 Listening for your question...', '#00ff88', 5000);
+        }
+        
+        function getSpeechRecognitionLang(lang) {
+            const langMap = {
+                'en': 'en-US',
+                'hi': 'hi-IN',
+                'kn': 'kn-IN',
+                'ta': 'ta-IN',
+                'te': 'te-IN',
+                'mr': 'mr-IN',
+                'bn': 'bn-IN'
+            };
+            return langMap[lang] || 'en-US';
+        }
+        
+        // Set up speech recognition event handlers
+        function setupSpeechRecognition() {
+            if (!speechRecognition) return;
+            
+            speechRecognition.onresult = async (event) => {
+                const question = event.results[0][0].transcript;
+                console.log('🎤 User asked:', question);
+                
+                showVRDebugDialog(`🎤 Question: ${question}`, '#00ff88', 3000);
+                
+                try {
+                    const answer = await getAIAnswer(question);
+                    console.log('🤖 AI Answer:', answer);
+                    
+                    // Show answer in VR
+                    showVRDebugDialog(`🤖 ${answer}`, '#ffffff', 10000);
+                    
+                    // Speak the answer using TTS
+                    await speakAIAnswer(answer);
+                    
+                } catch (error) {
+                    console.error('❌ AI Q&A failed:', error);
+                    const errorMsg = 'Sorry, I couldn\'t get an answer right now.';
+                    showVRDebugDialog(`❌ ${errorMsg}`, '#ff6b6b', 5000);
+                    await speakAIAnswer(errorMsg);
+                }
+            };
+            
+            speechRecognition.onerror = (event) => {
+                console.error('❌ Speech recognition error:', event.error);
+                showVRDebugDialog(`❌ Speech error: ${event.error}`, '#ff6b6b', 5000);
+            };
+            
+            speechRecognition.onend = () => {
+                console.log('🎤 Speech recognition ended');
+            };
+        }
+        
+        async function getAIAnswer(question) {
+            try {
+                const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer YOUR_OPENAI_API_KEY'
+                    },
+                    body: JSON.stringify({
+                        model: 'gpt-3.5-turbo',
+                        messages: [{
+                            role: 'system',
+                            content: 'You are a helpful astronomy expert. Answer questions about the Solar System, planets, space, and astronomy in a clear and educational way. Keep answers concise but informative.'
+                        }, {
+                            role: 'user',
+                            content: question
+                        }],
+                        temperature: 0.7,
+                        max_tokens: 200
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`OpenAI API error: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                return data.choices[0].message.content.trim();
+                
+            } catch (error) {
+                console.error('❌ OpenAI API error:', error);
+                throw error;
+            }
+        }
+        
+        async function speakAIAnswer(answer) {
+            const selectedLang = localStorage.getItem('selectedLanguage') || 'en';
+            console.log(`🗣️ Speaking AI answer in ${selectedLang}: ${answer.substring(0, 50)}...`);
+            
+            try {
+                if (window.ttsManager && window.ttsManager.fetchServerTTS) {
+                    await window.ttsManager.fetchServerTTS(answer, selectedLang);
+                    console.log('✅ AI answer spoken successfully');
+                } else {
+                    throw new Error('TTS Manager not available');
+                }
+            } catch (error) {
+                console.error('❌ Failed to speak AI answer:', error);
+                // Fallback to browser TTS
+                const utterance = new SpeechSynthesisUtterance(answer);
+                utterance.lang = selectedLang;
+                speechSynthesis.speak(utterance);
+            }
+        }
+
         // Initialize custom VR controls when scene loads
         document.addEventListener('DOMContentLoaded', () => {
             // Test tour system
@@ -1839,6 +1990,12 @@
                 console.log('🗣️ TTS Manager speak method:', typeof window.ttsManager.speak);
             }
             console.log('🗣️ Speech Synthesis available:', window.speechSynthesis ? 'Yes' : 'No');
+            
+            // Test Speech Recognition system
+            console.log('🎤 Speech Recognition test:');
+            console.log('🎤 Speech Recognition available:', ('webkitSpeechRecognition' in window) || ('SpeechRecognition' in window) ? 'Yes' : 'No');
+            
+            // Speech recognition will be initialized when needed
             
             // Wait for scene to load, then setup custom controls
             const scene = document.querySelector('a-scene');
