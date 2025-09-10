@@ -16,7 +16,12 @@
             // Fix THREE.Math.degToRad compatibility issue
             if (typeof THREE !== 'undefined') {
                 if (!THREE.Math && THREE.MathUtils) {
-                    THREE.Math = THREE.Math || {};
+                    THREE.Math = THREE.Math || {}
+                    
+                    
+                    
+                    
+                    \;
                     THREE.Math.degToRad = THREE.MathUtils.degToRad;
                     THREE.Math.radToDeg = THREE.MathUtils.radToDeg;
                 }
