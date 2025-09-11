@@ -7,6 +7,11 @@ class TTSManager {
         this.isSpeaking = false;
         this.currentLanguage = 'en';
         
+        // Audio pause/resume support
+        this.currentAudio = null;
+        this.isPaused = false;
+        this.pausedTime = 0;
+        
         this.init();
     }
 
@@ -223,16 +228,27 @@ class TTSManager {
     async playAudioUrl(url) {
         return new Promise((resolve, reject) => {
             console.log(`🎵 Playing audio from URL: ${url.substring(0, 50)}...`);
+            
+            // Stop any current audio
+            if (this.currentAudio) {
+                this.currentAudio.pause();
+                this.currentAudio = null;
+            }
+            
             const audio = new Audio();
             audio.src = url;
+            
+            // Store reference to current audio for pause/resume
+            this.currentAudio = audio;
             
             audio.onloadstart = () => console.log('🎵 Audio loading started');
             audio.oncanplay = () => console.log('🎵 Audio can play');
             audio.onplay = () => console.log('🎵 Audio playback started');
             audio.onended = () => { 
                 console.log('🎵 Audio playback ended');
+                this.currentAudio = null; // Clear reference when audio ends
                 URL.revokeObjectURL(url); 
-                resolve(); 
+                resolve();
             };
             audio.onerror = (e) => {
                 console.error('🎵 Audio playback error:', e);
@@ -492,6 +508,65 @@ class TTSManager {
 
     isSupported() {
         return !!window.speechSynthesis;
+    }
+
+    // Pause current audio playback
+    pauseAudio() {
+        console.log('⏸️ Pausing TTS audio...');
+        this.isPaused = true;
+        
+        // Pause HTML5 audio if playing
+        if (this.currentAudio && !this.currentAudio.paused) {
+            this.pausedTime = this.currentAudio.currentTime;
+            this.currentAudio.pause();
+            console.log('⏸️ HTML5 audio paused at', this.pausedTime, 'seconds');
+        }
+        
+        // Pause speech synthesis if speaking
+        if (this.synthesis.speaking) {
+            this.synthesis.pause();
+            console.log('⏸️ Speech synthesis paused');
+        }
+    }
+    
+    // Resume current audio playback
+    resumeAudio() {
+        console.log('▶️ Resuming TTS audio...');
+        this.isPaused = false;
+        
+        // Resume HTML5 audio if paused
+        if (this.currentAudio && this.currentAudio.paused) {
+            this.currentAudio.currentTime = this.pausedTime;
+            this.currentAudio.play().catch(error => {
+                console.error('❌ Failed to resume HTML5 audio:', error);
+            });
+            console.log('▶️ HTML5 audio resumed from', this.pausedTime, 'seconds');
+        }
+        
+        // Resume speech synthesis if paused
+        if (this.synthesis.paused) {
+            this.synthesis.resume();
+            console.log('▶️ Speech synthesis resumed');
+        }
+    }
+    
+    // Stop all audio playback
+    stopAudio() {
+        console.log('⏹️ Stopping all TTS audio...');
+        this.isPaused = false;
+        this.pausedTime = 0;
+        
+        // Stop HTML5 audio
+        if (this.currentAudio) {
+            this.currentAudio.pause();
+            this.currentAudio.currentTime = 0;
+            this.currentAudio = null;
+        }
+        
+        // Stop speech synthesis
+        if (this.synthesis.speaking || this.synthesis.paused) {
+            this.synthesis.cancel();
+        }
     }
 
     isSpeaking() {
