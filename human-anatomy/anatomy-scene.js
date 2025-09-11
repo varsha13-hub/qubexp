@@ -2,6 +2,7 @@
 class AnatomySceneController {
     constructor() {
         this.currentSystem = null;
+        this.currentLanguage = 'en';
         this.isVRMode = false;
         this.sceneLoaded = false;
         
@@ -55,16 +56,40 @@ class AnatomySceneController {
 
         this.currentSystem = systemName;
         
+        // Hide all models first
+        this.hideAllModels();
+        
+        // Show selected model
+        this.showModel(systemName);
+        
         // Move camera to focus position
         this.moveCameraToFocus(system.focus);
         
-        // Start narration
+        // Start narration in current language
         this.speakSystemInfo(system.narration);
         
         // Update UI
         this.updateSystemDisplay(systemName);
         
         console.log(`✅ ${systemName} system loaded`);
+    }
+
+    hideAllModels() {
+        const modelIds = ['skeletal', 'circulatory', 'respiratory', 'digestive', 'nervous', 'muscular', 'reproductive'];
+        modelIds.forEach(id => {
+            const model = document.querySelector(`#${id}`);
+            if (model) {
+                model.setAttribute('visible', 'false');
+            }
+        });
+    }
+
+    showModel(systemName) {
+        const model = document.querySelector(`#${systemName}`);
+        if (model) {
+            model.setAttribute('visible', 'true');
+            console.log(`👁️ Showing ${systemName} model`);
+        }
     }
 
     moveCameraToFocus(focusPosition) {
@@ -83,11 +108,13 @@ class AnatomySceneController {
     }
 
     speakSystemInfo(narration) {
-        console.log(`🗣️ Speaking: ${narration.substring(0, 50)}...`);
+        // Get narration in current language
+        const text = narration[this.currentLanguage] || narration.en;
+        console.log(`🗣️ Speaking in ${this.currentLanguage}: ${text.substring(0, 50)}...`);
         
         // Use the TTS system
         if (window.speak) {
-            window.speak(narration);
+            window.speak(text, this.currentLanguage);
         } else {
             console.warn('⚠️ TTS not available');
         }
@@ -109,12 +136,33 @@ class AnatomySceneController {
             menu.textContent = systemNames[systemName] || systemName;
         }
     }
+
+    setLanguage(language) {
+        this.currentLanguage = language;
+        console.log(`🌐 Language changed to: ${language}`);
+        
+        // If a system is currently loaded, re-speak the narration in new language
+        if (this.currentSystem) {
+            const system = anatomyData[this.currentSystem];
+            if (system && system.narration) {
+                this.speakSystemInfo(system.narration);
+            }
+        }
+    }
 }
 
-// Global function for button clicks
+// Global functions for button clicks
 function loadSystem(systemName) {
     if (window.anatomyController) {
         window.anatomyController.loadSystem(systemName);
+    } else {
+        console.error('❌ Anatomy controller not initialized');
+    }
+}
+
+function setLanguage(language) {
+    if (window.anatomyController) {
+        window.anatomyController.setLanguage(language);
     } else {
         console.error('❌ Anatomy controller not initialized');
     }

@@ -15,13 +15,14 @@
         padding: 10px; border-radius: 8px;
         z-index: 1000;
       }
-      button { 
+      button, select { 
         margin: 5px; padding: 8px 12px; border: none; border-radius: 5px; 
         cursor: pointer; background: #4CAF50; color: white;
         transition: background 0.3s;
       }
-      button:hover { background: #45a049; }
+      button:hover, select:hover { background: #45a049; }
       h3 { margin-top: 0; color: #4CAF50; }
+      label { color: #4CAF50; font-weight: bold; }
     </style>
   </head>
   <body>
@@ -34,15 +35,67 @@
       <button onclick="loadSystem('nervous')">🧠 Nervous</button>
       <button onclick="loadSystem('muscular')">💪 Muscular</button>
       <button onclick="loadSystem('reproductive')">👶 Reproductive</button>
+      <br>
+      <label for="lang">🌐 Language:</label>
+      <select id="lang" onchange="setLanguage(this.value)">
+        <option value="en">🇺🇸 English</option>
+        <option value="hi">🇮🇳 हिंदी (Hindi)</option>
+        <option value="kn">🇮🇳 ಕನ್ನಡ (Kannada)</option>
+        <option value="ta">🇮🇳 தமிழ் (Tamil)</option>
+        <option value="te">🇮🇳 తెలుగు (Telugu)</option>
+        <option value="mr">🇮🇳 मराठी (Marathi)</option>
+        <option value="bn">🇮🇳 বাংলা (Bengali)</option>
+      </select>
     </div>
 
     <a-scene background="color: #000011">
-      <a-assets>
-        <a-asset-item id="skeletonModel" src="models/skeleton.glb"></a-asset-item>
-      </a-assets>
+      <!-- Dummy Models for Testing -->
+      
+      <!-- Skeletal System: White cylinder + box combo -->
+      <a-entity id="skeletal" visible="false">
+        <a-box color="white" depth="0.5" height="2" width="0.5" position="0 0.5 -4"></a-box>
+        <a-cylinder color="white" height="1.5" radius="0.3" position="0 2 -4"></a-cylinder>
+        <a-text value="SKELETAL SYSTEM" position="0 3 -4" align="center" color="white" scale="0.5 0.5 0.5"></a-text>
+      </a-entity>
 
-      <!-- 3D Model Container -->
-      <a-entity id="model" gltf-model="#skeletonModel" position="0 -1.5 -4" scale="1 1 1"></a-entity>
+      <!-- Circulatory System: Red sphere (heart) -->
+      <a-entity id="circulatory" visible="false">
+        <a-sphere color="red" radius="0.5" position="0 1.5 -3"></a-sphere>
+        <a-text value="CIRCULATORY SYSTEM" position="0 2.5 -3" align="center" color="red" scale="0.5 0.5 0.5"></a-text>
+      </a-entity>
+
+      <!-- Respiratory System: 2 pink spheres (lungs) -->
+      <a-entity id="respiratory" visible="false">
+        <a-sphere color="pink" radius="0.4" position="-0.5 1.5 -3"></a-sphere>
+        <a-sphere color="pink" radius="0.4" position="0.5 1.5 -3"></a-sphere>
+        <a-text value="RESPIRATORY SYSTEM" position="0 2.5 -3" align="center" color="pink" scale="0.5 0.5 0.5"></a-text>
+      </a-entity>
+
+      <!-- Digestive System: Orange tube -->
+      <a-entity id="digestive" visible="false">
+        <a-cylinder color="orange" height="2" radius="0.3" position="0 1 -3"></a-cylinder>
+        <a-text value="DIGESTIVE SYSTEM" position="0 2.5 -3" align="center" color="orange" scale="0.5 0.5 0.5"></a-text>
+      </a-entity>
+
+      <!-- Nervous System: Yellow brain shape -->
+      <a-entity id="nervous" visible="false">
+        <a-sphere color="yellow" radius="0.6" position="0 1.5 -3"></a-sphere>
+        <a-text value="NERVOUS SYSTEM" position="0 2.5 -3" align="center" color="yellow" scale="0.5 0.5 0.5"></a-text>
+      </a-entity>
+
+      <!-- Muscular System: Red muscle shapes -->
+      <a-entity id="muscular" visible="false">
+        <a-box color="darkred" depth="0.3" height="1.5" width="0.8" position="-0.3 1 -3"></a-box>
+        <a-box color="darkred" depth="0.3" height="1.5" width="0.8" position="0.3 1 -3"></a-box>
+        <a-text value="MUSCULAR SYSTEM" position="0 2.5 -3" align="center" color="darkred" scale="0.5 0.5 0.5"></a-text>
+      </a-entity>
+
+      <!-- Reproductive System: Purple shapes -->
+      <a-entity id="reproductive" visible="false">
+        <a-sphere color="purple" radius="0.3" position="-0.3 1 -3"></a-sphere>
+        <a-sphere color="purple" radius="0.3" position="0.3 1 -3"></a-sphere>
+        <a-text value="REPRODUCTIVE SYSTEM" position="0 2.5 -3" align="center" color="purple" scale="0.5 0.5 0.5"></a-text>
+      </a-entity>
 
       <!-- Camera Rig -->
       <a-entity id="cameraRig" position="0 1.6 3">

@@ -7,6 +7,17 @@ class TTSManager {
         this.isSpeaking = false;
         this.currentLanguage = 'en-US';
         
+        // Language mapping for browser TTS
+        this.languageMap = {
+            'en': 'en-US',
+            'hi': 'hi-IN',
+            'kn': 'kn-IN',
+            'ta': 'ta-IN',
+            'te': 'te-IN',
+            'mr': 'mr-IN',
+            'bn': 'bn-IN'
+        };
+        
         this.init();
     }
 
@@ -53,7 +64,7 @@ class TTSManager {
         }
     }
 
-    speak(text) {
+    speak(text, langCode = 'en') {
         if (!this.synthesis) {
             console.warn('⚠️ Speech synthesis not available');
             return;
@@ -67,19 +78,30 @@ class TTSManager {
         // Stop any current speech
         this.stop();
         
-        console.log(`🗣️ Speaking: ${text.substring(0, 50)}...`);
+        console.log(`🗣️ Speaking in ${langCode}: ${text.substring(0, 50)}...`);
         
         const utterance = new SpeechSynthesisUtterance(text);
         
-        // Set voice properties
-        if (this.currentVoice) {
+        // Set language
+        const browserLang = this.languageMap[langCode] || 'en-US';
+        utterance.lang = browserLang;
+        
+        // Try to find a voice for the specific language
+        const languageVoices = this.voices.filter(voice => 
+            voice.lang.startsWith(langCode) || voice.lang.startsWith(browserLang)
+        );
+        
+        if (languageVoices.length > 0) {
+            utterance.voice = languageVoices[0];
+            console.log(`🗣️ Using ${langCode} voice: ${languageVoices[0].name}`);
+        } else if (this.currentVoice) {
             utterance.voice = this.currentVoice;
+            console.log(`🗣️ Using fallback voice: ${this.currentVoice.name}`);
         }
         
         utterance.rate = 0.9; // Slightly slower for educational content
         utterance.pitch = 1.0;
         utterance.volume = 1.0;
-        utterance.lang = this.currentLanguage;
         
         // Event handlers
         utterance.onstart = () => {
@@ -124,8 +146,8 @@ class TTSManager {
     }
 
     setLanguage(language) {
-        this.currentLanguage = language;
-        console.log(`🗣️ Language set to: ${language}`);
+        this.currentLanguage = this.languageMap[language] || 'en-US';
+        console.log(`🗣️ Language set to: ${this.currentLanguage}`);
     }
 
     setRate(rate) {
@@ -143,9 +165,9 @@ document.addEventListener('DOMContentLoaded', () => {
     ttsManager = new TTSManager();
     
     // Make speak function globally available
-    window.speak = (text) => {
+    window.speak = (text, langCode = 'en') => {
         if (ttsManager) {
-            ttsManager.speak(text);
+            ttsManager.speak(text, langCode);
         }
     };
     
