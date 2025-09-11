@@ -554,6 +554,7 @@
         let languageIndex = 0;
         let vrStarted = false; // Flag to prevent auto-speak before VR starts
         let allowPlanetSelection = false; // Flag to prevent auto-selection
+        let userHasInteracted = false; // Flag to track user interaction
         const languages = [
             { code: 'en', name: '🇺🇸 English' },
             { code: 'hi', name: '🇮🇳 हिंदी' },
@@ -691,8 +692,8 @@
         }
 
         function handlePlanetSelection(planet) {
-            // Only allow planet selection if explicitly enabled
-            if (!allowPlanetSelection) {
+            // Only allow planet selection if user has interacted and VR/tour has started
+            if (!userHasInteracted || !allowPlanetSelection || !vrStarted) {
                 console.log('Planet selection disabled - waiting for user interaction');
                 return;
             }
@@ -1092,6 +1093,7 @@
             
             // Enable planet selection for user interaction
             allowPlanetSelection = true;
+            userHasInteracted = true;
             
             // Clear any previously selected planet
             currentPlanet = null;
@@ -1568,6 +1570,7 @@
             
             // Enable planet selection for user interaction
             allowPlanetSelection = true;
+            userHasInteracted = true;
             
             // Start tour sequence
             await runTourSequence(currentTourLanguage);
