@@ -340,43 +340,20 @@
     </div>
 
     <div class="control-panel">
-        <h4>🎮 VR Controls</h4>
-        <p>Status: <span id="vrStatus" class="status">Loading...</span></p>
-        
-        <h4>🎬 Tour Controls</h4>
-        <button id="pauseBtn" class="test-btn" style="display: none;">⏸️ Pause Tour</button>
-        <button id="resumeBtn" class="test-btn" style="display: none;" disabled>▶️ Resume Tour</button>
-        <p class="info-text">Control the guided tour</p>
-        
-        <h4>🌍 Language</h4>
-        <select id="languageSelect">
-            <option value="en">🇺🇸 English</option>
-            <option value="hi">🇮🇳 हिंदी (Hindi)</option>
-            <option value="kn">🇮🇳 ಕನ್ನಡ (Kannada)</option>
-            <option value="ta">🇮🇳 தமிழ் (Tamil)</option>
-            <option value="te">🇮🇳 తెలుగు (Telugu)</option>
-            <option value="mr">🇮🇳 मराठी (Marathi)</option>
-            <option value="bn">🇮🇳 বাংলা (Bengali)</option>
-        </select>
-        
-        <h4>🎤 Voice Commands</h4>
-        <p class="info-text">Click any planet to hear its description in your selected language</p>
-        
-        <h4>📊 Current Planet</h4>
+        <h4>📍 Current Planet</h4>
         <p id="currentPlanet">None selected</p>
         
+        <!-- Tour Controls (only shown during guided tour) -->
+        <div id="tourControls" style="display: none;">
+            <h4>🎬 Tour Controls</h4>
+            <button id="pauseBtn" class="test-btn">⏸️ Pause</button>
+            <button id="resumeBtn" class="test-btn" style="display: none;" disabled>▶️ Resume</button>
+        </div>
+        
         <h4>🤖 AI Q&A</h4>
-        <button id="askQuestionBtn" class="test-btn">Ask a Question 🎤</button>
-        <p class="info-text">Ask any question about the Solar System using voice</p>
+        <button id="askQuestionBtn" class="test-btn">Ask a Question</button>
     </div>
 
-            <div class="info-panel">
-            <h4>ℹ️ Instructions</h4>
-            <p>• Click on planets to select them and hear description</p>
-            <p>• Planets automatically speak in your selected language</p>
-            <p>• Voice commands work in Hindi, Kannada, and other Indian languages</p>
-            <p>• Control panel is visible in VR mode (top right)</p>
-        </div>
 
     <a-scene background="color: #000011" style="display: none;">
         <!-- Space background -->
@@ -576,6 +553,7 @@
         let currentLanguage = 'en';
         let languageIndex = 0;
         let vrStarted = false; // Flag to prevent auto-speak before VR starts
+        let allowPlanetSelection = false; // Flag to prevent auto-selection
         const languages = [
             { code: 'en', name: '🇺🇸 English' },
             { code: 'hi', name: '🇮🇳 हिंदी' },
@@ -713,21 +691,30 @@
         }
 
         function handlePlanetSelection(planet) {
-                    const planetId = planet.getAttribute('data-planet-id');
-                    const planetName = planet.getAttribute('data-planet-name');
-                    const planetDesc = planet.getAttribute('data-planet-desc');
-                    
-                    currentPlanet = {
-                        id: planetId,
-                        name: planetName,
-                        description: planetDesc
-                    };
-                    
-                    // Update desktop display
-                    document.getElementById('currentPlanet').textContent = planetName;
-                    
-                    console.log('Selected planet:', planetName);
+            // Only allow planet selection if explicitly enabled
+            if (!allowPlanetSelection) {
+                console.log('Planet selection disabled - waiting for user interaction');
+                return;
+            }
+            
+            const planetId = planet.getAttribute('data-planet-id');
+            const planetName = planet.getAttribute('data-planet-name');
+            const planetDesc = planet.getAttribute('data-planet-desc');
+            
+            currentPlanet = {
+                id: planetId,
+                name: planetName,
+                description: planetDesc
+            };
+            
+            // Update desktop display
+            document.getElementById('currentPlanet').textContent = planetName;
+            
+            console.log('Selected planet:', planetName);
             console.log('Planet element:', planet);
+            
+            // Move camera closer to the selected planet
+            focusOnPlanet(planetId);
             
             // Check if this is a GLTF model or sphere
             const gltfModel = planet.querySelector('a-gltf-model');
@@ -1102,6 +1089,9 @@
             
             // Set VR flag to enable auto-speak (but don't auto-select any planet)
             vrStarted = true;
+            
+            // Enable planet selection for user interaction
+            allowPlanetSelection = true;
             
             // Clear any previously selected planet
             currentPlanet = null;
@@ -1572,6 +1562,13 @@
             document.getElementById('languageMenu').style.display = 'none';
             document.querySelector('a-scene').style.display = 'block';
             
+            // Show tour controls
+            document.getElementById('tourControls').style.display = 'block';
+            document.getElementById('pauseBtn').style.display = 'inline-block';
+            
+            // Enable planet selection for user interaction
+            allowPlanetSelection = true;
+            
             // Start tour sequence
             await runTourSequence(currentTourLanguage);
         }
@@ -1748,8 +1745,44 @@
                 resolve();
             });
         }
+        
+        // Move camera closer to a planet when it's focused
+        async function focusOnPlanet(planetId) {
+            const planetEl = document.querySelector(`[data-planet-id="${planetId}"]`);
+            if (!planetEl) return;
+            
+            const rig = document.querySelector('#rig');
+            if (!rig) return;
+            
+            const planetPos = planetEl.getAttribute('position');
+            const currentPos = rig.getAttribute('position');
+            
+            // Calculate position closer to the planet
+            const distance = Math.sqrt(
+                Math.pow(planetPos.x - currentPos.x, 2) + 
+                Math.pow(planetPos.y - currentPos.y, 2) + 
+                Math.pow(planetPos.z - currentPos.z, 2)
+            );
+            
+            // Move closer but not too close (maintain good viewing distance)
+            const targetDistance = Math.min(distance * 0.7, 15); // 70% closer, max 15 units
+            const direction = {
+                x: (planetPos.x - currentPos.x) / distance,
+                y: (planetPos.y - currentPos.y) / distance,
+                z: (planetPos.z - currentPos.z) / distance
+            };
+            
+            const targetPos = {
+                x: planetPos.x - direction.x * targetDistance,
+                y: Math.max(1.6, planetPos.y - direction.y * targetDistance), // Keep camera above ground
+                z: planetPos.z - direction.z * targetDistance
+            };
+            
+            console.log(`🎯 Focusing on ${planetId} - moving camera closer`);
+            await moveToPosition(rig, targetPos);
+        }
 
-        // Enhanced text-to-speech using only Sarvam TTS
+        // Enhanced text-to-speech using only Sarvam TTS with timeout
         async function speakText(text, language) {
             console.log(`🗣️ Speaking in ${language}: ${text.substring(0, 50)}...`);
             
@@ -1759,10 +1792,23 @@
             }
             
             try {
-                // Always use Sarvam TTS via ttsManager
+                // Always use Sarvam TTS via ttsManager with timeout
                 if (window.ttsManager && window.ttsManager.fetchServerTTS) {
                     console.log(`🎯 Using Sarvam TTS for ${language}`);
-                    await window.ttsManager.fetchServerTTS(text, language);
+                    
+                    // Create a timeout promise (max 20 seconds)
+                    const timeoutPromise = new Promise((_, reject) => {
+                        setTimeout(() => {
+                            reject(new Error('TTS timeout - narration took too long'));
+                        }, 20000); // 20 second timeout
+                    });
+                    
+                    // Race between TTS completion and timeout
+                    await Promise.race([
+                        window.ttsManager.fetchServerTTS(text, language),
+                        timeoutPromise
+                    ]);
+                    
                     console.log(`✅ Sarvam TTS completed for ${language}`);
                     return;
                 } else {
@@ -1771,7 +1817,11 @@
                 
             } catch (error) {
                 console.error('❌ Sarvam TTS error:', error);
-                console.log('❌ TTS failed - no fallback available');
+                if (error.message.includes('timeout')) {
+                    console.log('⏰ TTS timeout - continuing to next step');
+                } else {
+                    console.log('❌ TTS failed - no fallback available');
+                }
                 throw error;
             }
         }
