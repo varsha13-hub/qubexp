@@ -1,153 +1,57 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Human Anatomy Explorer - QubeXP</title>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Human Anatomy VR</title>
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    <script src="anatomy-scene.js"></script>
+    <script src="anatomy-data.js"></script>
+    <script src="tts.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Arial', sans-serif;
-            background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%);
-            color: white;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-        }
-
-        .container {
-            text-align: center;
-            max-width: 800px;
-            padding: 20px;
-        }
-
-        .icon {
-            font-size: 8rem;
-            margin-bottom: 2rem;
-            opacity: 0.7;
-        }
-
-        .title {
-            font-size: 3rem;
-            font-weight: bold;
-            margin-bottom: 1rem;
-            color: #00ff88;
-        }
-
-        .subtitle {
-            font-size: 1.5rem;
-            margin-bottom: 2rem;
-            color: #cccccc;
-        }
-
-        .description {
-            font-size: 1.2rem;
-            color: #aaaaaa;
-            line-height: 1.6;
-            margin-bottom: 3rem;
-        }
-
-        .features {
-            background: rgba(255, 255, 255, 0.1);
-            border: 2px solid rgba(0, 255, 136, 0.3);
-            border-radius: 20px;
-            padding: 2rem;
-            margin-bottom: 3rem;
-            backdrop-filter: blur(10px);
-        }
-
-        .features h3 {
-            color: #00ff88;
-            margin-bottom: 1rem;
-            font-size: 1.5rem;
-        }
-
-        .features ul {
-            list-style: none;
-            text-align: left;
-        }
-
-        .features li {
-            padding: 0.5rem 0;
-            color: #cccccc;
-        }
-
-        .features li::before {
-            content: '🔬 ';
-            color: #00ff88;
-        }
-
-        .back-btn {
-            background: linear-gradient(45deg, #00ff88, #00cc6a);
-            color: #1a1a2e;
-            border: none;
-            padding: 15px 30px;
-            border-radius: 25px;
-            font-size: 1.2rem;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            display: inline-block;
-        }
-
-        .back-btn:hover {
-            transform: scale(1.05);
-            box-shadow: 0 10px 20px rgba(0, 255, 136, 0.4);
-        }
-
-        .coming-soon {
-            background: linear-gradient(45deg, #ff6b6b, #ff8e8e);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 20px;
-            font-size: 1rem;
-            margin-bottom: 2rem;
-            display: inline-block;
-        }
+      body { margin: 0; font-family: sans-serif; }
+      #menu {
+        position: absolute; top: 20px; left: 20px;
+        background: rgba(0,0,0,0.7); color: white;
+        padding: 10px; border-radius: 8px;
+        z-index: 1000;
+      }
+      button { 
+        margin: 5px; padding: 8px 12px; border: none; border-radius: 5px; 
+        cursor: pointer; background: #4CAF50; color: white;
+        transition: background 0.3s;
+      }
+      button:hover { background: #45a049; }
+      h3 { margin-top: 0; color: #4CAF50; }
     </style>
-</head>
-<body>
-    <div class="container">
-        <div class="icon">🧬</div>
-        <h1 class="title">Human Anatomy Explorer</h1>
-        <p class="subtitle">Coming Soon to QubeXP</p>
-        
-        <div class="coming-soon">🚧 Under Development</div>
-        
-        <p class="description">
-            We're working hard to bring you an immersive 3D exploration of the human body. 
-            This module will feature interactive organ models, body system exploration, and 
-            educational content about human anatomy.
-        </p>
-
-        <div class="features">
-            <h3>Planned Features</h3>
-            <ul>
-                <li>Interactive 3D organ models with detailed structures</li>
-                <li>Body system exploration (circulatory, nervous, digestive, etc.)</li>
-                <li>Medical terminology and definitions</li>
-                <li>Health education and wellness content</li>
-                <li>Multilingual support for Indian languages</li>
-                <li>AI-powered Q&A about human anatomy</li>
-                <li>VR headset compatibility for immersive learning</li>
-                <li>Guided tours through different body systems</li>
-            </ul>
-        </div>
-
-        <a href="../" class="back-btn">← Back to QubeXP</a>
+  </head>
+  <body>
+    <div id="menu">
+      <h3>🦴 Select Body System</h3>
+      <button onclick="loadSystem('skeletal')">🦴 Skeletal</button>
+      <button onclick="loadSystem('circulatory')">❤️ Circulatory</button>
+      <button onclick="loadSystem('respiratory')">🫁 Respiratory</button>
+      <button onclick="loadSystem('digestive')">🍽️ Digestive</button>
+      <button onclick="loadSystem('nervous')">🧠 Nervous</button>
+      <button onclick="loadSystem('muscular')">💪 Muscular</button>
+      <button onclick="loadSystem('reproductive')">👶 Reproductive</button>
     </div>
 
-    <script>
-        console.log('🧬 Human Anatomy Explorer - Coming Soon');
-    </script>
-</body>
+    <a-scene background="color: #000011">
+      <a-assets>
+        <a-asset-item id="skeletonModel" src="models/skeleton.glb"></a-asset-item>
+      </a-assets>
+
+      <!-- 3D Model Container -->
+      <a-entity id="model" gltf-model="#skeletonModel" position="0 -1.5 -4" scale="1 1 1"></a-entity>
+
+      <!-- Camera Rig -->
+      <a-entity id="cameraRig" position="0 1.6 3">
+        <a-camera look-controls wasd-controls></a-camera>
+      </a-entity>
+
+      <!-- Lighting -->
+      <a-light type="ambient" color="#404040"></a-light>
+      <a-light type="directional" position="2 4 2" color="#ffffff" intensity="0.8"></a-light>
+    </a-scene>
+  </body>
 </html>
