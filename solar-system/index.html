@@ -336,10 +336,6 @@
             <h4>🎬 Guided Tour</h4>
             <button id="startTourBtn" class="tour-btn">Start Guided Tour</button>
             <p class="info-text">Experience a cinematic journey through the Solar System</p>
-            
-            <h4>🧪 Test TTS</h4>
-            <button id="testTTSBtn" class="test-btn">Test TTS in Selected Language</button>
-            <p class="info-text">Test text-to-speech in your chosen language</p>
     </div>
     </div>
 
@@ -368,10 +364,6 @@
         
         <h4>📊 Current Planet</h4>
         <p id="currentPlanet">None selected</p>
-        
-        <h4>🎤 Test TTS</h4>
-        <button id="testCurrentPlanetTTS" class="test-btn">Speak Current Planet</button>
-        <p class="info-text">Test TTS for the currently selected planet</p>
         
         <h4>🤖 AI Q&A</h4>
         <button id="askQuestionBtn" class="test-btn">Ask a Question 🎤</button>
@@ -785,18 +777,7 @@
                 console.log('Language changed to:', currentLanguage);
             });
             
-            // Test TTS button for current planet
-            const testCurrentPlanetTTSBtn = document.getElementById('testCurrentPlanetTTS');
-            if (testCurrentPlanetTTSBtn) {
-                testCurrentPlanetTTSBtn.addEventListener('click', () => {
-                if (currentPlanet) {
-                        console.log('Testing TTS for current planet:', currentPlanet.name);
-                    speakPlanetInfo();
-                } else {
-                        alert('Please select a planet first');
-                    }
-                });
-            }
+            // Test TTS button removed for cleaner UI
         }
         
         function cycleLanguage() {
@@ -1077,15 +1058,7 @@
                 });
             }
             
-            // Handle test TTS button
-            const testTTSBtn = document.getElementById('testTTSBtn');
-            if (testTTSBtn) {
-                testTTSBtn.addEventListener('click', () => {
-                    console.log('Test TTS button clicked!');
-                    unlockAudio(); // Unlock audio on user interaction
-                    testTTSInSelectedLanguage();
-                });
-            }
+            // Test TTS button removed for cleaner UI
             
             // Handle AI Q&A button
             const askQuestionBtn = document.getElementById('askQuestionBtn');
@@ -1484,6 +1457,9 @@
         let isTourActive = false;
         let tourPaused = false;
         let currentTourLanguage = 'en';
+        let currentTourStep = 0;
+        let tourSteps = [];
+        let pausedAtStep = 0;
         
         // Helper function to wait with pause support
         async function waitWithPauseCheck(duration) {
@@ -1503,10 +1479,17 @@
         function pauseTour() {
             console.log('⏸️ Pausing tour...');
             tourPaused = true;
+            pausedAtStep = currentTourStep;
             
-            // Pause TTS audio
-            if (window.ttsManager && window.ttsManager.pauseAudio) {
-                window.ttsManager.pauseAudio();
+            // Stop all TTS audio immediately
+            if (window.ttsManager && window.ttsManager.stopAudio) {
+                window.ttsManager.stopAudio();
+            }
+            
+            // Stop all animations
+            const rig = document.querySelector('#rig');
+            if (rig) {
+                rig.removeAttribute('animation__move');
             }
             
             // Update button states
@@ -1521,17 +1504,24 @@
             console.log('▶️ Resuming tour...');
             tourPaused = false;
             
-            // Resume TTS audio
-            if (window.ttsManager && window.ttsManager.resumeAudio) {
-                window.ttsManager.resumeAudio();
-            }
-            
             // Update button states
             document.getElementById('pauseBtn').style.display = 'inline-block';
             document.getElementById('resumeBtn').style.display = 'none';
             document.getElementById('resumeBtn').disabled = true;
             
             showTourStatus('Tour Resumed');
+            
+            // Resume tour from the paused step
+            resumeTourFromStep(pausedAtStep);
+        }
+        
+        // Resume tour from a specific step
+        async function resumeTourFromStep(step) {
+            console.log(`▶️ Resuming tour from step ${step}`);
+            currentTourStep = step;
+            
+            // Continue the tour sequence from where it was paused
+            await runTourSequence(currentTourLanguage);
         }
         
         // Add tour status indicator
@@ -1586,48 +1576,43 @@
             await runTourSequence(currentTourLanguage);
         }
 
-        // Run the complete tour sequence
+        // Run the complete tour sequence with step tracking
         async function runTourSequence(language) {
-            console.log(`🎬 Running tour in ${language}`);
+            console.log(`🎬 Running tour in ${language} from step ${currentTourStep}`);
+            
+            // Define tour steps
+            const steps = [
+                { name: 'Overview', action: () => showOverview(language) },
+                { name: 'Sun', action: () => visitPlanet('sun', language) },
+                { name: 'Mercury', action: () => visitPlanet('mercury', language) },
+                { name: 'Venus', action: () => visitPlanet('venus', language) },
+                { name: 'Earth', action: () => visitPlanet('earth', language) },
+                { name: 'Mars', action: () => visitPlanet('mars', language) },
+                { name: 'Jupiter', action: () => visitPlanet('jupiter', language) },
+                { name: 'Saturn', action: () => visitPlanet('saturn', language) },
+                { name: 'Uranus', action: () => visitPlanet('uranus', language) },
+                { name: 'Neptune', action: () => visitPlanet('neptune', language) },
+                { name: 'Pluto', action: () => visitPlanet('pluto', language) },
+                { name: 'Conclusion', action: () => showConclusion(language) }
+            ];
             
             try {
-                // 1. Overview
-                console.log('🎬 Tour Stage 1/11: Overview');
-                await showOverview(language);
+                // Start from current step
+                for (let i = currentTourStep; i < steps.length; i++) {
+                    // Check if tour is paused
+                    if (tourPaused) {
+                        console.log(`⏸️ Tour paused at step ${i}`);
+                        return;
+                    }
+                    
+                    currentTourStep = i;
+                    const step = steps[i];
+                    console.log(`🎬 Tour Stage ${i + 1}/${steps.length}: ${step.name}`);
+                    
+                    await step.action();
+                }
                 
-                // 2. Visit Sun
-                console.log('🎬 Tour Stage 2/11: Sun');
-                await visitPlanet('sun', language);
-                
-                // 3. Visit inner planets (terrestrial)
-                console.log('🎬 Tour Stage 3/11: Mercury');
-                await visitPlanet('mercury', language);
-                console.log('🎬 Tour Stage 4/11: Venus');
-                await visitPlanet('venus', language);
-                console.log('🎬 Tour Stage 5/11: Earth');
-                await visitPlanet('earth', language);
-                console.log('🎬 Tour Stage 6/11: Mars');
-                await visitPlanet('mars', language);
-                
-                // 4. Visit outer planets (gas giants)
-                console.log('🎬 Tour Stage 7/11: Jupiter');
-                await visitPlanet('jupiter', language);
-                console.log('🎬 Tour Stage 8/11: Saturn');
-                await visitPlanet('saturn', language);
-                console.log('🎬 Tour Stage 9/11: Uranus');
-                await visitPlanet('uranus', language);
-                console.log('🎬 Tour Stage 10/11: Neptune');
-                await visitPlanet('neptune', language);
-                
-                // 5. Visit dwarf planet
-                console.log('🎬 Tour Stage 11/11: Pluto');
-                await visitPlanet('pluto', language);
-                
-                // 6. Show conclusion
-                console.log('🎬 Tour Stage: Conclusion');
-                await showConclusion(language);
-                
-                // 7. Enable interactive mode
+                // Tour complete
                 console.log('🎬 Tour Complete! Enabling interactive mode...');
                 enableInteractiveMode();
                 

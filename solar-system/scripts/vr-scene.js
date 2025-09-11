@@ -542,7 +542,7 @@ class VRSceneController {
 
     navigateToPreviousPlanet() {
         if (!this.currentPlanet) {
-            this.selectPlanet(this.planets[0].id);
+            console.log('No planet selected, skipping navigation');
             return;
         }
 
@@ -553,7 +553,7 @@ class VRSceneController {
 
     navigateToNextPlanet() {
         if (!this.currentPlanet) {
-            this.selectPlanet(this.planets[0].id);
+            console.log('No planet selected, skipping navigation');
             return;
         }
 
