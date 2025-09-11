@@ -383,7 +383,7 @@
         <!-- Stars removed for cleaner planet visibility -->
         
         <!-- Sun - USING YOUR 3D MODEL -->
-        <a-entity position="0 0 -30" class="planet" data-planet-id="sun" data-planet-name="Sun" data-planet-desc="The Sun is the star at the center of our Solar System. It is a massive ball of hydrogen and helium that provides light and heat to all the planets." data-raycastable>
+        <a-entity position="0 0 -30" class="planet" data-planet-id="sun" data-planet-name="Sun" data-planet-desc="" data-raycastable>
             <!-- Your 3D Sun Model - Proper scale -->
             <a-entity gltf-model="#sun-model" position="0 0 0" scale="0.6 0.6 0.6"></a-entity>
             <!-- Fallback sphere (hidden by default, shown only if 3D model fails) -->
@@ -701,6 +701,12 @@
             const planetId = planet.getAttribute('data-planet-id');
             const planetName = planet.getAttribute('data-planet-name');
             const planetDesc = planet.getAttribute('data-planet-desc');
+            
+            // Skip planets with empty descriptions (like Sun)
+            if (!planetDesc || planetDesc.trim() === '') {
+                console.log(`Skipping ${planetName} - no description available`);
+                return;
+            }
             
             currentPlanet = {
                 id: planetId,
