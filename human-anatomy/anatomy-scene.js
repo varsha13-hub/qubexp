@@ -112,11 +112,11 @@ class AnatomySceneController {
         const text = narration[this.currentLanguage] || narration.en;
         console.log(`🗣️ Speaking in ${this.currentLanguage}: ${text.substring(0, 50)}...`);
         
-        // Use the TTS system
-        if (window.speak) {
-            window.speak(text, this.currentLanguage);
+        // Use the Sarvam TTS system
+        if (window.ttsManager) {
+            window.ttsManager.speak(text, this.currentLanguage);
         } else {
-            console.warn('⚠️ TTS not available');
+            console.warn('⚠️ TTS Manager not available');
         }
     }
 
