@@ -2062,38 +2062,126 @@
             };
         }
         
-        async function getAIAnswer(question) {
+        // Translation helper function
+        async function translateText(text, fromLang, toLang) {
             try {
-                const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                const res = await fetch('https://localhost:8040/api/translate', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer YOUR_OPENAI_API_KEY'
-                    },
-                    body: JSON.stringify({
-                        model: 'gpt-3.5-turbo',
-                        messages: [{
-                            role: 'system',
-                            content: 'You are a helpful astronomy expert. Answer questions about the Solar System, planets, space, and astronomy in a clear and educational way. Keep answers concise but informative.'
-                        }, {
-                            role: 'user',
-                            content: question
-                        }],
-                        temperature: 0.7,
-                        max_tokens: 200
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        text: text, 
+                        sourceLang: fromLang, 
+                        targetLang: toLang 
                     })
                 });
+                const data = await res.json();
+                return data.translatedText || text;
+            } catch (err) {
+                console.warn('Translation fallback:', err);
+                return text; // fallback to original
+            }
+        }
+
+        // Clean answer function to remove intro/outro fluff
+        function cleanAnswer(text) {
+            return text
+                .replace(/^Sure.*?:\s*/i, "")   // remove "Sure, here's..."
+                .replace(/Hope this helps.*$/i, "") // remove "Hope this helps"
+                .replace(/Here is.*?:\s*/i, "")
+                .replace(/^Of course.*?:\s*/i, "")
+                .replace(/^Certainly.*?:\s*/i, "")
+                .replace(/^Great question.*?:\s*/i, "")
+                .replace(/^I'd be happy.*?:\s*/i, "")
+                .replace(/^Let me.*?:\s*/i, "")
+                .replace(/^Absolutely.*?:\s*/i, "")
+                .replace(/^Yes.*?:\s*/i, "")
+                .replace(/^No problem.*?:\s*/i, "")
+                .replace(/^Here's.*?:\s*/i, "")
+                .replace(/^That's.*?:\s*/i, "")
+                .replace(/^Well.*?:\s*/i, "")
+                .replace(/^So.*?:\s*/i, "")
+                .replace(/^Now.*?:\s*/i, "")
+                .replace(/^First.*?:\s*/i, "")
+                .replace(/^To answer.*?:\s*/i, "")
+                .replace(/^In response.*?:\s*/i, "")
+                .replace(/^Regarding.*?:\s*/i, "")
+                .replace(/^About.*?:\s*/i, "")
+                .replace(/^Concerning.*?:\s*/i, "")
+                .replace(/^As for.*?:\s*/i, "")
+                .replace(/^When it comes to.*?:\s*/i, "")
+                .replace(/^Speaking of.*?:\s*/i, "")
+                .replace(/^In terms of.*?:\s*/i, "")
+                .replace(/^With regard to.*?:\s*/i, "")
+                .replace(/^In relation to.*?:\s*/i, "")
+                .replace(/^In connection with.*?:\s*/i, "")
+                .replace(/^In the context of.*?:\s*/i, "")
+                .replace(/^In the case of.*?:\s*/i, "")
+                .replace(/^In the matter of.*?:\s*/i, "")
+                .replace(/^In the subject of.*?:\s*/i, "")
+                .replace(/^In the topic of.*?:\s*/i, "")
+                .replace(/^In the field of.*?:\s*/i, "")
+                .replace(/^In the area of.*?:\s*/i, "")
+                .replace(/^In the realm of.*?:\s*/i, "")
+                .replace(/^In the world of.*?:\s*/i, "")
+                .replace(/^In the universe of.*?:\s*/i, "")
+                .replace(/^In the cosmos of.*?:\s*/i, "")
+                .replace(/^In the space of.*?:\s*/i, "")
+                .replace(/^In the galaxy of.*?:\s*/i, "")
+                .replace(/^In the solar system of.*?:\s*/i, "")
+                .replace(/^In the planetary system of.*?:\s*/i, "")
+                .replace(/^In the celestial system of.*?:\s*/i, "")
+                .replace(/^In the astronomical system of.*?:\s*/i, "")
+                .replace(/^In the cosmic system of.*?:\s*/i, "")
+                .replace(/^In the stellar system of.*?:\s*/i, "")
+                .trim();
+        }
+
+        async function getAIAnswer(question, lang) {
+            try {
+                const currentLanguage = lang || localStorage.getItem('selectedLanguage') || 'en';
+                console.log(`🤖 AI Q&A pipeline: "${question}" in ${currentLanguage}`);
+
+                // 1. Translate question to English (if not already English)
+                let translatedQ = question;
+                if (currentLanguage !== 'en') {
+                    console.log(`🌐 Translating question to English...`);
+                    translatedQ = await translateText(question, currentLanguage, 'en');
+                    console.log(`🌐 Translated: "${question}" → "${translatedQ}"`);
+                }
+
+                // 2. Send to Gemini
+                console.log(`🤖 Sending to Gemini: "${translatedQ}"`);
+                const geminiRes = await fetch('https://localhost:8040/api/ai/gemini-chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question: translatedQ })
+                });
                 
-                if (!response.ok) {
-                    throw new Error(`OpenAI API error: ${response.status}`);
+                if (!geminiRes.ok) {
+                    throw new Error(`Gemini API error: ${geminiRes.status}`);
                 }
                 
-                const data = await response.json();
-                return data.choices[0].message.content.trim();
-                
-            } catch (error) {
-                console.error('❌ OpenAI API error:', error);
-                throw error;
+                const geminiData = await geminiRes.json();
+                let answerEn = geminiData.answer || "Sorry, I don't have an answer.";
+                console.log(`🤖 Gemini response: "${answerEn}"`);
+
+                // 3. Clean the answer
+                answerEn = cleanAnswer(answerEn);
+                console.log(`🧹 Cleaned answer: "${answerEn}"`);
+
+                // 4. Translate answer back to user's language (if not English)
+                let finalAnswer = answerEn;
+                if (currentLanguage !== 'en') {
+                    console.log(`🌐 Translating answer to ${currentLanguage}...`);
+                    finalAnswer = await translateText(answerEn, 'en', currentLanguage);
+                    console.log(`🌐 Final answer: "${finalAnswer}"`);
+                }
+
+                return finalAnswer;
+
+            } catch (err) {
+                console.error('❌ AI Q&A failed:', err);
+                return 'Sorry, I couldn\'t get an answer right now.';
             }
         }
         
@@ -2102,9 +2190,23 @@
             console.log(`🗣️ Speaking AI answer in ${selectedLang}: ${answer.substring(0, 50)}...`);
             
             try {
+                // Split long answers into chunks to prevent TTS timeout
+                const MAX_TTS_CHARS = 400;
+                let chunks = [];
+                for (let i = 0; i < answer.length; i += MAX_TTS_CHARS) {
+                    chunks.push(answer.slice(i, i + MAX_TTS_CHARS));
+                }
+                
                 if (window.ttsManager && window.ttsManager.fetchServerTTS) {
-                    await window.ttsManager.fetchServerTTS(answer, selectedLang);
-                    console.log('✅ AI answer spoken successfully');
+                    // Speak each chunk separately
+                    for (const chunk of chunks) {
+                        await window.ttsManager.fetchServerTTS(chunk, selectedLang);
+                        // Small delay between chunks for better listening experience
+                        if (chunks.length > 1) {
+                            await new Promise(resolve => setTimeout(resolve, 500));
+                        }
+                    }
+                    console.log('✅ AI answer spoken successfully in chunks');
                 } else {
                     throw new Error('TTS Manager not available');
                 }

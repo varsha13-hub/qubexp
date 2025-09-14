@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Indus Valley Civilization VR - QubeXP</title>
+    
+    <!-- A-Frame for VR -->
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    
+    <!-- THREE.js compatibility shim -->
+    <script>
+        if (typeof THREE !== 'undefined') {
+            if (!THREE.Math && THREE.MathUtils) {
+                THREE.Math = THREE.Math || {}
+                THREE.Math.degToRad = THREE.MathUtils.degToRad;
+                THREE.Math.radToDeg = THREE.MathUtils.radToDeg;
+            }
+        }
+    </script>
+    
+    <!-- A-Frame Extras for GLTF loader -->
+    <script src="https://unpkg.com/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
+    
+    <style>
+        body { 
+            margin: 0; 
+            padding: 0; 
+            font-family: Arial, sans-serif;
+        }
+        
+        a-scene { 
+            width: 100%; 
+            height: 100vh; 
+        }
+        
+        .loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #2c1810 0%, #8b4513 50%, #d2691e 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            color: #ffffff;
+        }
+        
+        .loading h2 {
+            margin-bottom: 20px;
+            color: #f4a460;
+        }
+        
+        .control-panel {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            color: white;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+        
+        .control-btn {
+            background: #8b4513;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .control-btn:hover {
+            background: #a0522d;
+        }
+        
+        .control-btn.active {
+            background: #f4a460;
+            color: #2c1810;
+        }
+        
+        .language-selector {
+            margin: 10px 0;
+        }
+        
+        .language-selector select {
+            background: #2c1810;
+            color: white;
+            border: 1px solid #8b4513;
+            padding: 5px;
+            border-radius: 3px;
+        }
+        
+        .info-panel {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 15px;
+            border-radius: 10px;
+            color: white;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .info-panel h3 {
+            color: #f4a460;
+            margin-bottom: 10px;
+        }
+        
+        .site-marker {
+            position: absolute;
+            background: rgba(244, 164, 96, 0.8);
+            border: 2px solid #8b4513;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .site-marker:hover {
+            transform: scale(1.2);
+            background: rgba(244, 164, 96, 1);
+        }
+        
+        .site-marker::after {
+            content: attr(data-site);
+            position: absolute;
+            top: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .site-marker:hover::after {
+            opacity: 1;
+        }
+        
+        .voice-controls {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            z-index: 1000;
+        }
+        
+        .voice-btn {
+            background: #8b4513;
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 20px;
+            width: 60px;
+            height: 60px;
+            transition: all 0.3s ease;
+        }
+        
+        .voice-btn:hover {
+            background: #a0522d;
+            transform: scale(1.1);
+        }
+        
+        .voice-btn.listening {
+            background: #ff6b6b;
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div class="loading" id="loadingScreen">
+        <h2>🏛️ Indus Valley Civilization</h2>
+        <p>Loading ancient wonders...</p>
+        <div style="margin-top: 20px;">
+            <div style="width: 200px; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; overflow: hidden;">
+                <div id="loadingBar" style="width: 0%; height: 100%; background: #f4a460; transition: width 0.3s ease;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Control Panel -->
+    <div class="control-panel">
+        <h3 style="margin: 0 0 10px 0; color: #f4a460;">🏛️ Indus Valley</h3>
+        <button class="control-btn" onclick="startGuidedTour()">🎬 Start Tour</button>
+        <button class="control-btn" onclick="toggleExploration()">🔍 Explore</button>
+        <button class="control-btn" onclick="showOverview()">🌍 Overview</button>
+        
+        <div class="language-selector">
+            <select id="languageSelect" onchange="changeLanguage(this.value)">
+                <option value="en">English</option>
+                <option value="hi">हिन्दी</option>
+                <option value="kn">ಕನ್ನಡ</option>
+                <option value="ta">தமிழ்</option>
+                <option value="te">తెలుగు</option>
+                <option value="bn">বাংলা</option>
+            </select>
+        </div>
+        
+        <button class="control-btn" onclick="toggleVR()">🥽 VR Mode</button>
+    </div>
+
+    <!-- Voice Controls -->
+    <div class="voice-controls">
+        <button class="voice-btn" id="voiceBtn" onclick="toggleVoiceRecognition()" title="Ask about Indus Valley">
+            🎤
+        </button>
+    </div>
+
+    <!-- Info Panel -->
+    <div class="info-panel" id="infoPanel">
+        <h3 id="infoTitle">Welcome to Indus Valley Civilization</h3>
+        <p id="infoText">Click on archaeological sites to learn about this ancient civilization that flourished around 2600-1900 BCE.</p>
+    </div>
+
+    <!-- A-Frame Scene -->
+    <a-scene 
+        id="indusScene"
+        vr-mode-ui="enabled: true"
+        embedded
+        background="color: #87CEEB"
+        fog="type: linear; color: #87CEEB; near: 10; far: 100"
+        renderer="antialias: true; colorManagement: true"
+        loading-screen="enabled: false">
+        
+        <!-- Assets -->
+        <a-assets>
+            <!-- Placeholder textures for now - will be replaced with actual 3D models -->
+            <img id="groundTexture" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JvdW5kIiB3aWR0aD0iNTAiIGhlaWdodD0iNTAiIHBhdHRlcm5Vbml0cz0idXNlclNwYWNlT25Vc2UiPjxyZWN0IHdpZHRoPSI1MCIgaGVpZ2h0PSI1MCIgZmlsbD0iIzhiNDUxMyIvPjxyZWN0IHdpZHRoPSIyNSIgaGVpZ2h0PSIyNSIgZmlsbD0iI2QyNjkxZSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNncm91bmQpIi8+PC9zdmc+">
+            <img id="brickTexture" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjU2IiBoZWlnaHQ9IjEyOCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjU2IiBoZWlnaHQ9IjEyOCIgZmlsbD0iI2QyNjkxZSIvPjxyZWN0IHg9IjEyOCIgd2lkdGg9IjEyOCIgaGVpZ2h0PSI2NCIgZmlsbD0iI2EwNTIyZCIvPjxyZWN0IHk9IjY0IiB3aWR0aD0iMTI4IiBoZWlnaHQ9IjY0IiBmaWxsPSIjYTU1MjJkIi8+PC9zdmc+">
+        </a-assets>
+
+        <!-- Camera Rig -->
+        <a-entity id="cameraRig" position="0 1.6 0">
+            <a-camera 
+                id="camera"
+                look-controls="enabled: true"
+                wasd-controls="enabled: true"
+                cursor="rayOrigin: mouse"
+                raycaster="objects: .clickable">
+            </a-camera>
+        </a-entity>
+
+        <!-- Ground -->
+        <a-plane 
+            id="ground"
+            position="0 0 0" 
+            rotation="-90 0 0" 
+            width="200" 
+            height="200" 
+            src="#groundTexture"
+            repeat="10 10">
+        </a-plane>
+
+        <!-- Mohenjo-daro (Main City) -->
+        <a-entity id="mohenjo-daro" class="clickable" position="0 0 -20">
+            <!-- Great Bath -->
+            <a-box 
+                position="0 0.5 0" 
+                width="12" 
+                height="1" 
+                depth="7" 
+                src="#brickTexture"
+                color="#8b4513"
+                animation="property: rotation; to: 0 360 0; dur: 20000; loop: true; easing: linear">
+            </a-box>
+            
+            <!-- Citadel -->
+            <a-box 
+                position="0 2 0" 
+                width="8" 
+                height="4" 
+                depth="6" 
+                src="#brickTexture"
+                color="#a0522d">
+            </a-box>
+            
+            <!-- Text Label -->
+            <a-text 
+                value="Mohenjo-daro\nGreat Bath & Citadel" 
+                position="0 6 0" 
+                align="center" 
+                color="#f4a460"
+                width="8">
+            </a-text>
+        </a-entity>
+
+        <!-- Harappa -->
+        <a-entity id="harappa" class="clickable" position="-30 0 -15">
+            <!-- Granary -->
+            <a-cylinder 
+                position="0 1.5 0" 
+                radius="3" 
+                height="3" 
+                src="#brickTexture"
+                color="#8b4513">
+            </a-cylinder>
+            
+            <!-- Text Label -->
+            <a-text 
+                value="Harappa\nGranary" 
+                position="0 4 0" 
+                align="center" 
+                color="#f4a460"
+                width="6">
+            </a-text>
+        </a-entity>
+
+        <!-- Dholavira -->
+        <a-entity id="dholavira" class="clickable" position="25 0 -10">
+            <!-- Water Reservoir -->
+            <a-box 
+                position="0 0.5 0" 
+                width="8" 
+                height="1" 
+                depth="4" 
+                color="#4169E1"
+                opacity="0.7">
+            </a-box>
+            
+            <!-- Text Label -->
+            <a-text 
+                value="Dholavira\nWater Management" 
+                position="0 3 0" 
+                align="center" 
+                color="#f4a460"
+                width="6">
+            </a-text>
+        </a-entity>
+
+        <!-- Lothal (Port City) -->
+        <a-entity id="lothal" class="clickable" position="0 0 30">
+            <!-- Dock -->
+            <a-box 
+                position="0 0.5 0" 
+                width="10" 
+                height="1" 
+                depth="3" 
+                src="#brickTexture"
+                color="#8b4513">
+            </a-box>
+            
+            <!-- Text Label -->
+            <a-text 
+                value="Lothal\nAncient Port" 
+                position="0 3 0" 
+                align="center" 
+                color="#f4a460"
+                width="6">
+            </a-text>
+        </a-entity>
+
+        <!-- Kalibangan -->
+        <a-entity id="kalibangan" class="clickable" position="-20 0 20">
+            <!-- Fire Altars -->
+            <a-cylinder 
+                position="0 0.5 0" 
+                radius="1" 
+                height="1" 
+                color="#ff6b6b">
+            </a-cylinder>
+            <a-cylinder 
+                position="2 0.5 0" 
+                radius="1" 
+                height="1" 
+                color="#ff6b6b">
+            </a-cylinder>
+            
+            <!-- Text Label -->
+            <a-text 
+                value="Kalibangan\nFire Altars" 
+                position="0 3 0" 
+                align="center" 
+                color="#f4a460"
+                width="6">
+            </a-text>
+        </a-entity>
+
+        <!-- Lighting -->
+        <a-light type="ambient" color="#87CEEB" intensity="0.4"></a-light>
+        <a-light type="directional" position="10 10 5" color="#ffffff" intensity="0.8"></a-light>
+
+        <!-- Sky -->
+        <a-sky color="#87CEEB"></a-sky>
+    </a-scene>
+
+    <!-- Scripts -->
+    <script src="scripts/indus-data.js"></script>
+    <script src="scripts/indus-scene.js"></script>
+    <script src="scripts/tts.js"></script>
+    <script src="scripts/voice.js"></script>
+    
+    <script>
+        // Global variables
+        let currentLanguage = 'en';
+        let isTourActive = false;
+        let isExplorationMode = false;
+        let ttsManager;
+        let voiceManager;
+        let indusData;
+
+        // Initialize the experience
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log('🏛️ Indus Valley VR Experience Loading...');
+            
+            // Initialize managers
+            ttsManager = new TTSManager();
+            voiceManager = new VoiceManager();
+            
+            // Load Indus Valley data
+            indusData = new IndusData();
+            await indusData.loadData();
+            
+            // Initialize scene
+            const scene = new IndusScene();
+            scene.initialize();
+            
+            // Hide loading screen
+            setTimeout(() => {
+                document.getElementById('loadingScreen').classList.add('hidden');
+                updateInfo('Welcome to Indus Valley Civilization', 'Explore the ancient cities and learn about this remarkable civilization. Click on sites or use voice commands to learn more.');
+            }, 2000);
+            
+            console.log('✅ Indus Valley VR Experience Ready!');
+        });
+
+        // Tour and exploration functions
+        function startGuidedTour() {
+            isTourActive = true;
+            isExplorationMode = false;
+            console.log('🎬 Starting Indus Valley Guided Tour');
+            // Tour implementation will be added
+        }
+
+        function toggleExploration() {
+            isExplorationMode = !isExplorationMode;
+            isTourActive = false;
+            console.log('🔍 Exploration mode:', isExplorationMode ? 'ON' : 'OFF');
+        }
+
+        function showOverview() {
+            if (isTourActive) {
+                // Move camera to overview position
+                moveToPosition({x: 0, y: 15, z: 30}, 3000);
+                updateInfo('Indus Valley Overview', 'This ancient civilization spanned across modern-day Pakistan and northwest India, with major cities like Mohenjo-daro and Harappa.');
+            }
+        }
+
+        function changeLanguage(lang) {
+            currentLanguage = lang;
+            console.log('🌐 Language changed to:', lang);
+            // Update UI and reload content in new language
+        }
+
+        function toggleVR() {
+            const scene = document.querySelector('a-scene');
+            if (scene.is('vr-mode')) {
+                scene.exitVR();
+            } else {
+                scene.enterVR();
+            }
+        }
+
+        function toggleVoiceRecognition() {
+            if (voiceManager) {
+                voiceManager.toggle();
+            }
+        }
+
+        function updateInfo(title, text) {
+            document.getElementById('infoTitle').textContent = title;
+            document.getElementById('infoText').textContent = text;
+        }
+
+        // Smooth camera movement
+        function moveToPosition(targetPosition, duration = 3000, onComplete) {
+            const cameraRig = document.querySelector("#cameraRig");
+            if (!cameraRig) return;
+            
+            const startPos = cameraRig.object3D.position.clone();
+            const endPos = new THREE.Vector3(targetPosition.x, targetPosition.y, targetPosition.z);
+            let startTime = null;
+            
+            function animate(time) {
+                if (!startTime) startTime = time;
+                const elapsed = time - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                
+                cameraRig.object3D.position.lerpVectors(startPos, endPos, progress);
+                
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                } else {
+                    console.log("📷 Camera move finished:", endPos);
+                    if (typeof onComplete === "function") {
+                        onComplete();
+                    }
+                }
+            }
+            requestAnimationFrame(animate);
+        }
+
+        // Site click handlers
+        document.addEventListener('click', (event) => {
+            if (event.target.classList.contains('clickable')) {
+                const siteId = event.target.id;
+                console.log('🏛️ Site clicked:', siteId);
+                // Handle site selection
+            }
+        });
+    </script>
+</body>
+</html>

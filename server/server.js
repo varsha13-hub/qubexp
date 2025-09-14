@@ -24,12 +24,13 @@ app.use((req, res, next) => {
   next();
 });
 
-// Static files (for PWA assets)
-app.use(express.static(path.join(__dirname, '../client')));
+// Static files - serve from project root to include all modules
+app.use(express.static(path.join(__dirname, '..')));
 
 // API Routes
 app.use('/api/health', require('./src/routes/health'));
 app.use('/api/planets', require('./src/routes/planets'));
+app.use('/api/indus-valley', require('./src/routes/indus-valley'));
 app.use('/api/translate', require('./src/routes/translate'));
 app.use('/api/tts', require('./src/routes/tts'));
 // AI endpoints for working-vr.html
@@ -45,13 +46,32 @@ app.get('/service-worker.js', (req, res) => {
   res.sendFile(path.join(__dirname, '../client/service-worker.js'));
 });
 
-// Main route - serve working-vr.html as the main experience
+// Main route - serve index.html as the main experience
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '../client/working-vr.html'));
+  res.sendFile(path.join(__dirname, '../index.html'));
 });
 
+// Solar System routes
+app.get('/solar-system', (req, res) => {
+  res.sendFile(path.join(__dirname, '../solar-system/index.html'));
+});
+
+app.get('/solar-system/', (req, res) => {
+  res.sendFile(path.join(__dirname, '../solar-system/index.html'));
+});
+
+// Indus Valley routes
+app.get('/indus-valley', (req, res) => {
+  res.sendFile(path.join(__dirname, '../indus-valley/index.html'));
+});
+
+app.get('/indus-valley/', (req, res) => {
+  res.sendFile(path.join(__dirname, '../indus-valley/index.html'));
+});
+
+// Legacy working-vr route
 app.get('/working-vr', (req, res) => {
-  res.sendFile(path.join(__dirname, '../client/working-vr.html'));
+  res.sendFile(path.join(__dirname, '../solar-system/working-vr.html'));
 });
 
 // Error handling middleware

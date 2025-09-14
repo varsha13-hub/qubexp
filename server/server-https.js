@@ -38,8 +38,11 @@ app.use(express.static(path.join(__dirname, '..')));
 // API Routes
 app.use('/api/health', require('./src/routes/health'));
 app.use('/api/planets', require('./src/routes/planets'));
+app.use('/api/indus-valley', require('./src/routes/indus-valley'));
 app.use('/api/translate', require('./src/routes/translate'));
 app.use('/api/tts', require('./src/routes/tts'));
+// AI endpoints
+app.use('/api/ai', require('./src/routes/ai-endpoints'));
 
 // Serve PWA manifest (if exists in solar-system)
 app.get('/manifest.json', (req, res) => {
@@ -66,8 +69,26 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../index.html'));
 });
 
-// Solar system VR route
-app.get('/solar-system/vr', (req, res) => {
+// Solar System routes
+app.get('/solar-system', (req, res) => {
+  res.sendFile(path.join(__dirname, '../solar-system/index.html'));
+});
+
+app.get('/solar-system/', (req, res) => {
+  res.sendFile(path.join(__dirname, '../solar-system/index.html'));
+});
+
+// Indus Valley routes
+app.get('/indus-valley', (req, res) => {
+  res.sendFile(path.join(__dirname, '../indus-valley/index.html'));
+});
+
+app.get('/indus-valley/', (req, res) => {
+  res.sendFile(path.join(__dirname, '../indus-valley/index.html'));
+});
+
+// Legacy working-vr route
+app.get('/working-vr', (req, res) => {
   res.sendFile(path.join(__dirname, '../solar-system/working-vr.html'));
 });
 

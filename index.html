@@ -75,23 +75,30 @@
         }
 
         .modules-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 2rem;
+            display: flex;
+            flex-direction: row;
+            gap: 1.5rem;
             margin-top: 2rem;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+            justify-content: center;
         }
 
         .module-card {
             background: rgba(255, 255, 255, 0.1);
             border: 2px solid rgba(0, 255, 136, 0.3);
             border-radius: 20px;
-            padding: 2rem;
+            padding: 1.5rem;
             text-align: center;
             transition: all 0.3s ease;
             cursor: pointer;
             backdrop-filter: blur(10px);
             position: relative;
             overflow: hidden;
+            flex: 1;
+            max-width: 450px;
+            min-width: 400px;
         }
 
         .module-card:hover {
@@ -116,34 +123,35 @@
         }
 
         .module-icon {
-            font-size: 4rem;
-            margin-bottom: 1rem;
+            font-size: 3rem;
+            margin-bottom: 0.8rem;
             display: block;
         }
 
         .module-title {
-            font-size: 1.8rem;
+            font-size: 1.5rem;
             font-weight: bold;
-            margin-bottom: 1rem;
+            margin-bottom: 0.8rem;
             color: #00ff88;
         }
 
         .module-description {
-            font-size: 1rem;
+            font-size: 0.9rem;
             color: #cccccc;
-            line-height: 1.6;
-            margin-bottom: 1.5rem;
+            line-height: 1.5;
+            margin-bottom: 1rem;
         }
 
         .module-features {
             list-style: none;
             text-align: left;
-            margin-bottom: 1.5rem;
+            margin-bottom: 1rem;
         }
 
         .module-features li {
-            padding: 0.3rem 0;
+            padding: 0.2rem 0;
             color: #aaaaaa;
+            font-size: 0.85rem;
         }
 
         .module-features li::before {
@@ -155,9 +163,9 @@
             background: linear-gradient(45deg, #00ff88, #00cc6a);
             color: #1a1a2e;
             border: none;
-            padding: 12px 30px;
-            border-radius: 25px;
-            font-size: 1.1rem;
+            padding: 10px 25px;
+            border-radius: 20px;
+            font-size: 1rem;
             font-weight: bold;
             cursor: pointer;
             transition: all 0.3s ease;
@@ -187,6 +195,13 @@
             font-size: 0.9rem;
         }
 
+        @media (max-width: 1200px) {
+            .modules-grid {
+                grid-template-columns: repeat(2, 1fr);
+                max-width: 900px;
+            }
+        }
+
         @media (max-width: 768px) {
             .logo {
                 font-size: 2.5rem;
@@ -199,6 +214,7 @@
             .modules-grid {
                 grid-template-columns: 1fr;
                 gap: 1.5rem;
+                max-width: 400px;
             }
             
             .module-card {
@@ -231,6 +247,23 @@
                     <li>Full VR headset compatibility</li>
                 </ul>
                 <a href="solar-system/" class="enter-btn">🚀 Enter Solar System</a>
+            </div>
+
+            <!-- Indus Valley Civilization Module -->
+            <div class="module-card">
+                <span class="module-icon">🏛️</span>
+                <h2 class="module-title">Indus Valley Civilization</h2>
+                <p class="module-description">
+                    Journey through ancient cities like Mohenjo-daro and Harappa, exploring the world's earliest urban civilization with AI-powered Q&A.
+                </p>
+                <ul class="module-features">
+                    <li>Interactive 3D archaeological sites</li>
+                    <li>Guided tour of ancient cities</li>
+                    <li>AI Q&A in multiple Indian languages</li>
+                    <li>Historical artifacts and timeline</li>
+                    <li>Coming soon...</li>
+                </ul>
+                <button class="enter-btn coming-soon">🏛️ Coming Soon</button>
             </div>
 
             <!-- Human Anatomy Module -->
@@ -286,6 +319,8 @@
         function enterModule(moduleName) {
             if (moduleName === 'solar-system') {
                 window.location.href = 'solar-system/';
+            } else if (moduleName === 'indus-valley') {
+                window.location.href = 'indus-valley/';
             }
         }
 
