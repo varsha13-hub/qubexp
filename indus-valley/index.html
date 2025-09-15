@@ -253,7 +253,24 @@
         
         <!-- Assets -->
         <a-assets>
-            <!-- Placeholder textures for now - will be replaced with actual 3D models -->
+            <!-- 3D Models from Harappa Mohenjo-daro -->
+            <a-asset-item id="ancientHouses" src="harappa mohenjodaro/models/ancient_houses.glb"></a-asset-item>
+            <a-asset-item id="mohenjoDaroEntrance" src="harappa mohenjodaro/models/entrance_-_the_city_of_mohenjo_daro.glb"></a-asset-item>
+            <a-asset-item id="germanRiver" src="harappa mohenjodaro/models/german_river.glb"></a-asset-item>
+            <a-asset-item id="mapleTree" src="harappa mohenjodaro/models/maple_tree.glb"></a-asset-item>
+            <a-asset-item id="marSabaMonastery" src="harappa mohenjodaro/models/mar_saba_monastery__-rawscan.glb"></a-asset-item>
+            <a-asset-item id="ancientRome" src="harappa mohenjodaro/models/massive_scale_model_of_ancient_rome.glb"></a-asset-item>
+            <a-asset-item id="mohenjoDaroModel" src="harappa mohenjodaro/models/mohenjo-daro_indus_valley_civilization.glb"></a-asset-item>
+            <a-asset-item id="oldVillageHouse" src="harappa mohenjodaro/models/old_village_house_-_indian_game_asset.glb"></a-asset-item>
+            <a-asset-item id="nimrudPanels" src="harappa mohenjodaro/models/panels_3__4_nimrud_nw_palace.glb"></a-asset-item>
+            <a-asset-item id="grassSoil" src="harappa mohenjodaro/models/rough_dry_short_grass_soil.glb"></a-asset-item>
+            <a-asset-item id="stoneWall" src="harappa mohenjodaro/models/seamless_texture_-_stone_wall.glb"></a-asset-item>
+            <a-asset-item id="streamingRiver" src="harappa mohenjodaro/models/streaming_river.glb"></a-asset-item>
+            <a-asset-item id="templeRuin" src="harappa mohenjodaro/models/temple_ruin_aquarium_decoration_-_photoscan.glb"></a-asset-item>
+            <a-asset-item id="greatBath" src="harappa mohenjodaro/models/the_great_bath.glb"></a-asset-item>
+            <a-asset-item id="waterAnimation" src="harappa mohenjodaro/models/water_animation.glb"></a-asset-item>
+            
+            <!-- Fallback textures -->
             <img id="groundTexture" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JvdW5kIiB3aWR0aD0iNTAiIGhlaWdodD0iNTAiIHBhdHRlcm5Vbml0cz0idXNlclNwYWNlT25Vc2UiPjxyZWN0IHdpZHRoPSI1MCIgaGVpZ2h0PSI1MCIgZmlsbD0iIzhiNDUxMyIvPjxyZWN0IHdpZHRoPSIyNSIgaGVpZ2h0PSIyNSIgZmlsbD0iI2QyNjkxZSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNncm91bmQpIi8+PC9zdmc+">
             <img id="brickTexture" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjU2IiBoZWlnaHQ9IjEyOCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjU2IiBoZWlnaHQ9IjEyOCIgZmlsbD0iI2QyNjkxZSIvPjxyZWN0IHg9IjEyOCIgd2lkdGg9IjEyOCIgaGVpZ2h0PSI2NCIgZmlsbD0iI2EwNTIyZCIvPjxyZWN0IHk9IjY0IiB3aWR0aD0iMTI4IiBoZWlnaHQ9IjY0IiBmaWxsPSIjYTU1MjJkIi8+PC9zdmc+">
         </a-assets>
@@ -269,7 +286,15 @@
             </a-camera>
         </a-entity>
 
-        <!-- Ground -->
+        <!-- Ground with Grass Soil Texture -->
+        <a-entity 
+            gltf-model="#grassSoil"
+            position="0 0 0"
+            scale="20 20 20"
+            rotation="-90 0 0">
+        </a-entity>
+        
+        <!-- Additional Ground Plane for Fallback -->
         <a-plane 
             id="ground"
             position="0 0 0" 
@@ -277,36 +302,51 @@
             width="200" 
             height="200" 
             src="#groundTexture"
-            repeat="10 10">
+            repeat="10 10"
+            opacity="0.3">
         </a-plane>
 
         <!-- Mohenjo-daro (Main City) -->
         <a-entity id="mohenjo-daro" class="clickable" position="0 0 -20">
-            <!-- Great Bath -->
-            <a-box 
-                position="0 0.5 0" 
-                width="12" 
-                height="1" 
-                depth="7" 
-                src="#brickTexture"
-                color="#8b4513"
-                animation="property: rotation; to: 0 360 0; dur: 20000; loop: true; easing: linear">
-            </a-box>
+            <!-- Main Mohenjo-daro Model -->
+            <a-entity 
+                gltf-model="#mohenjoDaroModel"
+                position="0 0 0"
+                scale="2 2 2"
+                animation="property: rotation; to: 0 360 0; dur: 60000; loop: true; easing: linear">
+            </a-entity>
             
-            <!-- Citadel -->
-            <a-box 
-                position="0 2 0" 
-                width="8" 
-                height="4" 
-                depth="6" 
-                src="#brickTexture"
-                color="#a0522d">
-            </a-box>
+            <!-- Great Bath Model -->
+            <a-entity 
+                gltf-model="#greatBath"
+                position="0 0 0"
+                scale="1.5 1.5 1.5">
+            </a-entity>
+            
+            <!-- Ancient Houses -->
+            <a-entity 
+                gltf-model="#ancientHouses"
+                position="5 0 3"
+                scale="1.2 1.2 1.2">
+            </a-entity>
+            
+            <a-entity 
+                gltf-model="#ancientHouses"
+                position="-5 0 3"
+                scale="1.2 1.2 1.2">
+            </a-entity>
+            
+            <!-- Temple Ruins -->
+            <a-entity 
+                gltf-model="#templeRuin"
+                position="0 0 8"
+                scale="1.5 1.5 1.5">
+            </a-entity>
             
             <!-- Text Label -->
             <a-text 
-                value="Mohenjo-daro\nGreat Bath & Citadel" 
-                position="0 6 0" 
+                value="Mohenjo-daro\nAncient City" 
+                position="0 8 0" 
                 align="center" 
                 color="#f4a460"
                 width="8">
@@ -315,19 +355,43 @@
 
         <!-- Harappa -->
         <a-entity id="harappa" class="clickable" position="-30 0 -15">
-            <!-- Granary -->
-            <a-cylinder 
-                position="0 1.5 0" 
-                radius="3" 
-                height="3" 
-                src="#brickTexture"
-                color="#8b4513">
-            </a-cylinder>
+            <!-- Old Village House (Granary) -->
+            <a-entity 
+                gltf-model="#oldVillageHouse"
+                position="0 0 0"
+                scale="2 2 2">
+            </a-entity>
+            
+            <!-- Additional Houses -->
+            <a-entity 
+                gltf-model="#ancientHouses"
+                position="5 0 0"
+                scale="1.5 1.5 1.5">
+            </a-entity>
+            
+            <a-entity 
+                gltf-model="#ancientHouses"
+                position="-5 0 0"
+                scale="1.5 1.5 1.5">
+            </a-entity>
+            
+            <!-- Trees -->
+            <a-entity 
+                gltf-model="#mapleTree"
+                position="3 0 3"
+                scale="1.2 1.2 1.2">
+            </a-entity>
+            
+            <a-entity 
+                gltf-model="#mapleTree"
+                position="-3 0 3"
+                scale="1.2 1.2 1.2">
+            </a-entity>
             
             <!-- Text Label -->
             <a-text 
-                value="Harappa\nGranary" 
-                position="0 4 0" 
+                value="Harappa\nAncient Settlement" 
+                position="0 6 0" 
                 align="center" 
                 color="#f4a460"
                 width="6">
@@ -336,20 +400,38 @@
 
         <!-- Dholavira -->
         <a-entity id="dholavira" class="clickable" position="25 0 -10">
-            <!-- Water Reservoir -->
-            <a-box 
-                position="0 0.5 0" 
-                width="8" 
-                height="1" 
-                depth="4" 
-                color="#4169E1"
-                opacity="0.7">
-            </a-box>
+            <!-- Water Reservoir with Animation -->
+            <a-entity 
+                gltf-model="#waterAnimation"
+                position="0 0 0"
+                scale="2 2 2">
+            </a-entity>
+            
+            <!-- Streaming River -->
+            <a-entity 
+                gltf-model="#streamingRiver"
+                position="0 0 0"
+                scale="1.5 1.5 1.5">
+            </a-entity>
+            
+            <!-- German River for additional water features -->
+            <a-entity 
+                gltf-model="#germanRiver"
+                position="3 0 0"
+                scale="1.2 1.2 1.2">
+            </a-entity>
+            
+            <!-- Temple Ruins -->
+            <a-entity 
+                gltf-model="#templeRuin"
+                position="0 0 5"
+                scale="1.3 1.3 1.3">
+            </a-entity>
             
             <!-- Text Label -->
             <a-text 
                 value="Dholavira\nWater Management" 
-                position="0 3 0" 
+                position="0 5 0" 
                 align="center" 
                 color="#f4a460"
                 width="6">
@@ -358,20 +440,44 @@
 
         <!-- Lothal (Port City) -->
         <a-entity id="lothal" class="clickable" position="0 0 30">
-            <!-- Dock -->
-            <a-box 
-                position="0 0.5 0" 
-                width="10" 
-                height="1" 
-                depth="3" 
-                src="#brickTexture"
-                color="#8b4513">
-            </a-box>
+            <!-- Ancient Rome Model for Port Structures -->
+            <a-entity 
+                gltf-model="#ancientRome"
+                position="0 0 0"
+                scale="1.5 1.5 1.5">
+            </a-entity>
+            
+            <!-- Water Animation for Port -->
+            <a-entity 
+                gltf-model="#waterAnimation"
+                position="0 0 0"
+                scale="2 2 2">
+            </a-entity>
+            
+            <!-- Streaming River for Port Water -->
+            <a-entity 
+                gltf-model="#streamingRiver"
+                position="0 0 0"
+                scale="1.8 1.8 1.8">
+            </a-entity>
+            
+            <!-- Ancient Houses for Port Buildings -->
+            <a-entity 
+                gltf-model="#ancientHouses"
+                position="5 0 0"
+                scale="1.3 1.3 1.3">
+            </a-entity>
+            
+            <a-entity 
+                gltf-model="#ancientHouses"
+                position="-5 0 0"
+                scale="1.3 1.3 1.3">
+            </a-entity>
             
             <!-- Text Label -->
             <a-text 
                 value="Lothal\nAncient Port" 
-                position="0 3 0" 
+                position="0 6 0" 
                 align="center" 
                 color="#f4a460"
                 width="6">
@@ -380,28 +486,147 @@
 
         <!-- Kalibangan -->
         <a-entity id="kalibangan" class="clickable" position="-20 0 20">
-            <!-- Fire Altars -->
-            <a-cylinder 
-                position="0 0.5 0" 
-                radius="1" 
-                height="1" 
-                color="#ff6b6b">
-            </a-cylinder>
-            <a-cylinder 
-                position="2 0.5 0" 
-                radius="1" 
-                height="1" 
-                color="#ff6b6b">
-            </a-cylinder>
+            <!-- Temple Ruins for Fire Altars -->
+            <a-entity 
+                gltf-model="#templeRuin"
+                position="0 0 0"
+                scale="1.5 1.5 1.5">
+            </a-entity>
+            
+            <!-- Additional Temple Ruins -->
+            <a-entity 
+                gltf-model="#templeRuin"
+                position="3 0 0"
+                scale="1.2 1.2 1.2">
+            </a-entity>
+            
+            <a-entity 
+                gltf-model="#templeRuin"
+                position="-3 0 0"
+                scale="1.2 1.2 1.2">
+            </a-entity>
+            
+            <!-- Ancient Houses -->
+            <a-entity 
+                gltf-model="#ancientHouses"
+                position="0 0 5"
+                scale="1.3 1.3 1.3">
+            </a-entity>
+            
+            <!-- Trees -->
+            <a-entity 
+                gltf-model="#mapleTree"
+                position="2 0 2"
+                scale="1.1 1.1 1.1">
+            </a-entity>
+            
+            <a-entity 
+                gltf-model="#mapleTree"
+                position="-2 0 2"
+                scale="1.1 1.1 1.1">
+            </a-entity>
             
             <!-- Text Label -->
             <a-text 
                 value="Kalibangan\nFire Altars" 
-                position="0 3 0" 
+                position="0 5 0" 
                 align="center" 
                 color="#f4a460"
                 width="6">
             </a-text>
+        </a-entity>
+
+        <!-- Environmental Trees -->
+        <a-entity id="environmental-trees">
+            <!-- Trees around Mohenjo-daro -->
+            <a-entity 
+                gltf-model="#mapleTree"
+                position="15 0 -25"
+                scale="1.5 1.5 1.5">
+            </a-entity>
+            <a-entity 
+                gltf-model="#mapleTree"
+                position="-15 0 -25"
+                scale="1.5 1.5 1.5">
+            </a-entity>
+            <a-entity 
+                gltf-model="#mapleTree"
+                position="0 0 -35"
+                scale="1.5 1.5 1.5">
+            </a-entity>
+            
+            <!-- Trees around Harappa -->
+            <a-entity 
+                gltf-model="#mapleTree"
+                position="-35 0 -10"
+                scale="1.3 1.3 1.3">
+            </a-entity>
+            <a-entity 
+                gltf-model="#mapleTree"
+                position="-25 0 -20"
+                scale="1.3 1.3 1.3">
+            </a-entity>
+            
+            <!-- Trees around Dholavira -->
+            <a-entity 
+                gltf-model="#mapleTree"
+                position="30 0 -5"
+                scale="1.3 1.3 1.3">
+            </a-entity>
+            <a-entity 
+                gltf-model="#mapleTree"
+                position="20 0 -15"
+                scale="1.3 1.3 1.3">
+            </a-entity>
+            
+            <!-- Trees around Lothal -->
+            <a-entity 
+                gltf-model="#mapleTree"
+                position="10 0 35"
+                scale="1.4 1.4 1.4">
+            </a-entity>
+            <a-entity 
+                gltf-model="#mapleTree"
+                position="-10 0 35"
+                scale="1.4 1.4 1.4">
+            </a-entity>
+            
+            <!-- Trees around Kalibangan -->
+            <a-entity 
+                gltf-model="#mapleTree"
+                position="-25 0 15"
+                scale="1.2 1.2 1.2">
+            </a-entity>
+            <a-entity 
+                gltf-model="#mapleTree"
+                position="-15 0 25"
+                scale="1.2 1.2 1.2">
+            </a-entity>
+        </a-entity>
+
+        <!-- Additional Water Features -->
+        <a-entity id="water-features">
+            <!-- Rivers connecting sites -->
+            <a-entity 
+                gltf-model="#germanRiver"
+                position="0 0 -10"
+                scale="3 1 1"
+                rotation="0 90 0">
+            </a-entity>
+            
+            <a-entity 
+                gltf-model="#germanRiver"
+                position="-15 0 5"
+                scale="2 1 1"
+                rotation="0 45 0">
+            </a-entity>
+            
+            <a-entity 
+                gltf-model="#germanRiver"
+                position="15 0 10"
+                scale="2 1 1"
+                rotation="0 -45 0">
+            </a-entity>
         </a-entity>
 
         <!-- Lighting -->
