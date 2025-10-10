@@ -1701,17 +1701,15 @@
             
             showTourStatus('Tour Resumed');
             
-            // Resume tour from the paused step
-            resumeTourFromStep(pausedAtStep);
+            // Don't restart tour - just unpause and let it continue
+            // The tour loop checks tourPaused flag and will continue automatically
         }
         
-        // Resume tour from a specific step
+        // Resume tour from a specific step (DEPRECATED - tour auto-resumes via while loop)
         async function resumeTourFromStep(step) {
-            console.log(`▶️ Resuming tour from step ${step}`);
-            currentTourStep = step;
-            
-            // Continue the tour sequence from where it was paused
-            await runTourSequence(currentTourLanguage);
+            console.log(`⚠️ resumeTourFromStep called but not needed - tour auto-resumes`);
+            // Don't call runTourSequence again - the original tour is still running
+            // and will automatically continue when tourPaused becomes false
         }
         
         // Add tour status indicator
@@ -1799,10 +1797,10 @@
             try {
                 // Start from current step
                 for (let i = currentTourStep; i < steps.length; i++) {
-                    // Check if tour is paused
-                    if (tourPaused) {
-                        console.log(`⏸️ Tour paused at step ${i}`);
-                        return;
+                    // Wait if tour is paused
+                    while (tourPaused) {
+                        console.log(`⏸️ Tour paused at step ${i}, waiting...`);
+                        await waitWithPause(500);
                     }
                     
                     currentTourStep = i;
