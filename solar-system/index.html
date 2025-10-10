@@ -416,9 +416,6 @@
             <a-light type="point" color="#FFD700" intensity="2" distance="125" decay="2"></a-light>
             <a-animation attribute="rotation" to="0 360 0" dur="20000" repeat="indefinite"></a-animation>
         </a-entity>
-        <a-text value="Sun" position="0 3.0 -30" align="center" color="#ffffff" scale="0.75 0.75 1">
-            <a-animation attribute="position" to="0 3.75 -30" dur="2000" repeat="indefinite" direction="alternate"></a-animation>
-        </a-text>
         
         <!-- Mercury -->
         <a-entity id="mercury-orbit" orbit-parent="speed: 1.6" position="0 0 -30">
@@ -426,7 +423,6 @@
             <!-- Fallback sphere in case GLTF fails -->
             <a-sphere position="0 0 0" radius="0.3" color="#8C7853"></a-sphere>
           </a-entity>
-          <a-text value="Mercury" position="0 0.75 0" align="center" color="#ffffff" scale="0.5 0.5 1"></a-text>
         </a-entity>
         <a-entity orbit-ring="radius: 6; thickness: 0.15; color: #bfbfbf; opacity: 0.5" position="0 0 -30"></a-entity>
         
@@ -436,7 +432,6 @@
             <!-- Fallback sphere in case GLTF fails -->
             <a-sphere position="0 0 0" radius="0.45" color="#FFC649"></a-sphere>
           </a-entity>
-          <a-text value="Venus" position="0 1.25 0" align="center" color="#ffffff" scale="0.5 0.5 1"></a-text>
         </a-entity>
         <a-entity orbit-ring="radius: 8; thickness: 0.15; color: #e0d6c6; opacity: 0.5" position="0 0 -30"></a-entity>
         
@@ -446,7 +441,6 @@
             <!-- Fallback sphere in case GLTF fails -->
             <a-sphere position="0 0 0" radius="0.45" color="#6B93D6"></a-sphere>
           </a-entity>
-          <a-text value="Earth" position="0 1.25 0" align="center" color="#ffffff" scale="0.5 0.5 1"></a-text>
         </a-entity>
         <a-entity orbit-ring="radius: 12; thickness: 0.18; color: #5fb3ff; opacity: 0.55" position="0 0 -30"></a-entity>
         
@@ -456,7 +450,6 @@
             <!-- Fallback sphere in case GLTF fails -->
             <a-sphere position="0 0 0" radius="0.36" color="#CD5C5C"></a-sphere>
           </a-entity>
-          <a-text value="Mars" position="0 1.0 0" align="center" color="#ffffff" scale="0.5 0.5 1"></a-text>
         </a-entity>
         <a-entity orbit-ring="radius: 16; thickness: 0.2; color: #ff8c66; opacity: 0.55" position="0 0 -30"></a-entity>
         
@@ -467,7 +460,6 @@
             <!-- Fallback sphere in case GLTF fails -->
             <a-sphere position="0 0 0" radius="0.9" color="#D8CA9D"></a-sphere>
           </a-entity>
-          <a-text value="Jupiter" position="0 2.25 0" align="center" color="#ffffff" scale="0.625 0.625 1"></a-text>
         </a-entity>
         <a-entity orbit-ring="radius: 22; thickness: 0.2; color: #d4c090; opacity: 0.5" position="0 0 -30"></a-entity>
         
@@ -477,7 +469,6 @@
             <!-- Fallback sphere in case GLTF fails -->
             <a-sphere position="0 0 0" radius="0.75" color="#FAD5A5"></a-sphere>
           </a-entity>
-          <a-text value="Saturn" position="0 2.0 0" align="center" color="#ffffff" scale="0.625 0.625 1"></a-text>
         </a-entity>
         <a-entity orbit-ring="radius: 28; thickness: 0.2; color: #f0e6c0; opacity: 0.45" position="0 0 -30"></a-entity>
         
@@ -488,7 +479,6 @@
             <!-- Fallback sphere in case GLTF fails -->
             <a-sphere position="0 0 0" radius="0.54" color="#4FD0E7"></a-sphere>
           </a-entity>
-          <a-text value="Uranus" position="0 1.5 0" align="center" color="#ffffff" scale="0.5 0.5 1"></a-text>
         </a-entity>
         <a-entity orbit-ring="radius: 34; thickness: 0.2; color: #6fd9ed; opacity: 0.45" position="0 0 -30"></a-entity>
         
@@ -498,7 +488,6 @@
             <!-- Fallback sphere in case GLTF fails -->
             <a-sphere position="0 0 0" radius="0.45" color="#4B70DD"></a-sphere>
           </a-entity>
-          <a-text value="Neptune" position="0 1.5 0" align="center" color="#ffffff" scale="0.5 0.5 1"></a-text>
         </a-entity>
         <a-entity orbit-ring="radius: 40; thickness: 0.2; color: #6b8fe6; opacity: 0.45" position="0 0 -30"></a-entity>
         
@@ -507,7 +496,6 @@
             <a-animation attribute="rotation" to="0 360 0" dur="35000" repeat="indefinite"></a-animation>
 
         </a-sphere>
-        <a-text value="Pluto" position="170 0.5 -30" align="center" color="#ffffff" scale="0.375 0.375 1"></a-text>
         
         <!-- VR Rig with Custom Movement Controls -->
         <a-entity id="rig" position="0 1.6 0">
@@ -1916,11 +1904,32 @@
             // Wait a moment for narration to start
             await wait(500);
             
+            // Calculate appropriate camera distance based on planet type
+            let approachOffset, viewOffset;
+            
+            if (planetId === 'sun') {
+                // Sun needs much more distance
+                approachOffset = { x: 0, y: 10, z: 35 };
+                viewOffset = { x: 0, y: 5, z: 25 };
+            } else if (planetId === 'jupiter' || planetId === 'saturn') {
+                // Gas giants need more distance
+                approachOffset = { x: 3, y: 6, z: 12 };
+                viewOffset = { x: 0, y: 3, z: 10 };
+            } else if (planetId === 'pluto') {
+                // Pluto is far away, approach from side
+                approachOffset = { x: 5, y: 5, z: 10 };
+                viewOffset = { x: 2, y: 2, z: 6 };
+            } else {
+                // Rocky planets - closer view
+                approachOffset = { x: 3, y: 5, z: 10 };
+                viewOffset = { x: 0, y: 2, z: 6 };
+            }
+            
             // Approach from a dramatic angle WHILE narration plays
             await moveToPosition(rig, { 
-                x: planetPos.x + 5, 
-                y: planetPos.y + 8, 
-                z: planetPos.z + 15 
+                x: planetPos.x + approachOffset.x, 
+                y: planetPos.y + approachOffset.y, 
+                z: planetPos.z + approachOffset.z 
             });
             
             // Brief pause for dramatic effect
@@ -1929,12 +1938,11 @@
             // Highlight the planet being visited
             highlightPlanet(planetEl);
             
-            // Move camera to viewing distance (further for Sun, closer for planets)
-            const isSun = planetId === 'sun';
+            // Move camera to final viewing position
             await moveToPosition(rig, { 
-                x: planetPos.x, 
-                y: planetPos.y + (isSun ? 5 : 3), 
-                z: planetPos.z + (isSun ? 25 : 8) 
+                x: planetPos.x + viewOffset.x, 
+                y: planetPos.y + viewOffset.y, 
+                z: planetPos.z + viewOffset.z 
             });
             
             // Wait for narration to complete
