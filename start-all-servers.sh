@@ -21,8 +21,8 @@ echo "✅ HTTPS Server started (PID: $HTTPS_PID) - https://localhost:8443"
 # Wait for servers to start
 sleep 3
 
-# Start ngrok tunnel
-ngrok http 8443 --log=stdout > /tmp/ngrok.log 2>&1 &
+# Start ngrok tunnel (forward to HTTPS backend)
+ngrok http https://localhost:8443 --log=stdout > /tmp/ngrok.log 2>&1 &
 NGROK_PID=$!
 echo "✅ Ngrok started (PID: $NGROK_PID)"
 
