@@ -575,7 +575,7 @@
 
     <script src="scripts/tts-sarvam.js"></script>
     <script src="scripts/voice.js?v=2"></script>
-    <script src="scripts/vr-scene.js?v=4"></script>
+    <script src="scripts/vr-scene.js?v=5"></script>
     
     <script>
         // Simple TTS helper for tour - updated to use SarvamTTS
@@ -1929,11 +1929,12 @@
             // Highlight the planet being visited
             highlightPlanet(planetEl);
             
-            // Move camera close to planet for intimate view
+            // Move camera to viewing distance (further for Sun, closer for planets)
+            const isSun = planetId === 'sun';
             await moveToPosition(rig, { 
                 x: planetPos.x, 
-                y: planetPos.y + 3, 
-                z: planetPos.z + 8 
+                y: planetPos.y + (isSun ? 5 : 3), 
+                z: planetPos.z + (isSun ? 25 : 8) 
             });
             
             // Wait for narration to complete
