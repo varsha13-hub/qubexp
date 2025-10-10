@@ -578,10 +578,40 @@
     <script src="scripts/vr-scene.js?v=4"></script>
     
     <script>
-        // Simple TTS helper for tour
+        // Simple TTS helper for tour - updated to use SarvamTTS
         async function speakAndWait(text, lang = 'hi') {
-            if (window.TTSManager) {
-                await window.TTSManager.speakTextSarvam(text, { language: lang });
+            if (window.SarvamTTS) {
+                await window.SarvamTTS.speakAndWait(text, lang);
+            }
+        }
+
+        // Safe tour starter that preloads models first
+        async function startGuidedTourSafe() {
+            try {
+                console.log('🎬 Starting guided tour safely...');
+                
+                // 1) preload models (so narration doesn't start before visuals are ready)
+                if (window.ModelPreloader) {
+                    console.log('📦 Preloading models...');
+                    await window.ModelPreloader.preloadAll(12000); // 12s timeout
+                    window.ModelPreloader.applyCachedToEntities();
+                    console.log('✅ Models preloaded');
+                }
+
+                // 2) ensure SarvamTTS exists and is usable before starting narration
+                if (!window.SarvamTTS) {
+                    console.warn('⚠️ SarvamTTS not found - using fallback');
+                    return startGuidedTour(); // fallback to old method
+                }
+
+                // 3) start the original tour runner
+                console.log('🎤 Starting narration...');
+                await startGuidedTour();
+                
+            } catch (e) {
+                console.warn('⚠️ startGuidedTourSafe error:', e);
+                // fallback so UI still works
+                await startGuidedTour();
             }
         }
         
@@ -1151,7 +1181,7 @@
             if (startTourBtn) {
                 startTourBtn.addEventListener('click', () => {
                     console.log('Start tour button clicked!');
-                    startGuidedTour();
+                    startGuidedTourSafe(); // Use safe starter with model preloading
                     
                     // Show pause button when tour starts
                     document.getElementById('pauseBtn').style.display = 'inline-block';
@@ -1633,10 +1663,10 @@
                 if (tourPaused) {
                     // Wait until tour is resumed
                     while (tourPaused) {
-                        await new Promise(resolve => setTimeout(resolve, 100));
+                        await waitWithPause(100);
                     }
                 }
-                await new Promise(resolve => setTimeout(resolve, 100));
+                await waitWithPause(100);
             }
         }
         
@@ -1646,8 +1676,10 @@
             tourPaused = true;
             pausedAtStep = currentTourStep;
             
-            // Stop all TTS audio immediately
-            if (window.ttsManager && window.ttsManager.stopAudio) {
+            // Stop all TTS audio immediately using new TourController
+            if (window.TourController) {
+                window.TourController.pause();
+            } else if (window.ttsManager && window.ttsManager.stopAudio) {
                 window.ttsManager.stopAudio();
             }
             
@@ -1668,6 +1700,11 @@
         function resumeTour() {
             console.log('▶️ Resuming tour...');
             tourPaused = false;
+            
+            // Resume audio using new TourController
+            if (window.TourController) {
+                window.TourController.resume();
+            }
             
             // Update button states
             document.getElementById('pauseBtn').style.display = 'inline-block';
@@ -1997,7 +2034,7 @@
             
             // Wait for pause to be cleared before speaking
             while (tourPaused && isTourActive) {
-                await new Promise(resolve => setTimeout(resolve, 100));
+                await waitWithPause(100);
             }
             
             try {
@@ -2024,7 +2061,7 @@
             if (isTourActive) {
                 return waitWithPauseCheck(ms);
             } else {
-                return new Promise(resolve => setTimeout(resolve, ms));
+                return waitWithPause(ms);
             }
         }
 
@@ -2389,7 +2426,7 @@
                         await window.ttsManager.fetchServerTTS(chunk, selectedLang);
                         // Small delay between chunks for better listening experience
                         if (chunks.length > 1) {
-                            await new Promise(resolve => setTimeout(resolve, 500));
+                            await waitWithPause(500);
                         }
                     }
                     console.log('✅ AI answer spoken successfully in chunks');

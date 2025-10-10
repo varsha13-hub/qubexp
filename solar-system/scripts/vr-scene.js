@@ -1,3 +1,119 @@
+/* ---- Model Preloader Helper ---- */
+const ModelPreloader = (function(){
+  const cache = new Map();
+  let loader = null;
+  
+  function ensureLoader() {
+    if (!loader) {
+      if (!window.THREE || !window.THREE.GLTFLoader) {
+        console.warn('THREE.GLTFLoader missing; include GLTFLoader');
+        // For A-Frame, GLTFLoader is often available at THREE.GLTFLoader
+      }
+      loader = new THREE.GLTFLoader(); // assuming loader exists
+    }
+    return loader;
+  }
+  
+  async function resolveAttr(attr) {
+    if (!attr) return null;
+    if (typeof attr === 'string' && attr.startsWith('#')) {
+      const asset = document.getElementById(attr.slice(1));
+      if (asset) return asset.getAttribute('src') || asset.src || null;
+    }
+    return attr;
+  }
+  
+  async function preloadAll(timeoutMs = 12000) {
+    const els = Array.from(document.querySelectorAll('[gltf-model]'));
+    const urls = [...new Set(els.map(e => e.getAttribute('gltf-model')).filter(Boolean))];
+    const resolved = await Promise.all(urls.map(resolveAttr));
+    const unique = [...new Set(resolved.filter(Boolean))];
+    if (!unique.length) return cache;
+
+    ensureLoader();
+    const promises = unique.map(url => {
+      if (cache.has(url)) return Promise.resolve(cache.get(url));
+      return new Promise(resolve => {
+        loader.load(url,
+          gltf => { cache.set(url, gltf); resolve(gltf); },
+          undefined,
+          err => { console.warn('model load failed', url, err); resolve(null); }
+        );
+      });
+    });
+    // timeout guard
+    const all = Promise.all(promises);
+    try {
+      const res = await Promise.race([all, new Promise((_, rej) => setTimeout(() => rej(new Error('model preload timeout')), timeoutMs))]);
+      console.log('ModelPreloader: done. cache size:', cache.size);
+    } catch (e) {
+      console.warn('ModelPreloader: timeout or error', e);
+    }
+    return cache;
+  }
+
+  function applyCachedToEntities() {
+    document.querySelectorAll('[gltf-model]').forEach(el => {
+      const attr = el.getAttribute('gltf-model');
+      resolveAttr(attr).then(url => {
+        const g = url && cache.get(url);
+        if (g && g.scene) {
+          // avoid A-Frame re-loading; set object3D directly
+          try {
+            el.removeAttribute('gltf-model');
+            const clone = g.scene.clone(true);
+            el.setObject3D('mesh', clone);
+          } catch (e) {
+            console.warn('applyCachedToEntities error', e);
+          }
+        }
+      });
+    });
+  }
+
+  return { preloadAll, applyCachedToEntities };
+})();
+
+/* ---- Tour Controller for Pause/Resume ---- */
+window.TourController = {
+  paused: false,
+  _resumeResolve: null,
+  pause() {
+    if (this.paused) return;
+    this.paused = true;
+    if (window.SarvamTTS) window.SarvamTTS.pause();
+    console.log('⏸ Tour paused');
+  },
+  resume() {
+    if (!this.paused) return;
+    this.paused = false;
+    if (window.SarvamTTS) window.SarvamTTS.resume();
+    if (this._resumeResolve) { this._resumeResolve(); this._resumeResolve = null; }
+    console.log('▶ Tour resumed');
+  },
+  waitForResume() {
+    if (!this.paused) return Promise.resolve();
+    return new Promise(resolve => this._resumeResolve = resolve);
+  }
+};
+
+/* ---- Wait with Pause Helper ---- */
+async function waitWithPause(ms) {
+  const chunk = 200;
+  let remaining = ms;
+  while (remaining > 0) {
+    if (window.TourController && window.TourController.paused) {
+      await window.TourController.waitForResume();
+      continue;
+    }
+    await new Promise(r => setTimeout(r, Math.min(chunk, remaining)));
+    remaining -= chunk;
+  }
+}
+
+// Expose globally
+window.waitWithPause = waitWithPause;
+
 // VR Scene Controller for A-Frame
 class VRSceneController {
     constructor() {
