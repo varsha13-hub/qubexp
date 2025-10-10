@@ -391,12 +391,13 @@
         </a-assets>
         
         <!-- Direct GLB model loading -->
-        <!-- Stars background -->
-        <a-sky color="#000011"></a-sky>
+        <!-- Starry sky background + procedural starfield -->
+        <a-sky src="https://cdn.jsdelivr.net/gh/aframevr/aframe@1.4.0/examples/assets/images/starry-sky.jpg" rotation="0 -30 0"></a-sky>
+        <a-entity starfield="count: 1000; radius: 220; size: 0.5"></a-entity>
         
-
-        
-        <!-- Stars removed for cleaner planet visibility -->
+        <!-- Enhanced lighting -->
+        <a-entity light="type: point; intensity: 1.6; distance: 120; decay: 2" position="0 0 -30"></a-entity>
+        <a-entity light="type: ambient; color: #404040; intensity: 0.45"></a-entity>
         
         
         <!-- Sun - USING YOUR 3D MODEL -->
@@ -416,70 +417,86 @@
         </a-text>
         
         <!-- Mercury -->
-        <a-entity gltf-model="#mercury-model" position="7.5 0 -30" scale="0.0003 0.0003 0.0003" class="planet" data-planet-id="mercury" data-raycastable data-planet-name="Mercury" data-planet-desc="Mercury is the smallest and innermost planet in the Solar System. It has no moons and is covered in craters.">
-            <a-animation attribute="rotation" to="0 360 0" dur="15000" repeat="indefinite"></a-animation>
+        <a-entity id="mercury-orbit" orbit-parent="speed: 1.6" position="0 0 -30">
+          <a-entity gltf-model="#mercury-model" position="6 0.35 0" scale="0.0003 0.0003 0.0003" spin-body="speed: 40" class="planet" data-planet-id="mercury" data-raycastable data-planet-name="Mercury" data-planet-desc="Mercury is the smallest and innermost planet in the Solar System. It has no moons and is covered in craters.">
             <!-- Fallback sphere in case GLTF fails -->
             <a-sphere position="0 0 0" radius="0.3" color="#8C7853"></a-sphere>
+          </a-entity>
+          <a-text value="Mercury" position="0 0.75 0" align="center" color="#ffffff" scale="0.5 0.5 1"></a-text>
         </a-entity>
-        <a-text value="Mercury" position="7.5 0.75 -30" align="center" color="#ffffff" scale="0.5 0.5 1"></a-text>
+        <a-entity orbit-ring="radius: 6; thickness: 0.15; color: #bfbfbf; opacity: 0.5" position="0 0 -30"></a-entity>
         
         <!-- Venus -->
-        <a-entity gltf-model="#venus-model" position="15 0 -30" scale="0.00045 0.00045 0.00045" class="planet" data-planet-id="venus" data-raycastable data-planet-name="Venus" data-planet-desc="Venus is the second planet from the Sun and is often called Earth's sister planet due to similar size and mass.">
-            <a-animation attribute="rotation" to="0 360 0" dur="18000" repeat="indefinite"></a-animation>
+        <a-entity id="venus-orbit" orbit-parent="speed: 0.9" position="0 0 -30">
+          <a-entity gltf-model="#venus-model" position="8 0 0" scale="0.00045 0.00045 0.00045" spin-body="speed: 6" class="planet" data-planet-id="venus" data-raycastable data-planet-name="Venus" data-planet-desc="Venus is the second planet from the Sun and is often called Earth's sister planet due to similar size and mass.">
             <!-- Fallback sphere in case GLTF fails -->
             <a-sphere position="0 0 0" radius="0.45" color="#FFC649"></a-sphere>
+          </a-entity>
+          <a-text value="Venus" position="0 1.25 0" align="center" color="#ffffff" scale="0.5 0.5 1"></a-text>
         </a-entity>
-        <a-text value="Venus" position="15 1.25 -30" align="center" color="#ffffff" scale="0.5 0.5 1"></a-text>
+        <a-entity orbit-ring="radius: 8; thickness: 0.15; color: #e0d6c6; opacity: 0.5" position="0 0 -30"></a-entity>
         
         <!-- Earth -->
-        <a-entity gltf-model="#earth-model" position="22.5 0 -30" scale="0.00048 0.00048 0.00048" class="planet" data-planet-id="earth" data-raycastable data-planet-name="Earth" data-planet-desc="Earth is our home planet and the only known planet with life. It has one natural satellite, the Moon.">
-            <a-animation attribute="rotation" to="0 360 0" dur="16000" repeat="indefinite"></a-animation>
+        <a-entity id="earth-orbit" orbit-parent="speed: 0.42" position="0 0 -30">
+          <a-entity gltf-model="#earth-model" position="12 0.5 0" scale="0.00048 0.00048 0.00048" spin-body="speed: 18" class="planet" data-planet-id="earth" data-raycastable data-planet-name="Earth" data-planet-desc="Earth is our home planet and the only known planet with life. It has one natural satellite, the Moon.">
             <!-- Fallback sphere in case GLTF fails -->
             <a-sphere position="0 0 0" radius="0.45" color="#6B93D6"></a-sphere>
+          </a-entity>
+          <a-text value="Earth" position="0 1.25 0" align="center" color="#ffffff" scale="0.5 0.5 1"></a-text>
         </a-entity>
-        <a-text value="Earth" position="22.5 1.25 -30" align="center" color="#ffffff" scale="0.5 0.5 1"></a-text>
+        <a-entity orbit-ring="radius: 12; thickness: 0.18; color: #5fb3ff; opacity: 0.55" position="0 0 -30"></a-entity>
         
         <!-- Mars -->
-        <a-entity gltf-model="#mars-model" position="30 0 -30" scale="0.00036 0.00036 0.00036" class="planet" data-planet-id="mars" data-raycastable data-planet-name="Mars" data-planet-desc="Mars is the fourth planet from the Sun and is often called the Red Planet due to its reddish appearance.">
-            <a-animation attribute="rotation" to="0 360 0" dur="14000" repeat="indefinite"></a-animation>
+        <a-entity id="mars-orbit" orbit-parent="speed: 0.32" position="0 0 -30">
+          <a-entity gltf-model="#mars-model" position="16 0.45 0" scale="0.00036 0.00036 0.00036" spin-body="speed: 14" class="planet" data-planet-id="mars" data-raycastable data-planet-name="Mars" data-planet-desc="Mars is the fourth planet from the Sun and is often called the Red Planet due to its reddish appearance.">
             <!-- Fallback sphere in case GLTF fails -->
             <a-sphere position="0 0 0" radius="0.36" color="#CD5C5C"></a-sphere>
+          </a-entity>
+          <a-text value="Mars" position="0 1.0 0" align="center" color="#ffffff" scale="0.5 0.5 1"></a-text>
         </a-entity>
-        <a-text value="Mars" position="30 1.0 -30" align="center" color="#ffffff" scale="0.5 0.5 1"></a-text>
+        <a-entity orbit-ring="radius: 16; thickness: 0.2; color: #ff8c66; opacity: 0.55" position="0 0 -30"></a-entity>
         
         
         <!-- Jupiter -->
-        <a-entity gltf-model="#jupiter-model" position="45 0 -30" scale="0.0015 0.0015 0.0015" class="planet" data-planet-id="jupiter" data-raycastable data-planet-name="Jupiter" data-planet-desc="Jupiter is the largest planet in our Solar System and is a gas giant with no solid surface.">
-            <a-animation attribute="rotation" to="0 360 0" dur="22000" repeat="indefinite"></a-animation>
+        <a-entity id="jupiter-orbit" orbit-parent="speed: 0.14" position="0 0 -30">
+          <a-entity gltf-model="#jupiter-model" position="22 0 0" scale="0.0015 0.0015 0.0015" spin-body="speed: 8" class="planet" data-planet-id="jupiter" data-raycastable data-planet-name="Jupiter" data-planet-desc="Jupiter is the largest planet in our Solar System and is a gas giant with no solid surface.">
             <!-- Fallback sphere in case GLTF fails -->
             <a-sphere position="0 0 0" radius="0.9" color="#D8CA9D"></a-sphere>
+          </a-entity>
+          <a-text value="Jupiter" position="0 2.25 0" align="center" color="#ffffff" scale="0.625 0.625 1"></a-text>
         </a-entity>
-        <a-text value="Jupiter" position="45 2.25 -30" align="center" color="#ffffff" scale="0.625 0.625 1"></a-text>
+        <a-entity orbit-ring="radius: 22; thickness: 0.2; color: #d4c090; opacity: 0.5" position="0 0 -30"></a-entity>
         
         <!-- Saturn -->
-        <a-entity gltf-model="#saturn-model" position="60 0 -30" scale="0.00135 0.00135 0.00135" class="planet" data-planet-id="saturn" data-raycastable data-planet-name="Saturn" data-planet-desc="Saturn is the sixth planet from the Sun and is famous for its spectacular ring system.">
-            <a-animation attribute="rotation" to="0 360 0" dur="25000" repeat="indefinite"></a-animation>
+        <a-entity id="saturn-orbit" orbit-parent="speed: 0.10" position="0 0 -30">
+          <a-entity gltf-model="#saturn-model" position="28 0 0" scale="0.00135 0.00135 0.00135" spin-body="speed: 10" class="planet" data-planet-id="saturn" data-raycastable data-planet-name="Saturn" data-planet-desc="Saturn is the sixth planet from the Sun and is famous for its spectacular ring system.">
             <!-- Fallback sphere in case GLTF fails -->
             <a-sphere position="0 0 0" radius="0.75" color="#FAD5A5"></a-sphere>
+          </a-entity>
+          <a-text value="Saturn" position="0 2.0 0" align="center" color="#ffffff" scale="0.625 0.625 1"></a-text>
         </a-entity>
-        <a-text value="Saturn" position="60 2.0 -30" align="center" color="#ffffff" scale="0.625 0.625 1"></a-text>
+        <a-entity orbit-ring="radius: 28; thickness: 0.2; color: #f0e6c0; opacity: 0.45" position="0 0 -30"></a-entity>
         
         
         <!-- Uranus -->
-        <a-entity gltf-model="#uranus-model" position="75 0 -30" scale="0.00075 0.00075 0.00075" class="planet" data-planet-id="uranus" data-raycastable data-planet-name="Uranus" data-planet-desc="Uranus is the seventh planet from the Sun and is an ice giant with a unique sideways rotation.">
-            <a-animation attribute="rotation" to="0 360 0" dur="28000" repeat="indefinite"></a-animation>
+        <a-entity id="uranus-orbit" orbit-parent="speed: 0.07" position="0 0 -30">
+          <a-entity gltf-model="#uranus-model" position="34 0 0" scale="0.00075 0.00075 0.00075" spin-body="speed: 9" class="planet" data-planet-id="uranus" data-raycastable data-planet-name="Uranus" data-planet-desc="Uranus is the seventh planet from the Sun and is an ice giant with a unique sideways rotation.">
             <!-- Fallback sphere in case GLTF fails -->
             <a-sphere position="0 0 0" radius="0.54" color="#4FD0E7"></a-sphere>
+          </a-entity>
+          <a-text value="Uranus" position="0 1.5 0" align="center" color="#ffffff" scale="0.5 0.5 1"></a-text>
         </a-entity>
-        <a-text value="Uranus" position="75 1.5 -30" align="center" color="#ffffff" scale="0.5 0.5 1"></a-text>
+        <a-entity orbit-ring="radius: 34; thickness: 0.2; color: #6fd9ed; opacity: 0.45" position="0 0 -30"></a-entity>
         
         <!-- Neptune -->
-        <a-entity gltf-model="#neptune-model" position="90 0 -30" scale="0.00072 0.00072 0.00072" class="planet" data-planet-id="neptune" data-raycastable data-planet-name="Neptune" data-planet-desc="Neptune is the eighth and farthest planet from the Sun. It's an ice giant with the strongest winds in the Solar System.">
-            <a-animation attribute="rotation" to="0 360 0" dur="30000" repeat="indefinite"></a-animation>
+        <a-entity id="neptune-orbit" orbit-parent="speed: 0.05" position="0 0 -30">
+          <a-entity gltf-model="#neptune-model" position="40 0 0" scale="0.00072 0.00072 0.00072" spin-body="speed: 11" class="planet" data-planet-id="neptune" data-raycastable data-planet-name="Neptune" data-planet-desc="Neptune is the eighth and farthest planet from the Sun. It's an ice giant with the strongest winds in the Solar System.">
             <!-- Fallback sphere in case GLTF fails -->
             <a-sphere position="0 0 0" radius="0.45" color="#4B70DD"></a-sphere>
+          </a-entity>
+          <a-text value="Neptune" position="0 1.5 0" align="center" color="#ffffff" scale="0.5 0.5 1"></a-text>
         </a-entity>
-        <a-text value="Neptune" position="90 1.5 -30" align="center" color="#ffffff" scale="0.5 0.5 1"></a-text>
+        <a-entity orbit-ring="radius: 40; thickness: 0.2; color: #6b8fe6; opacity: 0.45" position="0 0 -30"></a-entity>
         
         <!-- Pluto -->
         <a-sphere position="170 0 -30" radius="0.15" color="#C0C0C0" class="planet" data-planet-id="pluto" data-raycastable data-planet-name="Pluto" data-planet-desc="Pluto is a dwarf planet in the Kuiper Belt. Though no longer classified as a planet, it remains an important celestial body.">
@@ -2277,6 +2294,134 @@
                 });
             }
         });
+    </script>
+
+    <!-- Orbital Mechanics Components -->
+    <script>
+    /* ===== Orbit parent: rotate this parent to make the child revolve around the center =====
+       Usage: attach to a parent that is positioned at the Sun (usually 0 0 0).
+       Put your planet GLTF as a child and set the child's position to (radius, y, z).
+       Example: <a-entity orbit-parent="speed: 0.5"></a-entity>
+    */
+    AFRAME.registerComponent('orbit-parent', {
+      schema: {
+        speed: { type: 'number', default: 0.4 } // radians per second
+      },
+      init() {
+        this._lastTime = null;
+      },
+      tick(time, delta) {
+        // delta is ms since last tick; convert to seconds
+        if (!delta) return;
+        const dt = delta / 1000;
+        // rotate around Y axis in world-space by incrementing parent's rotation.y
+        // We rotate the object3D directly to avoid setAttribute thrashing.
+        this.el.object3D.rotation.y += this.data.speed * dt;
+      }
+    });
+
+    /* ===== Spin (self-rotation) =====
+       Attach directly to the planet entity (the GLTF child).
+       Example: <a-entity spin-body="speed: 18; axis: y"></a-entity>
+    */
+    AFRAME.registerComponent('spin-body', {
+      schema: {
+        speed: { type: 'number', default: 20 }, // degrees/sec
+        axis: { type: 'string', default: 'y' }, // 'x'|'y'|'z'
+        enabled: { type: 'boolean', default: true }
+      },
+      init() {
+        this._lastTime = null;
+      },
+      tick(time, delta) {
+        if (!this.data.enabled || !delta) return;
+        const dt = delta / 1000;
+        const degToRad = Math.PI / 180;
+        const rot = this.el.object3D.rotation;
+        const deltaRad = this.data.speed * degToRad * dt;
+        if (this.data.axis === 'x') rot.x += deltaRad;
+        else if (this.data.axis === 'z') rot.z += deltaRad;
+        else rot.y += deltaRad;
+      }
+    });
+
+    /* ===== Starfield (lightweight procedurally generated star points) =====
+       Usage: place <a-entity starfield="count:1200; radius:200;"></a-entity> once behind everything.
+    */
+    AFRAME.registerComponent('starfield', {
+      schema: {
+        count: { type: 'int', default: 1200 },
+        radius: { type: 'number', default: 200 },
+        size: { type: 'number', default: 0.6 }
+      },
+      init() {
+        const THREE = AFRAME.THREE;
+        const data = this.data;
+        const geometry = new THREE.BufferGeometry();
+        const positions = new Float32Array(data.count * 3);
+
+        for (let i = 0; i < data.count; i++) {
+          const u = Math.random();
+          const v = Math.random();
+          const theta = 2 * Math.PI * u;
+          const phi = Math.acos(2 * v - 1);
+          const r = data.radius * (0.85 + Math.random() * 0.3);
+          const x = r * Math.sin(phi) * Math.cos(theta);
+          const y = r * Math.sin(phi) * Math.sin(theta);
+          const z = r * Math.cos(phi);
+          positions[3 * i] = x;
+          positions[3 * i + 1] = y;
+          positions[3 * i + 2] = z;
+        }
+
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        const material = new THREE.PointsMaterial({
+          size: data.size,
+          sizeAttenuation: true,
+          transparent: true,
+          opacity: 0.9
+        });
+        const points = new THREE.Points(geometry, material);
+        this.el.setObject3D('starfield', points);
+        this._rotSpeed = 0.0002;
+      },
+      tick(time, delta) {
+        const obj = this.el.getObject3D('starfield');
+        if (obj) obj.rotation.y += this._rotSpeed * (delta || 16);
+      },
+      remove() { this.el.removeObject3D('starfield'); }
+    });
+
+    /* ===== Orbit ring helper (A-Frame mesh) =====
+       Usage: <a-entity orbit-ring="radius: 12; thickness:0.08; color:#7fbfff; opacity:0.55"></a-entity>
+    */
+    AFRAME.registerComponent('orbit-ring', {
+      schema: {
+        radius: { type: 'number', default: 10 },
+        thickness: { type: 'number', default: 0.05 },
+        color: { type: 'color', default: '#888' },
+        opacity: { type: 'number', default: 0.5 }
+      },
+      init() {
+        const THREE = AFRAME.THREE;
+        const r = this.data.radius;
+        const inner = Math.max(0.001, r - this.data.thickness / 2);
+        const outer = r + this.data.thickness / 2;
+        const segments = 128;
+        const geom = new THREE.RingGeometry(inner, outer, segments);
+        const mat = new THREE.MeshBasicMaterial({
+          color: new THREE.Color(this.data.color),
+          transparent: true,
+          opacity: this.data.opacity,
+          side: THREE.DoubleSide,
+          depthWrite: false
+        });
+        const mesh = new THREE.Mesh(geom, mat);
+        mesh.rotation.x = -Math.PI / 2; // lie flat on XZ plane
+        this.el.setObject3D('ring', mesh);
+      },
+      remove() { this.el.removeObject3D('ring'); }
+    });
     </script>
 </body>
 </html>
