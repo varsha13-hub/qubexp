@@ -1830,26 +1830,14 @@
             
             const rig = document.querySelector('#rig');
             
-            // Play overview narration FIRST
-            const narrationPromise = speakText(tourData.overview[language] || tourData.overview.en, language);
-            
-            // Wait a moment for narration to start
-            await wait(500);
-            
-            // Start from a dramatic angle WHILE narration plays
-            await moveToPosition(rig, { x: 0, y: 25, z: 30 });
-            
-            // Brief pause for dramatic effect
-            await wait(1000);
-            
             // Move to overview position (far back to see all planets)
-            await moveToPosition(rig, { x: 0, y: 15, z: 20 });
+            await moveToPosition(rig, { x: 0, y: 10, z: 15 });
             
-            // Wait for narration to complete
-            await narrationPromise;
+            // Play overview narration
+            await speakText(tourData.overview[language] || tourData.overview.en, language);
             
-            // Extra time for dramatic effect
-            await wait(2000);
+            // Brief pause
+            await wait(500);
         }
 
         // Show conclusion scene with dramatic finale
@@ -1859,23 +1847,14 @@
             
             const rig = document.querySelector('#rig');
             
-            // Move to a dramatic high angle for conclusion
-            await moveToPosition(rig, { x: 0, y: 25, z: 25 });
-            
-            // Brief pause for dramatic effect
-            await wait(1000);
-            
-            // Move back to overview position for conclusion
-            await moveToPosition(rig, { x: 0, y: 15, z: 20 });
+            // Move to overview position for conclusion
+            await moveToPosition(rig, { x: 0, y: 10, z: 15 });
             
             // Play conclusion narration
-                await speakText(tourData.conclusion[language] || tourData.conclusion.en, language);
+            await speakText(tourData.conclusion[language] || tourData.conclusion.en, language);
             
-            // Wait for narration to complete
-            await wait(6000);
-            
-            // Final dramatic pause
-            await wait(2000);
+            // Brief pause
+            await wait(1000);
         }
 
         // Visit a specific planet with cinematic approach
@@ -1898,58 +1877,38 @@
             planetEl.object3D.getWorldPosition(worldPos);
             const planetPos = { x: worldPos.x, y: worldPos.y, z: worldPos.z };
             
-            // Start narration FIRST
-            const narrationPromise = speakText(tourData[planetId]?.[language] || tourData[planetId]?.en || `Visiting ${planetId}`, language);
-            
-            // Wait a moment for narration to start
-            await wait(500);
-            
             // Calculate appropriate camera distance based on planet type
-            let approachOffset, viewOffset;
+            let viewOffset;
             
             if (planetId === 'sun') {
                 // Sun needs much more distance
-                approachOffset = { x: 0, y: 10, z: 35 };
-                viewOffset = { x: 0, y: 5, z: 25 };
+                viewOffset = { x: 0, y: 3, z: 20 };
             } else if (planetId === 'jupiter' || planetId === 'saturn') {
                 // Gas giants need more distance
-                approachOffset = { x: 3, y: 6, z: 12 };
-                viewOffset = { x: 0, y: 3, z: 10 };
+                viewOffset = { x: 0, y: 2, z: 8 };
             } else if (planetId === 'pluto') {
-                // Pluto is far away, approach from side
-                approachOffset = { x: 5, y: 5, z: 10 };
-                viewOffset = { x: 2, y: 2, z: 6 };
+                // Pluto - moderate distance
+                viewOffset = { x: 0, y: 1.5, z: 5 };
             } else {
                 // Rocky planets - closer view
-                approachOffset = { x: 3, y: 5, z: 10 };
-                viewOffset = { x: 0, y: 2, z: 6 };
+                viewOffset = { x: 0, y: 1.5, z: 5 };
             }
-            
-            // Approach from a dramatic angle WHILE narration plays
-            await moveToPosition(rig, { 
-                x: planetPos.x + approachOffset.x, 
-                y: planetPos.y + approachOffset.y, 
-                z: planetPos.z + approachOffset.z 
-            });
-            
-            // Brief pause for dramatic effect
-            await wait(1000);
             
             // Highlight the planet being visited
             highlightPlanet(planetEl);
             
-            // Move camera to final viewing position
+            // Move camera to viewing position (single movement, less motion)
             await moveToPosition(rig, { 
                 x: planetPos.x + viewOffset.x, 
                 y: planetPos.y + viewOffset.y, 
                 z: planetPos.z + viewOffset.z 
             });
             
-            // Wait for narration to complete
-            await narrationPromise;
+            // Start narration AFTER camera arrives
+            await speakText(tourData[planetId]?.[language] || tourData[planetId]?.en || `Visiting ${planetId}`, language);
             
-            // Extra time after narration
-            await wait(2000);
+            // Brief pause after narration
+            await wait(1000);
             
             // Remove highlight
             removePlanetHighlight(planetEl);
