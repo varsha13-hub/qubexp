@@ -563,7 +563,7 @@
 
     <script src="scripts/tts-sarvam.js"></script>
     <script src="scripts/voice.js?v=2"></script>
-    <script src="scripts/vr-scene.js?v=5"></script>
+    <script src="scripts/vr-scene.js?v=6"></script>
     
     <script>
         // Simple TTS helper for tour - updated to use SarvamTTS
@@ -1749,7 +1749,14 @@
 
         // Start the guided tour
         async function startGuidedTour() {
+            // Prevent multiple tour instances
+            if (window.tourRunning) {
+                console.warn('⚠️ Tour already running, ignoring duplicate start');
+                return;
+            }
+            
             console.log('🎬 Starting guided tour...');
+            window.tourRunning = true;
             isTourActive = true;
             window.tourActive = true; // Global flag to prevent planet narration overlap
             window.selectionDisabled = true; // Lock manual selection during tour
@@ -1812,11 +1819,13 @@
                 
                 // Tour complete
                 console.log('🎬 Tour Complete! Enabling interactive mode...');
+                window.tourRunning = false;
                 enableInteractiveMode();
                 
             } catch (error) {
                 console.error('❌ Tour error:', error);
                 console.log('🎬 Tour failed, enabling interactive mode...');
+                window.tourRunning = false;
                 enableInteractiveMode();
             }
         }
@@ -2121,8 +2130,18 @@
         }
 
         // Enable interactive mode after tour
-        function enableInteractiveMode() {
+        async function enableInteractiveMode() {
             console.log('🎮 Enabling interactive mode...');
+            
+            // Stop any TTS and clear busy flag
+            if (window.SarvamTTS) {
+                window.SarvamTTS.stop();
+            }
+            window.ttsBusy = false;
+            
+            // Wait a moment before enabling selection to avoid immediate spam
+            await waitWithPause(2000);
+            
             isTourActive = false;
             window.tourActive = false; // Clear global tour flag to allow planet interactions
             window.selectionDisabled = false; // Unlock manual selection

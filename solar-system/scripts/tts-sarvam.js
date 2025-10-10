@@ -1,7 +1,7 @@
 /* tts-sarvam.js - Sarvam-only TTS Manager (drop-in replacement) */
 (function (window) {
   const SARVAM_ENDPOINT = '/api/tts'; // <-- set to your Sarvam server endpoint if different
-  const DEFAULT_TIMEOUT_MS = 22000;
+  const DEFAULT_TIMEOUT_MS = 60000; // Increased for pause scenarios
 
   // language -> voice map (adjust if your server uses other voice names)
   const VOICE_BY_LANG = {
