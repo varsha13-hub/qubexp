@@ -376,9 +376,14 @@
         <a-sky color="#000011"></a-sky>
         
         <!-- Preload all planet models -->
-        <a-assets timeout="10000">
+        <a-assets timeout="60000">
+            <!-- Starry sky texture (working URL) -->
+            <img id="space-sky" src="https://cdn.aframe.io/360-image-gallery-boilerplate/img/sechelt.jpg" crossorigin="anonymous">
+            
             <!-- Sun texture -->
             <img id="sunTexture" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8ZGVmcz4KICAgIDxyYWRpYWxHcmFkaWVudCBpZD0ic3VuR3JhZGllbnQiIGN4PSI1MCUiIGN5PSI1MCUiIHI9IjUwJSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiNGRkQ3MDAiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSI3MCUiIHN0b3AtY29sb3I9IiNGRkE1MDAiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjRkY2NjAwIi8+CiAgICA8L3JhZGlhbEdyYWRpZW50PgogIDwvZGVmcz4KICA8Y2lyY2xlIGN4PSIyNTYiIGN5PSIyNTYiIHI9IjI1NiIgZmlsbD0idXJsKCNzdW5HcmFkaWVudCkiLz4KICA8Y2lyY2xlIGN4PSIyNTYiIGN5PSIyNTYiIHI9IjI0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRkZENzAwIiBzdHJva2Utd2lkdGg9IjE2IiBvcGFjaXR5PSIwLjMiLz4KICA8Y2lyY2xlIGN4PSIyNTYiIGN5PSIyNTYiIHI9IjIyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRkZBNTAwIiBzdHJva2Utd2lkdGg9IjEyIiBvcGFjaXR5PSIwLjIiLz4KPC9zdmc+">
+            
+            <!-- Planet models -->
             <a-asset-item id="sun-model" src="assets/planets/Sun.glb"></a-asset-item>
             <a-asset-item id="mercury-model" src="assets/planets/Mercury.glb"></a-asset-item>
             <a-asset-item id="venus-model" src="assets/planets/Venus.glb"></a-asset-item>
@@ -392,7 +397,7 @@
         
         <!-- Direct GLB model loading -->
         <!-- Starry sky background + procedural starfield -->
-        <a-sky src="https://cdn.jsdelivr.net/gh/aframevr/aframe@1.4.0/examples/assets/images/starry-sky.jpg" rotation="0 -30 0"></a-sky>
+        <a-sky id="scene-sky" src="#space-sky" rotation="0 -90 0"></a-sky>
         <a-entity starfield="count: 1000; radius: 220; size: 0.5"></a-entity>
         
         <!-- Enhanced lighting -->
@@ -508,7 +513,7 @@
         <!-- VR Rig with Custom Movement Controls -->
         <a-entity id="rig" position="0 1.6 0">
             <!-- Camera (headset view) -->
-            <a-camera id="camera" wasd-controls-enabled="false"></a-camera>
+            <a-camera id="camera" wasd-controls-enabled="false" look-controls="enabled: false"></a-camera>
 
             <!-- Right-hand controller -->
             <a-entity id="rightController"
@@ -724,78 +729,87 @@
         
         // Zoom functionality removed - planets now just show info without camera movement
         
+        // Attach planet selection listeners safely
         function setupPlanetInteractions() {
             const planets = document.querySelectorAll('.planet');
             planets.forEach(planet => {
-                planet.addEventListener('click', () => {
-                    handlePlanetSelection(planet);
-                });
+                attachPlanetSelection(planet);
+            });
+        }
+        
+        function attachPlanetSelection(planetEl) {
+            if (!planetEl) return;
+            // Avoid adding listener twice
+            if (planetEl.__hasSelectionListener) return;
+            planetEl.__hasSelectionListener = true;
+
+            planetEl.addEventListener('click', () => {
+                // If selection is locked (tour / loading), skip
+                if (window.selectionDisabled || window.tourActive) {
+                    console.log('🛑 Selection disabled (tour/loading)');
+                    return;
+                }
+                // Don't allow selection until models fully loaded
+                if (!window.modelsFullyLoaded) {
+                    console.warn('🛑 Selection ignored until models loaded');
+                    return;
+                }
+                guardedSelectPlanet(planetEl);
             });
         }
 
-        function handlePlanetSelection(planet) {
-            // Only allow planet selection if user has interacted and VR/tour has started
-            if (!userHasInteracted || !allowPlanetSelection || !vrStarted) {
-                console.log('Planet selection disabled - waiting for user interaction');
-                return;
-            }
-            
-            const planetId = planet.getAttribute('data-planet-id');
-            const planetName = planet.getAttribute('data-planet-name');
-            const planetDesc = planet.getAttribute('data-planet-desc');
-            
-            // Skip planets with empty descriptions (like Sun)
-            if (!planetDesc || planetDesc.trim() === '') {
-                console.log(`Skipping ${planetName} - no description available`);
-                return;
-            }
-            
-            currentPlanet = {
-                id: planetId,
-                name: planetName,
-                description: planetDesc
-            };
-            
-            // Update desktop display
-            document.getElementById('currentPlanet').textContent = planetName;
-            
-            console.log('Selected planet:', planetName);
-            console.log('Planet element:', planet);
-            
-            // Move camera closer to the selected planet
-            focusOnPlanet(planetId);
-            
-            // Check if this is a GLTF model or sphere
-            const gltfModel = planet.querySelector('a-gltf-model');
-            const sphereModel = planet.tagName === 'A-SPHERE' ? planet : null;
-            
-            if (gltfModel) {
-                console.log('This is a GLTF model planet');
-                console.log('GLTF model src:', gltfModel.getAttribute('src'));
-                console.log('GLTF model visible:', gltfModel.getAttribute('visible'));
-                console.log('GLTF model loaded:', gltfModel.hasAttribute('loaded'));
-            } else if (sphereModel) {
-                console.log('This is a sphere planet (Pluto)');
-            }
-            
-            // Subtle visual feedback - only scale the GLTF model, not the whole entity
-            if (gltfModel) {
-                const currentScale = gltfModel.getAttribute('scale');
-                if (currentScale) {
-                    const scaleArray = currentScale.split(' ').map(Number);
-                    const newScale = scaleArray.map(s => s * 1.05);
-                    gltfModel.setAttribute('scale', newScale.join(' '));
-                    setTimeout(() => {
-                        gltfModel.setAttribute('scale', currentScale);
-                    }, 300);
+        // Safe wrapper for programmatic selection (used by tour too)
+        function guardedSelectPlanet(planetEl) {
+            if (!planetEl) return;
+            const planetName = (planetEl.dataset && planetEl.dataset.planetName) || planetEl.id || 'unknown';
+
+            // Debounce / prevent identical repeated selections (250ms)
+            if (window._lastSelectedPlanet === planetName) {
+                // Small debounce to avoid rapid-fire repeats
+                if (window._selectionDebounce) return;
+                window._selectionDebounce = setTimeout(() => { window._selectionDebounce = null; }, 250);
+            } else {
+                window._lastSelectedPlanet = planetName;
+                // Clear debounce if different selection occurred
+                if (window._selectionDebounce) { 
+                    clearTimeout(window._selectionDebounce); 
+                    window._selectionDebounce = null; 
                 }
             }
-            
-            // Auto-speak the planet info in selected language (only after VR starts and user interaction)
-            if (vrStarted) {
-                // Don't auto-play audio - wait for user interaction
-                console.log(`🌍 Planet selected: ${planetName} (TTS ready for user interaction)`);
+
+            // Prevent overlapping TTS
+            if (window.ttsBusy) {
+                console.warn('🛑 Selection skipped because TTS busy:', planetName);
+                return;
             }
+
+            // Visual highlight call (call your existing highlight function)
+            try { 
+                if (typeof highlightPlanet === 'function') highlightPlanet(planetEl); 
+            } catch(e) { 
+                console.warn('Highlight error:', e); 
+            }
+
+            // Narrate the planet description via guarded speakText
+            const desc = planetEl.getAttribute('data-planet-desc') || `${planetName}`;
+            if (desc && desc.trim() !== '') {
+                speakText(desc, window.currentLanguage || 'en')
+                    .catch(err => console.error('speakText error:', err));
+            }
+        }
+
+        // Legacy wrapper - redirects to guardedSelectPlanet
+        function handlePlanetSelection(planet) {
+            if (!planet) return;
+            
+            // Check basic user interaction requirements
+            if (!userHasInteracted || !allowPlanetSelection || !vrStarted) {
+                console.log('🛑 Planet selection disabled - waiting for user interaction');
+                return;
+            }
+            
+            // Delegate to guarded selection
+            guardedSelectPlanet(planet);
         }
         
         function setupVRControls() {
@@ -1204,6 +1218,53 @@
             } else {
                 console.error('❌ Sun entity not found');
             }
+            
+            // Track ALL model loading to set modelsFullyLoaded flag
+            setTimeout(() => {
+                const modelEls = document.querySelectorAll('[gltf-model]');
+                let modelsRemaining = modelEls.length;
+                
+                console.log(`🔍 Tracking ${modelsRemaining} GLTF models for loading...`);
+                
+                if (modelsRemaining === 0) {
+                    window.modelsFullyLoaded = true;
+                    console.log('✅ No models to load - safe for narration');
+                } else {
+                    modelEls.forEach(el => {
+                        const handleLoaded = () => {
+                            modelsRemaining--;
+                            const planetId = el.closest('[data-planet-id]')?.getAttribute('data-planet-id') || 'unknown';
+                            console.log(`✅ Model loaded: ${planetId} (${modelsRemaining} remaining)`);
+                            
+                            if (modelsRemaining <= 0) {
+                                window.modelsFullyLoaded = true;
+                                console.log('✅✅✅ All models loaded and safe for narration ✅✅✅');
+                                
+                                // Only auto-select initial planet once — avoid re-triggering repeatedly
+                                if (!window._initialSelectionDone) {
+                                    window._initialSelectionDone = true;
+                                    const sunEl = document.querySelector('[data-planet-id="sun"]');
+                                    if (sunEl) {
+                                        // Temporarily disable selection during auto highlight to avoid loops
+                                        window.selectionDisabled = true;
+                                        try { 
+                                            if (typeof highlightPlanet === 'function') highlightPlanet(sunEl); 
+                                        } catch(e) { 
+                                            console.warn('Initial highlight error:', e); 
+                                        }
+                                        // Re-enable selections after brief delay
+                                        setTimeout(() => { window.selectionDisabled = false; }, 300);
+                                    }
+                                }
+                            }
+                        };
+                        
+                        el.addEventListener('model-loaded', handleLoaded, { once: true });
+                        el.addEventListener('model-error', handleLoaded, { once: true }); // Count errors too
+                    });
+                }
+            }, 100);
+            
             setTimeout(() => {
                 console.log('🔍 Checking GLTF models...');
                 
@@ -1494,10 +1555,20 @@
         };
 
         // Tour state management
+        // Tour state
         let isTourActive = false;
         let tourPaused = false;
         let currentTourLanguage = 'en';
         let currentTourStep = 0;
+        
+        // Global flags for TTS spam prevention (MUST be initialized early)
+        window.modelsFullyLoaded = false; // Set true when all GLTFs done loading
+        window.tourActive = false;        // True while guided tour is running
+        window.selectionDisabled = false; // Lock during tour/loading
+        window.ttsBusy = false;           // Prevents overlapping TTS calls
+        window._lastSelectedPlanet = null; // Track last selection for debouncing
+        window._selectionDebounce = null;  // Debounce timer
+        window._initialSelectionDone = false; // Prevent repeated initial selection
         let tourSteps = [];
         let pausedAtStep = 0;
         
@@ -1603,6 +1674,8 @@
         async function startGuidedTour() {
             console.log('🎬 Starting guided tour...');
             isTourActive = true;
+            window.tourActive = true; // Global flag to prevent planet narration overlap
+            window.selectionDisabled = true; // Lock manual selection during tour
             currentTourLanguage = localStorage.getItem('selectedLanguage') || 'en';
             
             console.log(`🎬 Tour language: ${currentTourLanguage}`);
@@ -1678,7 +1751,13 @@
             
             const rig = document.querySelector('#rig');
             
-            // Start from a dramatic angle
+            // Play overview narration FIRST
+            const narrationPromise = speakText(tourData.overview[language] || tourData.overview.en, language);
+            
+            // Wait a moment for narration to start
+            await wait(500);
+            
+            // Start from a dramatic angle WHILE narration plays
             await moveToPosition(rig, { x: 0, y: 25, z: 30 });
             
             // Brief pause for dramatic effect
@@ -1687,11 +1766,11 @@
             // Move to overview position (far back to see all planets)
             await moveToPosition(rig, { x: 0, y: 15, z: 20 });
             
-            // Play overview narration
-                await speakText(tourData.overview[language] || tourData.overview.en, language);
+            // Wait for narration to complete
+            await narrationPromise;
             
-            // Wait for narration to complete with extra time for dramatic effect
-            await wait(7000);
+            // Extra time for dramatic effect
+            await wait(2000);
         }
 
         // Show conclusion scene with dramatic finale
@@ -1734,9 +1813,19 @@
             showTourStatus(`🌍 Visiting ${planetName}`);
             
             const rig = document.querySelector('#rig');
-            const planetPos = planetEl.getAttribute('position');
             
-            // Approach from a dramatic angle first
+            // Get world position (not local) since planets are now in orbit-parents
+            const worldPos = new THREE.Vector3();
+            planetEl.object3D.getWorldPosition(worldPos);
+            const planetPos = { x: worldPos.x, y: worldPos.y, z: worldPos.z };
+            
+            // Start narration FIRST
+            const narrationPromise = speakText(tourData[planetId]?.[language] || tourData[planetId]?.en || `Visiting ${planetId}`, language);
+            
+            // Wait a moment for narration to start
+            await wait(500);
+            
+            // Approach from a dramatic angle WHILE narration plays
             await moveToPosition(rig, { 
                 x: planetPos.x + 5, 
                 y: planetPos.y + 8, 
@@ -1756,11 +1845,11 @@
                 z: planetPos.z + 8 
             });
             
-            // Play planet narration
-                await speakText(tourData[planetId]?.[language] || tourData[planetId]?.en || `Visiting ${planetId}`, language);
-            
             // Wait for narration to complete
-            await wait(8000);
+            await narrationPromise;
+            
+            // Extra time after narration
+            await wait(2000);
             
             // Remove highlight
             removePlanetHighlight(planetEl);
@@ -1805,7 +1894,10 @@
             const rig = document.querySelector('#rig');
             if (!rig) return;
             
-            const planetPos = planetEl.getAttribute('position');
+            // Get world position since planets are now in orbit-parents
+            const worldPos = new THREE.Vector3();
+            planetEl.object3D.getWorldPosition(worldPos);
+            const planetPos = { x: worldPos.x, y: worldPos.y, z: worldPos.z };
             const currentPos = rig.getAttribute('position');
             
             // Calculate position closer to the planet
@@ -1835,6 +1927,18 @@
 
         // Enhanced text-to-speech using only Sarvam TTS with timeout
         async function speakText(text, language) {
+            // DEBUG: Trace who is calling speakText
+            if (text && text.includes('star at the center')) {
+                console.trace('🔍 TRACE: Who is calling speakText for Sun?');
+            }
+            
+            // Prevent overlapping TTS requests
+            if (window.ttsBusy) {
+                console.warn('🛑 TTS busy — ignoring overlapping request');
+                return Promise.resolve();
+            }
+            
+            window.ttsBusy = true;
             console.log(`🗣️ Speaking in ${language}: ${text.substring(0, 50)}...`);
             
             // Wait for pause to be cleared before speaking
@@ -1874,6 +1978,9 @@
                     console.log('❌ TTS failed - no fallback available');
                 }
                 throw error;
+            } finally {
+                // Always release the TTS busy flag
+                window.ttsBusy = false;
             }
         }
 
@@ -1979,6 +2086,8 @@
         function enableInteractiveMode() {
             console.log('🎮 Enabling interactive mode...');
             isTourActive = false;
+            window.tourActive = false; // Clear global tour flag to allow planet interactions
+            window.selectionDisabled = false; // Unlock manual selection
             
             // Hide tour status
             hideTourStatus();
