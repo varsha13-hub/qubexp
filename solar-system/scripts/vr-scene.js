@@ -415,11 +415,30 @@ class VRSceneController {
         const planet = this.planets.find(p => p.id === planetId);
         if (!planet) return;
 
+        // 🛑 GUARD: Check if TTS is busy or selection is disabled
+        if (window.ttsBusy) {
+            console.log('🛑 selectPlanet: TTS busy, skipping', planet.name);
+            return;
+        }
+        
+        if (window.selectionDisabled) {
+            console.log('🛑 selectPlanet: selection disabled, skipping', planet.name);
+            return;
+        }
+        
+        if (window.tourActive) {
+            console.log('🛑 selectPlanet: tour active, skipping', planet.name);
+            return;
+        }
+
         this.currentPlanet = planet;
         console.log('Selected planet:', planet.name);
         
-        // Always try to translate planet info for better user experience
+        // Set TTS busy flag to prevent overlapping calls
+        window.ttsBusy = true;
+        
         try {
+            // Always try to translate planet info for better user experience
             const response = await fetch('http://localhost:8080/api/translate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -456,6 +475,9 @@ class VRSceneController {
             console.error('Translation failed, using original text:', error);
             this.showPlanetInfo(planet);
             await this.speakPlanetInfo(planet.description);
+        } finally {
+            // Always release the TTS busy flag
+            window.ttsBusy = false;
         }
         
         this.highlightPlanet(planetId);
@@ -569,6 +591,22 @@ class VRSceneController {
     }
 
     async speakPlanetInfo() {
+        // 🛑 GUARD: Check if TTS is busy or selection is disabled
+        if (window.ttsBusy) {
+            console.log('🛑 speakPlanetInfo: TTS busy, skipping');
+            return;
+        }
+        
+        if (window.selectionDisabled) {
+            console.log('🛑 speakPlanetInfo: selection disabled, skipping');
+            return;
+        }
+        
+        if (window.tourActive) {
+            console.log('🛑 speakPlanetInfo: tour active, skipping');
+            return;
+        }
+        
         if (this.currentPlanet) {
             try {
                 // Always use Sarvam TTS for all languages

@@ -30,30 +30,58 @@ class TTSProvider {
                 'api-subscription-key': sarvamKey
             };
 
+            // Sarvam TTS API correct format
+            // Valid speakers: anushka (female), priya (female), neha (female), or male voices
+            // Valid models: bulbul:v2, bulbul:v3-beta
             const payload = {
-                text: text,
+                inputs: [text],
                 target_language_code: sarvamLanguage,
-                model: 'bulbul:v2',
-                speaker: 'anushka',
-                pitch: options.pitch || 0.0,
-                pace: options.pace || 1.0,
-                loudness: options.loudness || 1.0
+                speaker: 'anushka', // Valid female voice
+                pitch: 0,
+                pace: 1.0,
+                loudness: 1.5,
+                speech_sample_rate: 8000,
+                enable_preprocessing: true,
+                model: 'bulbul:v2' // Valid model version
             };
 
-            const response = await axios.post(url, payload, {
-                headers,
-                timeout: 30000
-            });
+            console.log('🔍 Sarvam API Request:', JSON.stringify(payload, null, 2));
+            console.log('🔍 Sarvam API Key present:', !!sarvamKey, 'Length:', sarvamKey ? sarvamKey.length : 0);
 
-            if (response.data?.audios && response.data.audios.length > 0) {
-                return {
-                    audio: response.data.audios[0], // Base64 audio string
-                    format: 'mp3',
-                    provider: 'sarvam'
-                };
+            try {
+                const response = await axios.post(url, payload, {
+                    headers,
+                    timeout: 30000,
+                    validateStatus: function (status) {
+                        return status < 500; // Don't throw for 4xx errors
+                    }
+                });
+
+                console.log('🔍 Sarvam API Response Status:', response.status);
+                console.log('🔍 Sarvam API Response Data:', JSON.stringify(response.data, null, 2));
+
+                if (response.status === 400) {
+                    console.error('❌ Sarvam API 400 Error:', response.data);
+                    throw new Error(`Sarvam API validation error: ${JSON.stringify(response.data)}`);
+                }
+
+                if (response.status !== 200) {
+                    throw new Error(`Sarvam API returned status ${response.status}`);
+                }
+
+                if (response.data?.audios && response.data.audios.length > 0) {
+                    return {
+                        audio: response.data.audios[0], // Base64 audio string
+                        format: 'mp3',
+                        provider: 'sarvam'
+                    };
+                }
+
+                throw new Error('Invalid response from Sarvam AI TTS');
+            } catch (apiError) {
+                console.error('❌ Sarvam API Error:', apiError.message);
+                throw apiError;
             }
-
-            throw new Error('Invalid response from Sarvam AI TTS');
         } catch (error) {
             throw new Error(`Sarvam TTS failed: ${error.message}`);
         }
@@ -236,7 +264,7 @@ const ttsProvider = new TTSProvider();
 // TTS endpoint
 router.post('/', async (req, res) => {
     try {
-        const { text, language = 'en', options = {} } = req.body;
+        const { text, language = 'en', options = {}, voice, speaker } = req.body;
 
         if (!text || typeof text !== 'string') {
             return res.status(400).json({
@@ -245,10 +273,20 @@ router.post('/', async (req, res) => {
             });
         }
 
+        // Merge voice/speaker parameter into options for compatibility
+        const ttsOptions = { ...options };
+        if (speaker) {
+            ttsOptions.speaker = speaker;
+            ttsOptions.voice = speaker; // For compatibility with other providers
+        } else if (voice) {
+            ttsOptions.speaker = voice;
+            ttsOptions.voice = voice;
+        }
+
         console.log('TTS request:', {
             text: text.substring(0, 100) + (text.length > 100 ? '...' : ''),
             language,
-            options
+            options: ttsOptions
         });
 
         // Try providers in order of preference
@@ -262,7 +300,7 @@ router.post('/', async (req, res) => {
 
         for (const providerName of providers) {
             try {
-                result = await ttsProvider.providers[providerName](text, language, options);
+                result = await ttsProvider.providers[providerName](text, language, ttsOptions);
                 console.log(`✅ ${providerName} TTS successful`);
                 break;
             } catch (err) {

@@ -373,12 +373,11 @@
 
     <a-scene background="color: #000011" style="display: none;">
         <!-- Space background -->
-        <a-sky color="#000011"></a-sky>
+        <!-- Background - using starfield instead of a-sky for better performance -->
         
         <!-- Preload all planet models -->
         <a-assets timeout="60000">
-            <!-- Starry sky texture (working URL) -->
-            <img id="space-sky" src="https://cdn.aframe.io/360-image-gallery-boilerplate/img/sechelt.jpg" crossorigin="anonymous">
+            <!-- Sky texture removed to fix visual glitches -->
             
             <!-- Sun texture -->
             <img id="sunTexture" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8ZGVmcz4KICAgIDxyYWRpYWxHcmFkaWVudCBpZD0ic3VuR3JhZGllbnQiIGN4PSI1MCUiIGN5PSI1MCUiIHI9IjUwJSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiNGRkQ3MDAiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSI3MCUiIHN0b3AtY29sb3I9IiNGRkE1MDAiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjRkY2NjAwIi8+CiAgICA8L3JhZGlhbEdyYWRpZW50PgogIDwvZGVmcz4KICA8Y2lyY2xlIGN4PSIyNTYiIGN5PSIyNTYiIHI9IjI1NiIgZmlsbD0idXJsKCNzdW5HcmFkaWVudCkiLz4KICA8Y2lyY2xlIGN4PSIyNTYiIGN5PSIyNTYiIHI9IjI0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRkZENzAwIiBzdHJva2Utd2lkdGg9IjE2IiBvcGFjaXR5PSIwLjMiLz4KICA8Y2lyY2xlIGN4PSIyNTYiIGN5PSIyNTYiIHI9IjIyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRkZBNTAwIiBzdHJva2Utd2lkdGg9IjEyIiBvcGFjaXR5PSIwLjIiLz4KPC9zdmc+">
@@ -397,7 +396,7 @@
         
         <!-- Direct GLB model loading -->
         <!-- Starry sky background + procedural starfield -->
-        <a-sky id="scene-sky" src="#space-sky" rotation="0 -90 0"></a-sky>
+        <!-- Sky removed to fix visual glitches - using starfield instead -->
         <a-entity starfield="count: 1000; radius: 220; size: 0.5"></a-entity>
         
         <!-- Enhanced lighting -->
@@ -574,9 +573,20 @@
         <a-light type="directional" color="#ffffff" intensity="0.4" position="0 10 0"></a-light>
     </a-scene>
 
-    <script src="scripts/tts.js?v=8"></script>
+    <script src="scripts/tts-sarvam.js"></script>
     <script src="scripts/voice.js?v=2"></script>
     <script src="scripts/vr-scene.js?v=4"></script>
+    
+    <script>
+        // Simple TTS helper for tour
+        async function speakAndWait(text, lang = 'hi') {
+            if (window.TTSManager) {
+                await window.TTSManager.speakTextSarvam(text, { language: lang });
+            }
+        }
+        
+        console.log('✅ Simple Sarvam TTS ready');
+    </script>
 
     <script>
         console.log('Working VR page loaded');
@@ -729,6 +739,83 @@
         
         // Zoom functionality removed - planets now just show info without camera movement
         
+        // Models loaded completion handler (defensive)
+        function onAllModelsLoaded() {
+            console.log("✅✅✅ All models loaded and safe for narration ✅✅✅");
+
+            // Mark ready and ensure selectionAllowed is set only once
+            window.modelsFullyLoaded = true;
+            window.selectionDisabled = true; // keep disabled until we finish initial setup
+            
+            if (!window._modelsLoadedOnce) {
+                window._modelsLoadedOnce = true;
+
+                // Visual-only initial highlight: do NOT speak
+                const sunEl = document.querySelector('[data-planet-id="sun"]');
+                if (sunEl) {
+                    try {
+                        // Use guardedSelectPlanet but skipSpeak to avoid TTS
+                        guardedSelectPlanet(sunEl, { skipSpeak: true, force: true });
+                    } catch (e) {
+                        console.warn("initial highlight failure:", e);
+                    }
+                }
+            }
+
+            // Small delay to finish asset registration then enable selection
+            setTimeout(() => {
+                window.selectionDisabled = false;
+                console.log("✅ selectionDisabled = false; interactive selection re-enabled");
+            }, 300); // allow a short settle time
+        }
+        
+        // Guarded selection function (prevents repeated auto-selection)
+        function guardedSelectPlanet(planetEl, opts = {}) {
+            // opts: { force: boolean, skipSpeak: boolean }
+            try {
+                if (!planetEl) return;
+                const id = planetEl.getAttribute && planetEl.getAttribute('data-planet-id') || planetEl.id || (planetEl.dataset && planetEl.dataset.planetId);
+                const now = Date.now();
+
+                // If selection disabled globally (tour / loading), ignore unless forced
+                if (window.selectionDisabled && !opts.force) {
+                    console.debug("guardedSelectPlanet: selectionDisabled -> ignoring", id);
+                    return;
+                }
+
+                // Debounce: ignore repeated selections on same id within 1500ms
+                if (id && id === window._lastSelectedPlanetId && (now - window._lastSelectionTs) < 1500 && !opts.force) {
+                    console.debug("guardedSelectPlanet: debounced repeated selection", id);
+                    return;
+                }
+
+                window._lastSelectedPlanetId = id;
+                window._lastSelectionTs = now;
+
+                // Visual feedback only - NO TTS here
+                try {
+                    document.querySelectorAll('.planet-selected').forEach(e => e.classList.remove('planet-selected'));
+                    planetEl.classList.add('planet-selected');
+                    if (typeof highlightPlanet === 'function' && !opts.skipSpeak) {
+                        highlightPlanet(planetEl);
+                    }
+                } catch(e) {
+                    console.warn('Visual highlight error:', e);
+                }
+
+                // Only speak if not explicitly skipped and not in tour-loading mode
+                if (!opts.skipSpeak && !window.selectionDisabled && !window.tourActive) {
+                    const desc = planetEl.getAttribute('data-planet-desc');
+                    if (desc && desc.trim() !== '') {
+                        speakText(desc, window.currentLanguage || 'en')
+                            .catch(err => console.error('speakText error:', err));
+                    }
+                }
+            } catch (err) {
+                console.error("guardedSelectPlanet error:", err);
+            }
+        }
+        
         // Attach planet selection listeners safely
         function setupPlanetInteractions() {
             const planets = document.querySelectorAll('.planet');
@@ -758,45 +845,6 @@
             });
         }
 
-        // Safe wrapper for programmatic selection (used by tour too)
-        function guardedSelectPlanet(planetEl) {
-            if (!planetEl) return;
-            const planetName = (planetEl.dataset && planetEl.dataset.planetName) || planetEl.id || 'unknown';
-
-            // Debounce / prevent identical repeated selections (250ms)
-            if (window._lastSelectedPlanet === planetName) {
-                // Small debounce to avoid rapid-fire repeats
-                if (window._selectionDebounce) return;
-                window._selectionDebounce = setTimeout(() => { window._selectionDebounce = null; }, 250);
-            } else {
-                window._lastSelectedPlanet = planetName;
-                // Clear debounce if different selection occurred
-                if (window._selectionDebounce) { 
-                    clearTimeout(window._selectionDebounce); 
-                    window._selectionDebounce = null; 
-                }
-            }
-
-            // Prevent overlapping TTS
-            if (window.ttsBusy) {
-                console.warn('🛑 Selection skipped because TTS busy:', planetName);
-                return;
-            }
-
-            // Visual highlight call (call your existing highlight function)
-            try { 
-                if (typeof highlightPlanet === 'function') highlightPlanet(planetEl); 
-            } catch(e) { 
-                console.warn('Highlight error:', e); 
-            }
-
-            // Narrate the planet description via guarded speakText
-            const desc = planetEl.getAttribute('data-planet-desc') || `${planetName}`;
-            if (desc && desc.trim() !== '') {
-                speakText(desc, window.currentLanguage || 'en')
-                    .catch(err => console.error('speakText error:', err));
-            }
-        }
 
         // Legacy wrapper - redirects to guardedSelectPlanet
         function handlePlanetSelection(planet) {
@@ -819,13 +867,18 @@
         }
         
         function setupDesktopControls() {
-            // Language selector
-            document.getElementById('languageSelect').addEventListener('change', (e) => {
+            // Language selector - check if element exists before adding listener
+            const languageSelect = document.getElementById('languageSelect');
+            if (languageSelect) {
+                languageSelect.addEventListener('change', (e) => {
                     currentLanguage = e.target.value;
                     languageIndex = languages.findIndex(lang => lang.code === currentLanguage);
                     updateVRLanguageDisplay();
                     console.log('Language changed to:', currentLanguage);
                 });
+            } else {
+                console.warn('Language selector element not found');
+            }
             
             // Test TTS button removed for cleaner UI
         }
@@ -870,6 +923,22 @@
             if (!currentPlanet) return;
             if (!vrStarted) {
                 console.log('🔇 TTS blocked - VR not started yet');
+                return;
+            }
+            
+            // 🛑 GUARD: Check if TTS is busy or selection is disabled
+            if (window.ttsBusy) {
+                console.log('🛑 speakPlanetInfo: TTS busy, skipping');
+                return;
+            }
+            
+            if (window.selectionDisabled) {
+                console.log('🛑 speakPlanetInfo: selection disabled, skipping');
+                return;
+            }
+            
+            if (window.tourActive) {
+                console.log('🛑 speakPlanetInfo: tour active, skipping');
                 return;
             }
             
@@ -1082,7 +1151,6 @@
             if (startTourBtn) {
                 startTourBtn.addEventListener('click', () => {
                     console.log('Start tour button clicked!');
-                    unlockAudio(); // Unlock audio on user interaction
                     startGuidedTour();
                     
                     // Show pause button when tour starts
@@ -1237,25 +1305,7 @@
                             console.log(`✅ Model loaded: ${planetId} (${modelsRemaining} remaining)`);
                             
                             if (modelsRemaining <= 0) {
-                                window.modelsFullyLoaded = true;
-                                console.log('✅✅✅ All models loaded and safe for narration ✅✅✅');
-                                
-                                // Only auto-select initial planet once — avoid re-triggering repeatedly
-                                if (!window._initialSelectionDone) {
-                                    window._initialSelectionDone = true;
-                                    const sunEl = document.querySelector('[data-planet-id="sun"]');
-                                    if (sunEl) {
-                                        // Temporarily disable selection during auto highlight to avoid loops
-                                        window.selectionDisabled = true;
-                                        try { 
-                                            if (typeof highlightPlanet === 'function') highlightPlanet(sunEl); 
-                                        } catch(e) { 
-                                            console.warn('Initial highlight error:', e); 
-                                        }
-                                        // Re-enable selections after brief delay
-                                        setTimeout(() => { window.selectionDisabled = false; }, 300);
-                                    }
-                                }
+                                onAllModelsLoaded();
                             }
                         };
                         
@@ -1567,8 +1617,12 @@
         window.selectionDisabled = false; // Lock during tour/loading
         window.ttsBusy = false;           // Prevents overlapping TTS calls
         window._lastSelectedPlanet = null; // Track last selection for debouncing
+        window._lastSelectedPlanetId = null; // Track by ID for guardedSelectPlanet
+        window._lastSelectionTs = 0;      // Timestamp for debouncing
         window._selectionDebounce = null;  // Debounce timer
         window._initialSelectionDone = false; // Prevent repeated initial selection
+        window._modelsLoadedOnce = false; // Ensure model completion runs once
+        window.audioUnlocked = false;     // Track audio unlock status
         let tourSteps = [];
         let pausedAtStep = 0;
         
@@ -1947,37 +2001,18 @@
             }
             
             try {
-                // Always use Sarvam TTS via ttsManager with timeout
-                if (window.ttsManager && window.ttsManager.fetchServerTTS) {
-                    console.log(`🎯 Using Sarvam TTS for ${language}`);
-                    
-                    // Create a timeout promise (max 20 seconds)
-                    const timeoutPromise = new Promise((_, reject) => {
-                        setTimeout(() => {
-                            reject(new Error('TTS timeout - narration took too long'));
-                        }, 20000); // 20 second timeout
-                    });
-                    
-                    // Race between TTS completion and timeout
-                    await Promise.race([
-                        window.ttsManager.fetchServerTTS(text, language),
-                        timeoutPromise
-                    ]);
-                    
-                    console.log(`✅ Sarvam TTS completed for ${language}`);
-                    return;
-                } else {
-                    throw new Error('TTS Manager not available');
-                }
+                // Use robust TTS with proper promise handling
+                console.log(`🎯 Using robust TTS for ${language}`);
+                
+                await speakAndWait(text, language, 'sarvam');
+                
+                console.log(`✅ Robust TTS completed for ${language}`);
+                return;
                 
             } catch (error) {
-                console.error('❌ Sarvam TTS error:', error);
-                if (error.message.includes('timeout')) {
-                    console.log('⏰ TTS timeout - continuing to next step');
-                } else {
-                    console.log('❌ TTS failed - no fallback available');
-                }
-                throw error;
+                console.warn('❌ Robust TTS error:', error);
+                console.log('⏰ TTS failed - continuing to next step');
+                // Continue tour even if TTS fails
             } finally {
                 // Always release the TTS busy flag
                 window.ttsBusy = false;

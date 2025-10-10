@@ -181,6 +181,22 @@ class TTSManager {
 
     // Helper method to play base64 audio data
     async playAudioBase64(base64Data, format = 'mp3') {
+        // 🛑 GUARD: Check if TTS is busy or selection is disabled
+        if (window.ttsBusy) {
+            console.log('🛑 playAudioBase64: TTS busy, skipping');
+            return;
+        }
+        
+        if (window.selectionDisabled) {
+            console.log('🛑 playAudioBase64: selection disabled, skipping');
+            return;
+        }
+        
+        if (window.tourActive) {
+            console.log('🛑 playAudioBase64: tour active, skipping');
+            return;
+        }
+        
         try {
             console.log(`🎵 Converting base64 audio (${format}) to blob and playing...`);
             
@@ -199,6 +215,22 @@ class TTSManager {
 
     // Helper method to play fetched server TTS audio
     async playServerTTSAudio(audioData) {
+        // 🛑 GUARD: Check if TTS is busy or selection is disabled
+        if (window.ttsBusy) {
+            console.log('🛑 playServerTTSAudio: TTS busy, skipping');
+            return;
+        }
+        
+        if (window.selectionDisabled) {
+            console.log('🛑 playServerTTSAudio: selection disabled, skipping');
+            return;
+        }
+        
+        if (window.tourActive) {
+            console.log('🛑 playServerTTSAudio: tour active, skipping');
+            return;
+        }
+        
         if (audioData.type === 'url') {
             await this.playAudioUrl(audioData.data);
         } else if (audioData.type === 'base64') {
@@ -210,6 +242,22 @@ class TTSManager {
 
     // Helper method to fetch and play server TTS audio (for backward compatibility)
     async fetchServerTTS(text, languageCode) {
+        // 🛑 GUARD: Check if TTS is busy or selection is disabled
+        if (window.ttsBusy) {
+            console.log('🛑 fetchServerTTS: TTS busy, skipping', text.substring(0, 50));
+            return;
+        }
+        
+        if (window.selectionDisabled) {
+            console.log('🛑 fetchServerTTS: selection disabled, skipping', text.substring(0, 50));
+            return;
+        }
+        
+        if (window.tourActive) {
+            console.log('🛑 fetchServerTTS: tour active, skipping', text.substring(0, 50));
+            return;
+        }
+        
         const audioData = await this.fetchServerTTSAudio(text, languageCode);
         await this.playServerTTSAudio(audioData);
     }
