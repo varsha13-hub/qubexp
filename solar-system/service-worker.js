@@ -1,357 +1,140 @@
-// Service Worker for SolarLearn VR PWA
-const CACHE_NAME = 'solarlearn-vr-v1.0.0';
-const STATIC_CACHE = 'solarlearn-static-v1.0.0';
-const DYNAMIC_CACHE = 'solarlearn-dynamic-v1.0.0';
+const CACHE_NAME = 'solar-vr-v1';
 
-// Files to cache for offline functionality
-const STATIC_FILES = [
-    '/',
-    '/index.html',
-    '/vr.html',
-    '/styles.css',
-    '/manifest.json',
-    '/scripts/app.js',
-    '/scripts/vr-scene.js',
-    '/scripts/voice.js',
-    '/scripts/tts.js',
-    '/scripts/api.js',
-    '/scripts/intents.js',
-    '/scripts/cache.js',
-    '/data/planets.en.json',
-    'https://aframe.io/releases/1.4.0/aframe.min.js',
-    'https://aframe.io/releases/1.4.0/aframe-extras.min.js'
+// Add all files that need to be cached for offline use
+const CACHE_URLS = [
+  '/',
+  '/index.html',
+  '/styles/main.css',
+  '/scripts/tts-offline.js',
+  '/scripts/voice.js',
+  '/scripts/vr-scene.js',
+  '/vr',
+  '/vr/',
+  '/working-vr',
+  '/working-vr.html',
+  // A-Frame and dependencies
+  'https://aframe.io/releases/1.4.0/aframe.min.js',
+  'https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.0.0/dist/aframe-extras.min.js',
+  'https://unpkg.com/aframe-environment-component@1.3.2/dist/aframe-environment-component.min.js',
+  // Audio files - English
+  '/audio/en/sun.mp3',
+  '/audio/en/mercury.mp3',
+  '/audio/en/venus.mp3',
+  '/audio/en/earth.mp3',
+  '/audio/en/mars.mp3',
+  '/audio/en/jupiter.mp3',
+  '/audio/en/saturn.mp3',
+  '/audio/en/uranus.mp3',
+  '/audio/en/neptune.mp3',
+  '/audio/en/overview.mp3',
+  '/audio/en/conclusion.mp3',
+  // Audio files - Hindi
+  '/audio/hi/sun.mp3',
+  '/audio/hi/mercury.mp3',
+  '/audio/hi/venus.mp3',
+  '/audio/hi/earth.mp3',
+  '/audio/hi/mars.mp3',
+  '/audio/hi/jupiter.mp3',
+  '/audio/hi/saturn.mp3',
+  '/audio/hi/uranus.mp3',
+  '/audio/hi/neptune.mp3',
+  '/audio/hi/overview.mp3',
+  '/audio/hi/conclusion.mp3',
+  // 3D Models
+  '/models/sun.glb',
+  '/models/mercury.glb',
+  '/models/venus.glb',
+  '/models/earth.glb',
+  '/models/mars.glb',
+  '/models/jupiter.glb',
+  '/models/saturn.glb',
+  '/models/uranus.glb',
+  '/models/neptune.glb',
+  // Icons
+  '/icons/icon-192.png',
+  '/icons/icon-512.png',
+  // Manifest
+  '/manifest.json'
 ];
 
-// API endpoints to cache (for offline fallback)
-const API_CACHE = [
-    '/api/planets',
-    '/api/health'
-];
-
-// Install event - cache static files
+// Install event - cache all required files
 self.addEventListener('install', (event) => {
-    console.log('Service Worker installing...');
-    
-    event.waitUntil(
-        caches.open(STATIC_CACHE)
-            .then((cache) => {
-                console.log('Caching static files...');
-                return cache.addAll(STATIC_FILES);
-            })
-            .then(() => {
-                console.log('Static files cached successfully');
-                return self.skipWaiting();
-            })
-            .catch((error) => {
-                console.error('Failed to cache static files:', error);
-            })
-    );
+  console.log('Service Worker installing...');
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then((cache) => {
+        console.log('Caching files for offline use');
+        return cache.addAll(CACHE_URLS.map(url => {
+          // Handle both absolute and relative URLs
+          if (url.startsWith('http')) {
+            return url;
+          }
+          return new URL(url, self.location.origin + '/solar-system').href;
+        }));
+      })
+  );
 });
 
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
-    console.log('Service Worker activating...');
-    
-    event.waitUntil(
-        caches.keys()
-            .then((cacheNames) => {
-                return Promise.all(
-                    cacheNames.map((cacheName) => {
-                        if (cacheName !== STATIC_CACHE && 
-                            cacheName !== DYNAMIC_CACHE && 
-                            cacheName !== CACHE_NAME) {
-                            console.log('Deleting old cache:', cacheName);
-                            return caches.delete(cacheName);
-                        }
-                    })
-                );
-            })
-            .then(() => {
-                console.log('Service Worker activated');
-                return self.clients.claim();
-            })
-    );
+  console.log('Service Worker activating...');
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          if (cacheName !== CACHE_NAME) {
+            console.log('Removing old cache:', cacheName);
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    })
+  );
 });
 
-// Fetch event - serve from cache or network
+// Helper function to normalize URLs
+function normalizeUrl(url) {
+  // Remove query parameters and hash
+  const urlObj = new URL(url);
+  urlObj.search = '';
+  urlObj.hash = '';
+  return urlObj.href;
+}
+
+// Fetch event - serve from cache first, then network
 self.addEventListener('fetch', (event) => {
-    const { request } = event;
-    const url = new URL(request.url);
-
-    // Skip non-GET requests
-    if (request.method !== 'GET') {
-        return;
-    }
-
-    // Handle different types of requests
-    if (isStaticFile(request)) {
-        event.respondWith(handleStaticFile(request));
-    } else if (isAPIRequest(request)) {
-        event.respondWith(handleAPIRequest(request));
-    } else {
-        event.respondWith(handleOtherRequest(request));
-    }
-});
-
-// Check if request is for a static file
-function isStaticFile(request) {
-    const url = new URL(request.url);
-    return STATIC_FILES.includes(url.pathname) || 
-           url.pathname.startsWith('/scripts/') ||
-           url.pathname.startsWith('/data/') ||
-           url.pathname.startsWith('/assets/') ||
-           url.pathname === '/styles.css' ||
-           url.pathname === '/manifest.json';
-}
-
-// Check if request is for an API endpoint
-function isAPIRequest(request) {
-    const url = new URL(request.url);
-    return url.pathname.startsWith('/api/');
-}
-
-// Handle static file requests
-async function handleStaticFile(request) {
-    try {
-        // Try cache first
-        const cachedResponse = await caches.match(request);
-        if (cachedResponse) {
-            return cachedResponse;
+  event.respondWith(
+    caches.match(normalizeUrl(event.request.url))
+      .then((response) => {
+        if (response) {
+          console.log('Serving from cache:', event.request.url);
+          return response;
         }
 
-        // Fallback to network
-        const networkResponse = await fetch(request);
-        
-        // Cache successful responses
-        if (networkResponse.ok) {
-            const cache = await caches.open(STATIC_CACHE);
-            cache.put(request, networkResponse.clone());
-        }
-        
-        return networkResponse;
-    } catch (error) {
-        console.error('Static file fetch failed:', error);
-        
-        // Return offline page for HTML requests
-        if (request.headers.get('accept').includes('text/html')) {
-            return caches.match('/index.html');
-        }
-        
-        throw error;
-    }
-}
-
-// Handle API requests
-async function handleAPIRequest(request) {
-    const url = new URL(request.url);
-    
-    try {
-        // Try network first for API requests
-        const networkResponse = await fetch(request);
-        
-        // Cache successful GET responses
-        if (networkResponse.ok && request.method === 'GET') {
-            const cache = await caches.open(DYNAMIC_CACHE);
-            cache.put(request, networkResponse.clone());
-        }
-        
-        return networkResponse;
-    } catch (error) {
-        console.error('API request failed:', error);
-        
-        // Try cache for GET requests
-        if (request.method === 'GET') {
-            const cachedResponse = await caches.match(request);
-            if (cachedResponse) {
-                return cachedResponse;
+        console.log('Fetching from network:', event.request.url);
+        return fetch(event.request)
+          .then((response) => {
+            // Check if we received a valid response
+            if (!response || response.status !== 200) {
+              return response;
             }
-        }
-        
-        // Return error response
-        return new Response(
-            JSON.stringify({ 
-                error: 'Network error', 
-                message: 'Please check your connection and try again.',
-                offline: true 
-            }),
-            {
-                status: 503,
-                statusText: 'Service Unavailable',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            }
-        );
-    }
-}
 
-// Handle other requests
-async function handleOtherRequest(request) {
-    try {
-        // Try network first
-        const networkResponse = await fetch(request);
-        
-        // Cache successful responses
-        if (networkResponse.ok) {
-            const cache = await caches.open(DYNAMIC_CACHE);
-            cache.put(request, networkResponse.clone());
-        }
-        
-        return networkResponse;
-    } catch (error) {
-        console.error('Request failed:', error);
-        throw error;
-    }
-}
+            // Clone the response as it can only be consumed once
+            const responseToCache = response.clone();
 
-// Background sync for offline actions
-self.addEventListener('sync', (event) => {
-    console.log('Background sync triggered:', event.tag);
-    
-    if (event.tag === 'background-sync') {
-        event.waitUntil(doBackgroundSync());
-    }
+            // Add the new file to cache
+            caches.open(CACHE_NAME)
+              .then((cache) => {
+                cache.put(normalizeUrl(event.request.url), responseToCache);
+              });
+
+            return response;
+          })
+          .catch((error) => {
+            console.error('Fetch failed:', error);
+            // Return any cached version as fallback
+            return caches.match(event.request);
+          });
+      })
+  );
 });
-
-// Background sync implementation
-async function doBackgroundSync() {
-    try {
-        // Sync any pending offline actions
-        console.log('Performing background sync...');
-        
-        // Example: sync cached translations
-        const cache = await caches.open(DYNAMIC_CACHE);
-        const requests = await cache.keys();
-        
-        for (const request of requests) {
-            if (request.url.includes('/api/translate')) {
-                // Could implement sync logic here
-                console.log('Syncing translation request:', request.url);
-            }
-        }
-        
-        console.log('Background sync completed');
-    } catch (error) {
-        console.error('Background sync failed:', error);
-    }
-}
-
-// Push notification handling
-self.addEventListener('push', (event) => {
-    console.log('Push notification received:', event);
-    
-    const options = {
-        body: event.data ? event.data.text() : 'New update available!',
-        icon: '/assets/icons/icon-192x192.png',
-        badge: '/assets/icons/icon-72x72.png',
-        vibrate: [100, 50, 100],
-        data: {
-            dateOfArrival: Date.now(),
-            primaryKey: 1
-        },
-        actions: [
-            {
-                action: 'explore',
-                title: 'Explore Solar System',
-                icon: '/assets/icons/icon-96x96.png'
-            },
-            {
-                action: 'close',
-                title: 'Close',
-                icon: '/assets/icons/icon-96x96.png'
-            }
-        ]
-    };
-    
-    event.waitUntil(
-        self.registration.showNotification('SolarLearn VR', options)
-    );
-});
-
-// Notification click handling
-self.addEventListener('notificationclick', (event) => {
-    console.log('Notification clicked:', event);
-    
-    event.notification.close();
-    
-    if (event.action === 'explore') {
-        event.waitUntil(
-            clients.openWindow('/vr')
-        );
-    } else if (event.action === 'close') {
-        // Just close the notification
-        return;
-    } else {
-        // Default action - open the app
-        event.waitUntil(
-            clients.openWindow('/')
-        );
-    }
-});
-
-// Message handling for communication with main thread
-self.addEventListener('message', (event) => {
-    console.log('Service Worker received message:', event.data);
-    
-    if (event.data && event.data.type === 'SKIP_WAITING') {
-        self.skipWaiting();
-    }
-    
-    if (event.data && event.data.type === 'GET_VERSION') {
-        event.ports[0].postMessage({ version: CACHE_NAME });
-    }
-    
-    if (event.data && event.data.type === 'CLEAR_CACHE') {
-        event.waitUntil(clearAllCaches());
-    }
-});
-
-// Clear all caches
-async function clearAllCaches() {
-    try {
-        const cacheNames = await caches.keys();
-        await Promise.all(
-            cacheNames.map(cacheName => caches.delete(cacheName))
-        );
-        console.log('All caches cleared');
-        return true;
-    } catch (error) {
-        console.error('Failed to clear caches:', error);
-        return false;
-    }
-}
-
-// Periodic cache cleanup
-self.addEventListener('periodicsync', (event) => {
-    if (event.tag === 'cache-cleanup') {
-        event.waitUntil(cleanupOldCaches());
-    }
-});
-
-// Cleanup old cache entries
-async function cleanupOldCaches() {
-    try {
-        const cache = await caches.open(DYNAMIC_CACHE);
-        const requests = await cache.keys();
-        
-        for (const request of requests) {
-            const response = await cache.match(request);
-            if (response) {
-                const date = response.headers.get('date');
-                if (date) {
-                    const age = Date.now() - new Date(date).getTime();
-                    // Remove entries older than 7 days
-                    if (age > 7 * 24 * 60 * 60 * 1000) {
-                        await cache.delete(request);
-                    }
-                }
-            }
-        }
-        
-        console.log('Cache cleanup completed');
-    } catch (error) {
-        console.error('Cache cleanup failed:', error);
-    }
-}
-
-console.log('Service Worker loaded');
