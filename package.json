@@ -1,0 +1,17 @@
+{
+  "name": "qubexp-solarlearn",
+  "version": "1.0.0",
+  "description": "SolarLearn VR - Offline-ready Electron app",
+  "main": "electron-main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "electron": "^26.2.1",
+    "node-fetch": "^2.6.1"
+  }
+}

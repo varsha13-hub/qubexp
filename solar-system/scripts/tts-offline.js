@@ -10,15 +10,38 @@
     _lastRequest: null,
 
     async _loadAudioFile(planet, lang) {
-      const audioPath = `${AUDIO_BASE_PATH}/${lang}/${planet}.mp3`;
+      const relPath = `${AUDIO_BASE_PATH}/${lang}/${planet}.mp3`;
+      console.log('[TTS] _loadAudioFile:', { planet, lang, relPath });
+      
+      // Verify path contains the planet key
+      if (!relPath.includes(planet)) {
+        console.warn('[TTS] resolved path does not include planet key — possible mapping bug', { planet, lang, relPath });
+      }
+      
+      // 1) If running under file:// and we have an Electron API, try to resolve
+      if (location.protocol === 'file:' && window.api && window.api.playLocalAudio) {
+        console.log('[TTS] trying Electron API for:', relPath);
+        const res = await window.api.playLocalAudio(relPath);
+        if (res.ok && res.path) {
+          console.log('[TTS] got file path from Electron:', res.path);
+          return res.path; // file://...
+        }
+        console.warn('[TTS] playLocalAudio did not return file:', res);
+      }
+
+      // 2) Otherwise try relative fetch from same origin
+      let base = window.location.pathname;
+      // remove trailing index.html or filename
+      base = base.substring(0, base.lastIndexOf('/'));
+      const url = `${base}/${relPath}`.replace(/\/\//g,'/');
       
       try {
-        const response = await fetch(audioPath);
-        if (!response.ok) throw new Error(`Audio file not found: ${audioPath}`);
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`Audio file not found: ${url}`);
         const blob = await response.blob();
         return URL.createObjectURL(blob);
       } catch (error) {
-        console.warn(`[Offline TTS] Failed to load audio file: ${audioPath}`, error);
+        console.warn(`[Offline TTS] Failed to load audio file: ${url}`, error);
         return null;
       }
     },
@@ -41,11 +64,34 @@
     },
 
     async speak(text, lang = 'hi', opts = {}) {
-      // Extract planet name from the current context
-      const planetMatch = text.toLowerCase().match(/\b(sun|mercury|venus|earth|mars|jupiter|saturn|uranus|neptune|overview|conclusion)\b/);
-      const planet = planetMatch ? planetMatch[1] : 'overview';
+      console.log('[TTS] speak requested:', { text, lang, opts });
+      window.__LAST_TTS_CALL__ = { time: Date.now(), text, lang, opts };
+
+      // Get planet key from opts or try to extract from text
+      const planet = opts.planetKey || (() => {
+        // Try to get from current tour step
+        if (window.currentPlanet && window.currentPlanet.id) {
+          console.log('[TTS] using current planet key:', window.currentPlanet.id);
+          return window.currentPlanet.id;
+        }
+        // Fallback to extraction from text
+        const planetMatch = text.toLowerCase().match(/\b(sun|mercury|venus|earth|mars|jupiter|saturn|uranus|neptune|overview|conclusion)\b/);
+        const key = planetMatch ? planetMatch[1] : 'overview';
+        console.log('[TTS] extracted planet key from text:', key);
+        return key;
+      })();
+      console.log('[TTS] using planet key:', planet);
 
       try {
+        // Try to get audio file path from Electron API first
+        if (window.api && window.api.resolveAudioKey) {
+          const result = await window.api.resolveAudioKey({ lang, key: planet });
+          if (result.ok) {
+            return this.playPath(result.path);
+          }
+        }
+
+        // Fallback to web mode
         const audioUrl = await this._loadAudioFile(planet, lang);
         if (!audioUrl) {
           console.warn(`[Offline TTS] No audio file for ${planet} in ${lang}, falling back to browser TTS`);
@@ -132,6 +178,48 @@
 
     isAvailable: function() {
       return true;
+    },
+
+    // Play audio directly from a file:// path
+    playPath: async function(filePath) {
+      console.log('[TTS] playPath:', filePath);
+      window.__LAST_TTS_CALL__ = { time: Date.now(), path: filePath };
+
+      try {
+        this.stop();
+        
+        const audio = new Audio(filePath);
+        audio.preload = 'auto';
+
+        await new Promise((resolve, reject) => {
+          audio.onended = () => {
+            console.log('[TTS] audio ended:', filePath);
+            this._cleanup();
+            resolve();
+          };
+
+          audio.onerror = (e) => {
+            console.error('[TTS] audio error:', e, 'currentSrc=', audio.currentSrc);
+            this._cleanup();
+            reject(e);
+          };
+
+          audio.oncanplay = () => {
+            console.log('[TTS] audio ready to play:', filePath);
+          };
+
+          audio.play().catch(err => {
+            console.error('[TTS] Playback error:', err, 'currentSrc=', audio.currentSrc);
+            reject(err);
+          });
+
+          this._audioEl = audio;
+          console.log('[TTS] audio element created:', { src: audio.src, currentSrc: audio.currentSrc });
+        });
+      } catch (error) {
+        console.error('[TTS] playPath error:', error);
+        throw error;
+      }
     }
   };
 

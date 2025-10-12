@@ -593,6 +593,36 @@
         }
     </script>
     <script src="scripts/tts-offline.js"></script>
+    <script>
+        // Example of using the Electron API
+        async function testElectronAPI() {
+            try {
+                // Test offline Q&A
+                const answer = await window.api.offlineAsk('what is the sun');
+                console.log('Q&A Test:', answer);
+
+                // Test local audio playback
+                const audioUrl = await window.api.playLocalAudio('audio/en/overview.mp3');
+                if (audioUrl) {
+                    const audio = new Audio(audioUrl);
+                    audio.play();
+                }
+
+                // Test Sarvam TTS (if API key is set)
+                const ttsUrl = await window.api.genSarvamTTS(
+                    'Welcome to Solar Learn VR!',
+                    'en',
+                    'welcome'
+                );
+                console.log('TTS generated:', ttsUrl);
+            } catch (error) {
+                console.error('API Test Error:', error);
+            }
+        }
+
+        // Uncomment to test the API
+        // testElectronAPI();
+    </script>
     <script src="scripts/voice.js?v=2"></script>
     <script src="scripts/vr-scene.js?v=6"></script>
     
@@ -1872,7 +1902,8 @@
             await moveToPosition(rig, { x: 0, y: 10, z: 15 });
             
             // Play overview narration
-            await speakText(tourData.overview[language] || tourData.overview.en, language);
+            window.currentPlanet = { id: 'overview' };
+            await speakText(tourData.overview[language] || tourData.overview.en, language, { planetKey: 'overview' });
             
             // Brief pause
             await wait(500);
@@ -1889,7 +1920,8 @@
             await moveToPosition(rig, { x: 0, y: 10, z: 15 });
             
             // Play conclusion narration
-            await speakText(tourData.conclusion[language] || tourData.conclusion.en, language);
+            window.currentPlanet = { id: 'conclusion' };
+            await speakText(tourData.conclusion[language] || tourData.conclusion.en, language, { planetKey: 'conclusion' });
             
             // Brief pause
             await wait(1000);
@@ -1897,7 +1929,7 @@
 
         // Visit a specific planet with cinematic approach
         async function visitPlanet(planetId, language) {
-            console.log(`🌍 Visiting ${planetId}...`);
+            console.log(`🌍 Visiting ${planetId}...`, { planetId, language });
             
             const planetEl = document.querySelector(`[data-planet-id="${planetId}"]`);
             if (!planetEl) {
@@ -1943,7 +1975,8 @@
             });
             
             // Start narration AFTER camera arrives
-            await speakText(tourData[planetId]?.[language] || tourData[planetId]?.en || `Visiting ${planetId}`, language);
+            window.currentPlanet = { id: planetId };
+            await speakText(tourData[planetId]?.[language] || tourData[planetId]?.en || `Visiting ${planetId}`, language, { planetKey: planetId });
             
             // Brief pause after narration
             await wait(1000);
