@@ -1,0 +1,171 @@
+{
+  "en": [
+    {
+      "question": "What is the Solar System?",
+      "answer": "The Solar System is our cosmic neighborhood consisting of the Sun and everything that orbits around it, including 8 planets, dwarf planets, moons, asteroids, comets, and other celestial objects."
+    },
+    {
+      "question": "What is the Sun?",
+      "answer": "The Sun is a massive star at the center of our Solar System. It's made mostly of hydrogen and helium, generates energy through nuclear fusion, and provides light and heat to all planets."
+    },
+    {
+      "question": "What is Mars?",
+      "answer": "Mars is the fourth planet from the Sun, known as the Red Planet due to iron oxide on its surface. It has two small moons (Phobos and Deimos) and scientists believe it may have once supported life."
+    },
+    {
+      "question": "How many moons does Jupiter have?",
+      "answer": "Jupiter has at least 95 confirmed moons. The four largest are called the Galilean moons: Io, Europa, Ganymede, and Callisto, discovered by Galileo Galilei in 1610."
+    },
+    {
+      "question": "What are Saturn's rings made of?",
+      "answer": "Saturn's rings are made of billions of pieces of ice and rock, ranging in size from tiny grains to house-sized chunks. They're incredibly thin, only about 10 meters thick in most places."
+    },
+    {
+      "question": "What is the largest planet?",
+      "answer": "Jupiter is the largest planet in our Solar System. It's so big that over 1,300 Earths could fit inside it. It's a gas giant made mostly of hydrogen and helium."
+    },
+    {
+      "question": "What is the smallest planet?",
+      "answer": "Mercury is the smallest planet in our Solar System, only slightly larger than Earth's Moon. It's also the closest planet to the Sun and has extreme temperature variations."
+    },
+    {
+      "question": "What is Earth?",
+      "answer": "Earth is the third planet from the Sun and the only known planet to support life. About 71% of its surface is covered by water, and it has a protective atmosphere that shields life from harmful radiation."
+    },
+    {
+      "question": "What is Venus?",
+      "answer": "Venus is the second planet from the Sun and Earth's sister planet due to similar size. It's the hottest planet in our Solar System with a thick atmosphere of carbon dioxide and surface temperatures around 462°C."
+    },
+    {
+      "question": "What is Mercury?",
+      "answer": "Mercury is the smallest and innermost planet. It has a rocky surface covered with craters and experiences extreme temperature swings from -180°C at night to 430°C during the day."
+    },
+    {
+      "question": "What is Uranus?",
+      "answer": "Uranus is the seventh planet from the Sun and is unique because it rotates on its side. It's an ice giant with a pale blue color due to methane in its atmosphere and has 27 known moons."
+    },
+    {
+      "question": "What is Neptune?",
+      "answer": "Neptune is the eighth and farthest planet from the Sun. It's known for its deep blue color and has the strongest winds in the Solar System, reaching speeds of up to 2,100 km/h."
+    },
+    {
+      "question": "How old is the Solar System?",
+      "answer": "The Solar System formed about 4.6 billion years ago from a giant cloud of gas and dust called the solar nebula. The Sun formed first, followed by the planets."
+    },
+    {
+      "question": "What is the asteroid belt?",
+      "answer": "The asteroid belt is a region between Mars and Jupiter containing millions of rocky objects. The largest is Ceres, which is also classified as a dwarf planet."
+    },
+    {
+      "question": "What is a comet?",
+      "answer": "A comet is a small icy body that orbits the Sun. When it gets close to the Sun, it heats up and releases gas and dust, forming a glowing tail that can stretch millions of kilometers."
+    },
+    {
+      "question": "How far is the Sun from Earth?",
+      "answer": "The Sun is about 150 million kilometers (93 million miles) from Earth. This distance is called one Astronomical Unit (AU) and light from the Sun takes about 8 minutes to reach Earth."
+    },
+    {
+      "question": "What is the Great Red Spot?",
+      "answer": "The Great Red Spot is a giant storm on Jupiter that has been raging for at least 400 years. It's so large that three Earths could fit inside it, though it has been shrinking in recent decades."
+    },
+    {
+      "question": "Can humans live on Mars?",
+      "answer": "Currently, no. Mars has a thin atmosphere, no breathable oxygen, extreme cold, and high radiation. However, scientists are working on technologies that might make it possible to establish human colonies there in the future."
+    },
+    {
+      "question": "What is a light year?",
+      "answer": "A light year is the distance light travels in one year, about 9.46 trillion kilometers. It's used to measure vast distances in space. The nearest star to our Sun is about 4.24 light years away."
+    },
+    {
+      "question": "Why do planets orbit the Sun?",
+      "answer": "Planets orbit the Sun because of gravity. The Sun's massive gravity pulls on the planets, while their forward motion keeps them from falling into the Sun, creating stable orbits."
+    }
+  ],
+  "hi": [
+    {
+      "question": "सौर मंडल क्या है?",
+      "answer": "सौर मंडल हमारा ब्रह्मांडीय पड़ोस है जिसमें सूर्य और उसके चारों ओर परिक्रमा करने वाली सभी चीजें शामिल हैं, जिनमें 8 ग्रह, बौने ग्रह, चंद्रमा, क्षुद्रग्रह, धूमकेतु और अन्य खगोलीय वस्तुएं हैं।"
+    },
+    {
+      "question": "सूर्य क्या है?",
+      "answer": "सूर्य हमारे सौर मंडल के केंद्र में एक विशाल तारा है। यह मुख्य रूप से हाइड्रोजन और हीलियम से बना है, परमाणु संलयन के माध्यम से ऊर्जा उत्पन्न करता है और सभी ग्रहों को प्रकाश और गर्मी प्रदान करता है।"
+    },
+    {
+      "question": "मंगल क्या है?",
+      "answer": "मंगल सूर्य से चौथा ग्रह है, जिसे लाल ग्रह के रूप में जाना जाता है क्योंकि इसकी सतह पर आयरन ऑक्साइड है। इसके दो छोटे चंद्रमा (फोबोस और डीमोस) हैं।"
+    },
+    {
+      "question": "बृहस्पति के कितने चंद्रमा हैं?",
+      "answer": "बृहस्पति के कम से कम 95 पुष्ट चंद्रमा हैं। चार सबसे बड़े को गैलीलियन चंद्रमा कहा जाता है: आयो, यूरोपा, गैनीमीड और कैलिस्टो।"
+    },
+    {
+      "question": "शनि के वलय किससे बने हैं?",
+      "answer": "शनि के वलय बर्फ और चट्टान के अरबों टुकड़ों से बने हैं, जो छोटे दानों से लेकर घर के आकार के टुकड़ों तक होते हैं।"
+    }
+  ],
+  "kn": [
+    {
+      "question": "ಸೌರವ್ಯೂಹ ಎಂದರೇನು?",
+      "answer": "ಸೌರವ್ಯೂಹವು ಸೂರ್ಯ ಮತ್ತು ಅದರ ಸುತ್ತ ಸುತ್ತುವ ಎಲ್ಲವನ್ನೂ ಒಳಗೊಂಡಿರುವ ನಮ್ಮ ಬ್ರಹ್ಮಾಂಡದ ನೆರೆಹೊರೆಯಾಗಿದೆ, ಇದರಲ್ಲಿ 8 ಗ್ರಹಗಳು, ಕುಬ್ಜ ಗ್ರಹಗಳು, ಚಂದ್ರರು, ಕ್ಷುದ್ರಗ್ರಹಗಳು ಮತ್ತು ಇತರ ಖಗೋಳ ವಸ್ತುಗಳು ಸೇರಿವೆ।"
+    },
+    {
+      "question": "ಸೂರ್ಯ ಎಂದರೇನು?",
+      "answer": "ಸೂರ್ಯನು ನಮ್ಮ ಸೌರವ್ಯೂಹದ ಕೇಂದ್ರದಲ್ಲಿರುವ ಒಂದು ದೊಡ್ಡ ನಕ್ಷತ್ರ. ಇದು ಮುಖ್ಯವಾಗಿ ಹೈಡ್ರೋಜನ್ ಮತ್ತು ಹೀಲಿಯಂನಿಂದ ಕೂಡಿದೆ, ಪರಮಾಣು ಸಮ್ಮಿಳನದ ಮೂಲಕ ಶಕ್ತಿಯನ್ನು ಉತ್ಪಾದಿಸುತ್ತದೆ ಮತ್ತು ಎಲ್ಲಾ ಗ್ರಹಗಳಿಗೆ ಬೆಳಕು ಮತ್ತು ಶಾಖವನ್ನು ಒದಗಿಸುತ್ತದೆ।"
+    },
+    {
+      "question": "ಮಂಗಳ ಎಂದರೇನು?",
+      "answer": "ಮಂಗಳವು ಸೂರ್ಯನಿಂದ ನಾಲ್ಕನೇ ಗ್ರಹವಾಗಿದೆ, ಇದನ್ನು ಕೆಂಪು ಗ್ರಹ ಎಂದು ಕರೆಯಲಾಗುತ್ತದೆ ಏಕೆಂದರೆ ಅದರ ಮೇಲ್ಮೈಯಲ್ಲಿ ಕಬ್ಬಿಣದ ಆಕ್ಸೈಡ್ ಇದೆ। ಇದಕ್ಕೆ ಎರಡು ಚಿಕ್ಕ ಚಂದ್ರರು (ಫೋಬೋಸ್ ಮತ್ತು ಡೀಮೋಸ್) ಇದ್ದಾರೆ।"
+    },
+    {
+      "question": "ಗುರುವಿಗೆ ಎಷ್ಟು ಚಂದ್ರರು ಇದ್ದಾರೆ?",
+      "answer": "ಗುರುವಿಗೆ ಕನಿಷ್ಠ 95 ದೃಢೀಕೃತ ಚಂದ್ರರು ಇದ್ದಾರೆ। ನಾಲ್ಕು ದೊಡ್ಡವುಗಳನ್ನು ಗೆಲಿಲಿಯನ್ ಚಂದ್ರರು ಎಂದು ಕರೆಯಲಾಗುತ್ತದೆ: ಐಯೋ, ಯುರೋಪಾ, ಗ್ಯಾನಿಮೀಡ್ ಮತ್ತು ಕ್ಯಾಲಿಸ್ಟೋ।"
+    },
+    {
+      "question": "ಶನಿಯ ಉಂಗುರಗಳು ಯಾವುದರಿಂದ ಮಾಡಲ್ಪಟ್ಟಿವೆ?",
+      "answer": "ಶನಿಯ ಉಂಗುರಗಳು ಐಸ್ ಮತ್ತು ಬಂಡೆಗಳ ಶತಕೋಟಿ ತುಂಡುಗಳಿಂದ ಮಾಡಲ್ಪಟ್ಟಿವೆ, ಇದು ಸಣ್ಣ ಧಾನ್ಯಗಳಿಂದ ಮನೆ ಗಾತ್ರದ ತುಂಡುಗಳವರೆಗೆ ಇರುತ್ತದೆ।"
+    }
+  ],
+  "ta": [
+    {
+      "question": "சூரிய குடும்பம் என்றால் என்ன?",
+      "answer": "சூரிய குடும்பம் என்பது சூரியன் மற்றும் அதைச் சுற்றி வரும் அனைத்தையும் உள்ளடக்கிய நமது பிரபஞ்ச சுற்றுப்புறமாகும், இதில் 8 கோள்கள், குள்ள கோள்கள், நிலவுகள், சிறுகோள்கள் மற்றும் பிற வான் பொருட்கள் அடங்கும்."
+    },
+    {
+      "question": "சூரியன் என்றால் என்ன?",
+      "answer": "சூரியன் நமது சூரிய குடும்பத்தின் மையத்தில் உள்ள ஒரு பெரிய நட்சத்திரம். இது முக்கியமாக ஹைட்ரஜன் மற்றும் ஹீலியத்தால் ஆனது, அணு இணைப்பு மூலம் ஆற்றலை உருவாக்குகிறது மற்றும் அனைத்து கோள்களுக்கும் ஒளி மற்றும் வெப்பத்தை வழங்குகிறது।"
+    },
+    {
+      "question": "செவ்வாய் என்றால் என்ன?",
+      "answer": "செவ்வாய் சூரியனிலிருந்து நான்காவது கோள், இது சிவப்பு கோள் என்று அழைக்கப்படுகிறது ஏனெனில் அதன் மேற்பரப்பில் இரும்பு ஆக்சைடு உள்ளது। இதற்கு இரண்டு சிறிய நிலவுகள் (போபோஸ் மற்றும் டீமோஸ்) உள்ளன."
+    }
+  ],
+  "te": [
+    {
+      "question": "సౌర వ్యవస్థ అంటే ఏమిటి?",
+      "answer": "సౌర వ్యవస్థ అనేది సూర్యుడు మరియు దాని చుట్టూ తిరిగే అన్నింటిని కలిగి ఉన్న మన విశ్వ పరిసరాలు, ఇందులో 8 గ్రహాలు, మరుగుజ్జు గ్రహాలు, చంద్రులు, గ్రహశకలాలు మరియు ఇతర ఖగోళ వస్తువులు ఉన్నాయి।"
+    },
+    {
+      "question": "సూర్యుడు అంటే ఏమిటి?",
+      "answer": "సూర్యుడు మన సౌర వ్యవస్థ మధ్యలో ఉన్న ఒక భారీ నక్షత్రం. ఇది ప్రధానంగా హైడ్రోజన్ మరియు హీలియంతో తయారు చేయబడింది, అణు సంలీనత ద్వారా శక్తిని ఉత్పత్తి చేస్తుంది మరియు అన్ని గ్రహాలకు కాంతి మరియు వేడిని అందిస్తుంది।"
+    },
+    {
+      "question": "మార్స్ అంటే ఏమిటి?",
+      "answer": "మార్స్ సూర్యుడి నుండి నాల్గవ గ్రహం, దాని ఉపరితలంపై ఇనుప ఆక్సైడ్ కారణంగా దీనిని ఎరుపు గ్రహం అని పిలుస్తారు। దీనికి రెండు చిన్న చంద్రులు (ఫోబోస్ మరియు డీమోస్) ఉన్నాయి।"
+    }
+  ],
+  "bn": [
+    {
+      "question": "সৌরজগত কী?",
+      "answer": "সৌরজগৎ হল আমাদের মহাজাগতিক প্রতিবেশী যা সূর্য এবং তার চারপাশে ঘূর্ণায়মান সবকিছু নিয়ে গঠিত, যার মধ্যে 8টি গ্রহ, বামন গ্রহ, চাঁদ, গ্রহাণু এবং অন্যান্য মহাজাগতিক বস্তু রয়েছে।"
+    },
+    {
+      "question": "সূর্য কী?",
+      "answer": "সূর্য আমাদের সৌরজগতের কেন্দ্রে একটি বিশাল তারকা। এটি মূলত হাইড্রোজেন এবং হিলিয়াম দিয়ে তৈরি, পারমাণবিক সংমিশ্রণের মাধ্যমে শক্তি উৎপন্ন করে এবং সমস্ত গ্রহে আলো ও তাপ সরবরাহ করে।"
+    },
+    {
+      "question": "মঙ্গল কী?",
+      "answer": "মঙ্গল সূর্য থেকে চতুর্থ গ্রহ, যা লাল গ্রহ হিসাবে পরিচিত কারণ এর পৃষ্ঠে আয়রন অক্সাইড রয়েছে। এর দুটি ছোট চাঁদ (ফোবোস এবং ডিমোস) রয়েছে।"
+    }
+  ]
+}
+

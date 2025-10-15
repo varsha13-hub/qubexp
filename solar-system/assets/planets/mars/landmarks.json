@@ -1,0 +1,9 @@
+[
+  {
+    "id": "sample-1",
+    "name": "Sample Site",
+    "lat": 0.5,
+    "lon": 10,
+    "desc": "This is a sample landing site."
+  }
+]

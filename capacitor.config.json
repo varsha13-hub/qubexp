@@ -1,0 +1,9 @@
+{
+  "appId": "com.qubexp.solarlearn",
+  "appName": "qubexp",
+  "webDir": "solar-system",
+  "bundledWebRuntime": false,
+  "android": {
+    "allowMixedContent": true
+  }
+}

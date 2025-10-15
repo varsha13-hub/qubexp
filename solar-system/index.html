@@ -324,6 +324,19 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         }
     </style>
+<script src="components/planet-surface.js"></script>
+<script src="components/planet-landing.js"></script>
+<script src="components/storm-system.js"></script>
+<script src="components/ambient-audio.js"></script>
+<script src="components/voice-command.js"></script>
+    <style>
+      /* Voice Control UI */
+      #voice-label { 
+        position: fixed; left: 16px; bottom: 16px; padding: 8px 12px; 
+        background: rgba(0,0,0,0.6); color: #fff; border-radius: 8px; 
+        font-family: sans-serif; z-index: 99999; display:none; 
+      }
+    </style>
 </head>
 <body>
     <!-- Pre-VR Language Selection Screen -->
@@ -369,9 +382,28 @@
             <button id="pauseBtn" class="test-btn">⏸️ Pause</button>
             <button id="resumeBtn" class="test-btn" style="display: none;" disabled>▶️ Resume</button>
         </div>
+
+        <!-- Voice Control UI -->
+        <div id="voice-label"></div>
+        
+        <!-- Loading Progress Overlay -->
+        <div id="loadingOverlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 17, 0.95); display: none; justify-content: center; align-items: center; z-index: 999999; flex-direction: column;">
+            <div style="text-align: center; color: white; font-family: Arial, sans-serif;">
+                <h2 style="font-size: 32px; margin-bottom: 20px;">🌌 Loading Solar System...</h2>
+                <div style="font-size: 18px; margin-bottom: 10px;" id="loadingStatus">Preparing experience...</div>
+                <div style="font-size: 14px; color: #64B5F6;" id="loadingProgress">0 / 9 models loaded</div>
+                <div style="margin-top: 20px; font-size: 12px; color: #999;">This may take 30-60 seconds on VR headsets</div>
+            </div>
+        </div>
         
         <h4>🤖 AI Q&A</h4>
-        <button id="askQuestionBtn" class="test-btn">Ask a Question</button>
+        <div style="display: flex; gap: 8px; flex-direction: column;">
+            <input type="text" id="questionInput" placeholder="Type your question..." style="padding: 8px; border-radius: 6px; border: 1px solid #ccc; font-size: 14px; width: 100%;">
+            <div style="display: flex; gap: 8px;">
+                <button id="askQuestionBtn" class="test-btn" style="flex: 1;">🎤 Voice</button>
+                <button id="askQuestionTextBtn" class="test-btn" style="flex: 1;">📝 Ask</button>
+            </div>
+        </div>
     </div>
 
 
@@ -380,7 +412,7 @@
         <!-- Background - using starfield instead of a-sky for better performance -->
         
         <!-- Preload all planet models -->
-        <a-assets timeout="60000">
+        <a-assets timeout="180000">
             <!-- Sky texture removed to fix visual glitches -->
             
             <!-- Sun texture -->
@@ -502,6 +534,9 @@
         </a-sphere>
         
         <!-- VR Rig with Custom Movement Controls -->
+        <!-- Voice Control Entity -->
+        <a-entity id="vc" voice-command="lang: en-US; wakeWord: hi xp; autoStartAfterGesture: true; minConfidence: 0.7"></a-entity>
+
         <a-entity id="rig" position="0 1.6 0">
             <!-- Camera (headset view) -->
             <a-camera id="camera" wasd-controls-enabled="false" look-controls="enabled: false"></a-camera>
@@ -592,7 +627,10 @@
             });
         }
     </script>
-    <script src="scripts/tts-offline.js"></script>
+        <script src="scripts/tts-offline.js"></script>
+        <script src="scripts/offline-qa-cache.js"></script>
+        <script src="scripts/ai-qa.js"></script>
+        <script src="scripts/preload-faqs.js"></script>
     <script>
         // Example of using the Electron API
         async function testElectronAPI() {
@@ -821,6 +859,16 @@
         // Models loaded completion handler (defensive)
         function onAllModelsLoaded() {
             console.log("✅✅✅ All models loaded and safe for narration ✅✅✅");
+
+            // Hide loading overlay
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            if (loadingOverlay) {
+                const statusEl = document.getElementById('loadingStatus');
+                if (statusEl) statusEl.textContent = 'Complete! ✅';
+                setTimeout(() => {
+                    loadingOverlay.style.display = 'none';
+                }, 1000);
+            }
 
             // Mark ready and ensure selectionAllowed is set only once
             window.modelsFullyLoaded = true;
@@ -1257,13 +1305,57 @@
             
             // Test TTS button removed for cleaner UI
             
-            // Handle AI Q&A button
+            // Handle AI Q&A buttons
             const askQuestionBtn = document.getElementById('askQuestionBtn');
+            const askQuestionTextBtn = document.getElementById('askQuestionTextBtn');
+            const questionInput = document.getElementById('questionInput');
+            
             if (askQuestionBtn) {
                 askQuestionBtn.addEventListener('click', () => {
-                    console.log('Ask Question button clicked!');
+                    console.log('Voice Question button clicked!');
                     unlockAudio(); // Unlock audio on user interaction
                     startVoiceQuestion();
+                });
+            }
+            
+            if (askQuestionTextBtn && questionInput) {
+                askQuestionTextBtn.addEventListener('click', async () => {
+                    const question = questionInput.value.trim();
+                    if (!question) {
+                        alert('Please type a question first');
+                        return;
+                    }
+                    
+                    console.log('📝 Text Question:', question);
+                    unlockAudio();
+                    
+                    const selectedLang = localStorage.getItem('selectedLanguage') || 'en';
+                    
+                    try {
+                        showVRDebugDialog(`🤖 Processing: ${question}`, '#00ff88', 3000);
+                        
+                        // Use the AI Q&A system
+                        if (window.aiQA) {
+                            await window.aiQA.ask(question, selectedLang);
+                        } else {
+                            // Fallback to getAIAnswer
+                            const answer = await getAIAnswer(question, selectedLang);
+                            showVRDebugDialog(`🤖 ${answer}`, '#ffffff', 15000);
+                            await speakAIAnswer(answer);
+                        }
+                        
+                        questionInput.value = ''; // Clear input
+                    } catch (error) {
+                        console.error('❌ Text Q&A failed:', error);
+                        showVRDebugDialog('❌ Failed to get answer', '#ff6b6b', 3000);
+                    }
+                });
+                
+                // Allow Enter key to submit
+                questionInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        askQuestionTextBtn.click();
+                    }
                 });
             }
         }
@@ -1271,6 +1363,12 @@
         function startVRExperience() {
             const selectedLang = localStorage.getItem('selectedLanguage') || 'en';
             console.log(`Starting VR with language: ${selectedLang}`);
+            
+            // Show loading overlay
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            if (loadingOverlay) {
+                loadingOverlay.style.display = 'flex';
+            }
             
             // Hide language menu
             const languageMenu = document.getElementById('languageMenu');
@@ -1373,15 +1471,34 @@
                 
                 console.log(`🔍 Tracking ${modelsRemaining} GLTF models for loading...`);
                 
+                const totalModels = modelsRemaining;
+                
+                // Update loading progress
+                const updateProgress = () => {
+                    const loaded = totalModels - modelsRemaining;
+                    const progressEl = document.getElementById('loadingProgress');
+                    const statusEl = document.getElementById('loadingStatus');
+                    if (progressEl) {
+                        progressEl.textContent = `${loaded} / ${totalModels} models loaded`;
+                    }
+                    if (statusEl && modelsRemaining > 0) {
+                        statusEl.textContent = `Loading 3D models... (${Math.round((loaded/totalModels)*100)}%)`;
+                    }
+                };
+                
                 if (modelsRemaining === 0) {
                     window.modelsFullyLoaded = true;
                     console.log('✅ No models to load - safe for narration');
                 } else {
+                    updateProgress(); // Initial update
+                    
                     modelEls.forEach(el => {
                         const handleLoaded = () => {
                             modelsRemaining--;
                             const planetId = el.closest('[data-planet-id]')?.getAttribute('data-planet-id') || 'unknown';
                             console.log(`✅ Model loaded: ${planetId} (${modelsRemaining} remaining)`);
+                            
+                            updateProgress(); // Update progress
                             
                             if (modelsRemaining <= 0) {
                                 onAllModelsLoaded();
@@ -2256,7 +2373,9 @@
             
             // Check if speech recognition is supported
             if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-                alert('Speech recognition is not supported in this browser. Please use Chrome or Edge.');
+                console.warn('⚠️ Speech recognition not supported');
+                showVRDebugDialog('🎤 Voice not supported - please use text input below', '#ff6b6b', 4000);
+                alert('Speech recognition is not supported in this browser. Please use the text input instead.');
                 return;
             }
             
@@ -2413,43 +2532,31 @@
                 const currentLanguage = lang || localStorage.getItem('selectedLanguage') || 'en';
                 console.log(`🤖 AI Q&A pipeline: "${question}" in ${currentLanguage}`);
 
-                // 1. Translate question to English (if not already English)
-                let translatedQ = question;
-                if (currentLanguage !== 'en') {
-                    console.log(`🌐 Translating question to English...`);
-                    translatedQ = await translateText(question, currentLanguage, 'en');
-                    console.log(`🌐 Translated: "${question}" → "${translatedQ}"`);
-                }
-
-                // 2. Send to Gemini
-                console.log(`🤖 Sending to Gemini: "${translatedQ}"`);
-                const geminiRes = await fetch('https://localhost:8040/api/ai/gemini-chat', {
+                // Use the new AI proxy endpoint
+                console.log(`🤖 Sending to AI proxy: "${question}"`);
+                const response = await fetch('/api/ai-ask', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ question: translatedQ })
+                    body: JSON.stringify({ 
+                        question: question,
+                        lang: currentLanguage 
+                    })
                 });
                 
-                if (!geminiRes.ok) {
-                    throw new Error(`Gemini API error: ${geminiRes.status}`);
+                if (!response.ok) {
+                    throw new Error(`AI API error: ${response.status}`);
                 }
                 
-                const geminiData = await geminiRes.json();
-                let answerEn = geminiData.answer || "Sorry, I don't have an answer.";
-                console.log(`🤖 Gemini response: "${answerEn}"`);
-
-                // 3. Clean the answer
-                answerEn = cleanAnswer(answerEn);
-                console.log(`🧹 Cleaned answer: "${answerEn}"`);
-
-                // 4. Translate answer back to user's language (if not English)
-                let finalAnswer = answerEn;
-                if (currentLanguage !== 'en') {
-                    console.log(`🌐 Translating answer to ${currentLanguage}...`);
-                    finalAnswer = await translateText(answerEn, 'en', currentLanguage);
-                    console.log(`🌐 Final answer: "${finalAnswer}"`);
+                const data = await response.json();
+                
+                if (!data.ok) {
+                    throw new Error(data.error || 'Unknown error');
                 }
+                
+                const answer = data.answer || "Sorry, I don't have an answer.";
+                console.log(`🤖 AI response (${data.source}): "${answer}"`);
 
-                return finalAnswer;
+                return answer;
 
             } catch (err) {
                 console.error('❌ AI Q&A failed:', err);
@@ -2462,32 +2569,81 @@
             console.log(`🗣️ Speaking AI answer in ${selectedLang}: ${answer.substring(0, 50)}...`);
             
             try {
-                // Split long answers into chunks to prevent TTS timeout
-                const MAX_TTS_CHARS = 400;
-                let chunks = [];
-                for (let i = 0; i < answer.length; i += MAX_TTS_CHARS) {
-                    chunks.push(answer.slice(i, i + MAX_TTS_CHARS));
+                // For regional languages, use Sarvam TTS
+                const regionalLangs = ['hi', 'kn', 'ta', 'te', 'bn', 'mr'];
+                if (regionalLangs.includes(selectedLang)) {
+                    console.log('✅ Using Sarvam TTS for', selectedLang);
+                    try {
+                        const response = await fetch('/api/tts', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                text: answer,
+                                language: selectedLang,
+                                speakerId: 'saarika'
+                            })
+                        });
+                        
+                        if (response.ok) {
+                            const audioBlob = await response.blob();
+                            const audioUrl = URL.createObjectURL(audioBlob);
+                            const audio = new Audio(audioUrl);
+                            
+                            audio.onended = () => {
+                                URL.revokeObjectURL(audioUrl);
+                                console.log('✅ Sarvam TTS completed');
+                            };
+                            
+                            audio.onerror = (e) => {
+                                URL.revokeObjectURL(audioUrl);
+                                console.error('❌ Sarvam TTS playback error:', e);
+                            };
+                            
+                            await audio.play();
+                            return;
+                        } else {
+                            console.warn('⚠️ Sarvam TTS failed, falling back to browser TTS');
+                        }
+                    } catch (err) {
+                        console.warn('⚠️ Sarvam TTS error:', err);
+                    }
                 }
                 
-                if (window.ttsManager && window.ttsManager.fetchServerTTS) {
-                    // Speak each chunk separately
-                    for (const chunk of chunks) {
-                        await window.ttsManager.fetchServerTTS(chunk, selectedLang);
-                        // Small delay between chunks for better listening experience
-                        if (chunks.length > 1) {
-                            await waitWithPause(500);
-                        }
+                // Fallback: use browser TTS (for English or if Sarvam fails)
+                console.log('✅ Using browser TTS for AI answer');
+                speechSynthesis.cancel();
+                
+                const utterance = new SpeechSynthesisUtterance(answer);
+                const targetLang = selectedLang === 'en' ? 'en-US' : 
+                                   selectedLang === 'hi' ? 'hi-IN' :
+                                   selectedLang === 'kn' ? 'kn-IN' :
+                                   selectedLang === 'ta' ? 'ta-IN' :
+                                   selectedLang === 'te' ? 'te-IN' :
+                                   selectedLang === 'bn' ? 'bn-IN' : 'en-US';
+                utterance.lang = targetLang;
+                utterance.rate = 0.85;
+                utterance.pitch = 1.0;
+                utterance.volume = 1.0;
+                
+                const speakWhenReady = () => {
+                    const voices = speechSynthesis.getVoices();
+                    let voice = voices.find(v => v.lang === targetLang);
+                    if (!voice && targetLang.includes('-')) {
+                        voice = voices.find(v => v.lang.startsWith(targetLang.split('-')[0]));
                     }
-                    console.log('✅ AI answer spoken successfully in chunks');
+                    if (voice) utterance.voice = voice;
+                    utterance.onerror = (e) => console.error('❌ Speech error:', e);
+                    utterance.onend = () => console.log('✅ Speech completed');
+                    speechSynthesis.speak(utterance);
+                };
+                
+                if (speechSynthesis.getVoices().length > 0) {
+                    speakWhenReady();
                 } else {
-                    throw new Error('TTS Manager not available');
+                    speechSynthesis.addEventListener('voiceschanged', speakWhenReady, { once: true });
                 }
             } catch (error) {
                 console.error('❌ Failed to speak AI answer:', error);
-                // Fallback to browser TTS
-                const utterance = new SpeechSynthesisUtterance(answer);
-                utterance.lang = selectedLang;
-                speechSynthesis.speak(utterance);
             }
         }
 
@@ -2652,6 +2808,67 @@
       },
       remove() { this.el.removeObject3D('ring'); }
     });
+    </script>
+
+    <script>
+      // Improved Voice Control System with TTS pause/resume and confidence checking
+      (function(){
+        const vc = document.getElementById('vc') || document.querySelector('[voice-command]');
+        const label = document.getElementById('voice-label');
+        
+        function show(msg, ms=2000){ 
+          label.textContent = msg; 
+          label.style.display='block'; 
+          clearTimeout(label._t); 
+          label._t=setTimeout(()=>label.style.display='none', ms); 
+        }
+        
+        if (!vc) { 
+          console.warn('vc not found'); 
+          return; 
+        }
+
+        // start once after user gesture to allow mic
+        function ensureStarted(){ 
+          try { 
+            vc.components['voice-command'] && vc.components['voice-command'].startHotwordListener(); 
+            show('Voice ready — say "hi XP"', 2500); 
+          } 
+          catch(e){ 
+            console.warn(e); 
+            show('Voice start failed'); 
+          } 
+        }
+        window.addEventListener('click', ensureStarted, { once:true }); 
+        window.addEventListener('touchstart', ensureStarted, { once:true });
+
+        vc.addEventListener('voice-state', (e)=> {
+          const s=(e.detail && e.detail.state);
+          if (s==='hotword-listening') show('Listening for "hi XP"...');
+          if (s==='listening') show('Say your command...');
+          if (s==='command-handled') show('Command received', 1200);
+          if (s==='listening-timeout') show('Command timed out', 1200);
+        });
+
+        vc.addEventListener('voice-cmd', (ev)=> {
+          const d = ev.detail || {};
+          console.log('[voice-wiring] intent:', d);
+          // adapt these to your app function names
+          if (d.cmd === 'start-tour' && window.startTour) window.startTour();
+          else if (d.cmd === 'pause-tour' && window.pauseTour) window.pauseTour();
+          else if (d.cmd === 'resume-tour' && window.resumeTour) window.resumeTour();
+          else if ((d.cmd === 'land' || d.cmd === 'goto') && d.planet && window.landOnPlanet) window.landOnPlanet(d.planet.toLowerCase());
+          else if (d.cmd === 'language' && d.lang && window.setLanguage) window.setLanguage(d.lang);
+          else if (d.cmd === 'next' && window.nextStep) window.nextStep();
+          else if (d.cmd === 'previous' && window.prevStep) window.prevStep();
+          else if (d.cmd === 'info' && window.showInfo) window.showInfo(d.text || 'overview');
+          else if (d.cmd === 'ask-ai' && d.question && window.aiQA) {
+            const lang = window.selectedLang || localStorage.getItem('selectedLang') || 'en';
+            window.aiQA.ask(d.question, lang).catch(err => console.error('[voice-wiring] AI ask failed:', err));
+          }
+          else console.log('Unhandled voice intent', d);
+        });
+      })();
     </script>
 </body>
 </html>

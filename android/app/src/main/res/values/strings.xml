@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">QubeXP SolarLearn VR</string>
+    <string name="title_activity_main">QubeXP SolarLearn VR</string>
+    <string name="package_name">com.qubexp.solarlearn</string>
+    <string name="custom_url_scheme">com.qubexp.solarlearn</string>
+</resources>

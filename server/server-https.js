@@ -3,7 +3,7 @@ const cors = require('cors');
 const path = require('path');
 const https = require('https');
 const fs = require('fs');
-require('dotenv').config();
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 const app = express();
 const PORT = process.env.HTTPS_PORT || 8443;
@@ -43,6 +43,7 @@ app.use('/api/translate', require('./src/routes/translate'));
 app.use('/api/tts', require('./src/routes/tts'));
 // AI endpoints
 app.use('/api/ai', require('./src/routes/ai-endpoints'));
+app.use('/api', require('./ai-proxy'));
 
 // Serve PWA manifest (if exists in solar-system)
 app.get('/manifest.json', (req, res) => {
