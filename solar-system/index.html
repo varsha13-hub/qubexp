@@ -339,7 +339,7 @@
         position: fixed; left: 16px; bottom: 16px; padding: 8px 12px; 
         background: rgba(0,0,0,0.6); color: #fff; border-radius: 8px; 
         font-family: sans-serif; z-index: 99999; display:none; 
-      }
+        }
     </style>
 </head>
 <body>
@@ -390,6 +390,12 @@
         <!-- Voice Control UI -->
         <div id="voice-label"></div>
         
+        <!-- VR Controller Debug Display -->
+        <div id="vr-debug" style="position: fixed; bottom: 10px; left: 10px; background: rgba(0,0,0,0.9); color: #00ff00; padding: 10px; border-radius: 5px; font-family: monospace; font-size: 11px; max-width: 90%; max-height: 200px; overflow-y: auto; z-index: 10001; display: block;">
+            <div style="color: #ffff00; font-weight: bold;">🎮 VR Debug</div>
+            <div id="vr-debug-content">Initializing...</div>
+        </div>
+        
         <!-- Loading Progress Overlay -->
         <div id="loadingOverlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 17, 0.95); display: none; justify-content: center; align-items: center; z-index: 999999; flex-direction: column;">
             <div style="text-align: center; color: white; font-family: Arial, sans-serif;">
@@ -436,7 +442,7 @@
         <!-- Sun - USING YOUR 3D MODEL -->
         <a-entity position="0 0 -30" class="planet" data-planet-id="sun" data-planet-name="Sun" data-planet-desc="" data-raycastable>
             <!-- Your 3D Sun Model - Proper scale -->
-            <a-entity gltf-model="assets/planets/Sun.glb" position="0 0 0" scale="0.6 0.6 0.6"></a-entity>
+            <a-entity gltf-model="assets/planets/Sun.glb?v=optimized" position="0 0 0" scale="0.6 0.6 0.6"></a-entity>
             <!-- Fallback sphere (hidden by default, shown only if 3D model fails) -->
             <a-sphere position="0 0 0" radius="7.5" color="#FFD700" 
                 material="color: #FFD700; transparent: false" visible="false">
@@ -448,7 +454,7 @@
         
         <!-- Mercury -->
         <a-entity id="mercury-orbit" orbit-parent="speed: 1.6" position="0 0 -30">
-            <a-entity gltf-model="assets/planets/Mercury.glb" position="6 0.35 0" scale="0.0003 0.0003 0.0003" spin-body="speed: 40" class="planet" data-planet-id="mercury" data-raycastable data-planet-name="Mercury" data-planet-desc="Mercury is the smallest and innermost planet in the Solar System. It has no moons and is covered in craters.">
+            <a-entity gltf-model="assets/planets/Mercury.glb?v=optimized" position="6 0.35 0" scale="0.0003 0.0003 0.0003" spin-body="speed: 40" class="planet" data-planet-id="mercury" data-raycastable data-planet-name="Mercury" data-planet-desc="Mercury is the smallest and innermost planet in the Solar System. It has no moons and is covered in craters.">
             <!-- Fallback sphere in case GLTF fails -->
             <a-sphere position="0 0 0" radius="0.3" color="#8C7853"></a-sphere>
           </a-entity>
@@ -457,16 +463,14 @@
         
         <!-- Venus -->
         <a-entity id="venus-orbit" orbit-parent="speed: 0.9" position="0 0 -30">
-          <a-entity gltf-model="assets/planets/Venus.glb" position="8 0 0" scale="0.00045 0.00045 0.00045" spin-body="speed: 6" class="planet" data-planet-id="venus" data-raycastable data-planet-name="Venus" data-planet-desc="Venus is the second planet from the Sun and is often called Earth's sister planet due to similar size and mass.">
-            <!-- Fallback sphere in case GLTF fails -->
-            <a-sphere position="0 0 0" radius="0.45" color="#FFC649"></a-sphere>
+          <a-entity gltf-model="assets/planets/Venus.glb?v=optimized" position="8 0 0" scale="0.00045 0.00045 0.00045" spin-body="speed: 6" class="planet" data-planet-id="venus" data-raycastable data-planet-name="Venus" data-planet-desc="Venus is the second planet from the Sun and is often called Earth's sister planet due to similar size and mass.">
           </a-entity>
         </a-entity>
         <a-entity orbit-ring="radius: 8; thickness: 0.15; color: #e0d6c6; opacity: 0.5" position="0 0 -30"></a-entity>
         
         <!-- Earth -->
         <a-entity id="earth-orbit" orbit-parent="speed: 0.42" position="0 0 -30">
-          <a-entity gltf-model="assets/planets/Earth.glb" position="12 0.5 0" scale="0.00048 0.00048 0.00048" spin-body="speed: 18" class="planet" data-planet-id="earth" data-raycastable data-planet-name="Earth" data-planet-desc="Earth is our home planet and the only known planet with life. It has one natural satellite, the Moon.">
+          <a-entity gltf-model="assets/planets/Earth.glb?v=optimized" position="12 0.5 0" scale="0.00048 0.00048 0.00048" spin-body="speed: 18" class="planet" data-planet-id="earth" data-raycastable data-planet-name="Earth" data-planet-desc="Earth is our home planet and the only known planet with life. It has one natural satellite, the Moon.">
             <!-- Fallback sphere in case GLTF fails -->
             <a-sphere position="0 0 0" radius="0.45" color="#6B93D6"></a-sphere>
           </a-entity>
@@ -475,7 +479,7 @@
         
         <!-- Mars -->
         <a-entity id="mars-orbit" orbit-parent="speed: 0.32" position="0 0 -30">
-          <a-entity gltf-model="assets/planets/Mars.glb" position="16 0.45 0" scale="0.00036 0.00036 0.00036" spin-body="speed: 14" class="planet" data-planet-id="mars" data-raycastable data-planet-name="Mars" data-planet-desc="Mars is the fourth planet from the Sun and is often called the Red Planet due to its reddish appearance.">
+          <a-entity gltf-model="assets/planets/Mars.glb?v=optimized" position="16 0.45 0" scale="0.00036 0.00036 0.00036" spin-body="speed: 14" class="planet" data-planet-id="mars" data-raycastable data-planet-name="Mars" data-planet-desc="Mars is the fourth planet from the Sun and is often called the Red Planet due to its reddish appearance.">
             <!-- Fallback sphere in case GLTF fails -->
             <a-sphere position="0 0 0" radius="0.36" color="#CD5C5C"></a-sphere>
           </a-entity>
@@ -485,16 +489,14 @@
         
         <!-- Jupiter -->
         <a-entity id="jupiter-orbit" orbit-parent="speed: 0.14" position="0 0 -30">
-          <a-entity gltf-model="assets/planets/Jupiter.glb" position="22 0 0" scale="0.0015 0.0015 0.0015" spin-body="speed: 8" class="planet" data-planet-id="jupiter" data-raycastable data-planet-name="Jupiter" data-planet-desc="Jupiter is the largest planet in our Solar System and is a gas giant with no solid surface.">
-            <!-- Fallback sphere in case GLTF fails -->
-            <a-sphere position="0 0 0" radius="0.9" color="#D8CA9D"></a-sphere>
+          <a-entity gltf-model="assets/planets/Jupiter.glb?v=optimized" position="22 0 0" scale="0.0015 0.0015 0.0015" spin-body="speed: 8" class="planet" data-planet-id="jupiter" data-raycastable data-planet-name="Jupiter" data-planet-desc="Jupiter is the largest planet in our Solar System and is a gas giant with no solid surface.">
           </a-entity>
         </a-entity>
         <a-entity orbit-ring="radius: 22; thickness: 0.2; color: #d4c090; opacity: 0.5" position="0 0 -30"></a-entity>
         
         <!-- Saturn -->
         <a-entity id="saturn-orbit" orbit-parent="speed: 0.10" position="0 0 -30">
-          <a-entity gltf-model="assets/planets/Saturn.glb" position="28 0 0" scale="0.00135 0.00135 0.00135" spin-body="speed: 10" class="planet" data-planet-id="saturn" data-raycastable data-planet-name="Saturn" data-planet-desc="Saturn is the sixth planet from the Sun and is famous for its spectacular ring system.">
+          <a-entity gltf-model="assets/planets/Saturn.glb?v=optimized" position="28 0 0" scale="0.00135 0.00135 0.00135" spin-body="speed: 10" class="planet" data-planet-id="saturn" data-raycastable data-planet-name="Saturn" data-planet-desc="Saturn is the sixth planet from the Sun and is famous for its spectacular ring system.">
             <!-- Fallback sphere in case GLTF fails -->
             <a-sphere position="0 0 0" radius="0.75" color="#FAD5A5"></a-sphere>
           </a-entity>
@@ -504,7 +506,7 @@
         
         <!-- Uranus -->
         <a-entity id="uranus-orbit" orbit-parent="speed: 0.07" position="0 0 -30">
-          <a-entity gltf-model="assets/planets/Uranus.glb" position="34 0 0" scale="0.00075 0.00075 0.00075" spin-body="speed: 9" class="planet" data-planet-id="uranus" data-raycastable data-planet-name="Uranus" data-planet-desc="Uranus is the seventh planet from the Sun and is an ice giant with a unique sideways rotation.">
+          <a-entity gltf-model="assets/planets/Uranus.glb?v=optimized" position="34 0 0" scale="0.00075 0.00075 0.00075" spin-body="speed: 9" class="planet" data-planet-id="uranus" data-raycastable data-planet-name="Uranus" data-planet-desc="Uranus is the seventh planet from the Sun and is an ice giant with a unique sideways rotation.">
             <!-- Fallback sphere in case GLTF fails -->
             <a-sphere position="0 0 0" radius="0.54" color="#4FD0E7"></a-sphere>
           </a-entity>
@@ -513,7 +515,7 @@
         
         <!-- Neptune -->
         <a-entity id="neptune-orbit" orbit-parent="speed: 0.05" position="0 0 -30">
-          <a-entity gltf-model="assets/planets/Neptune.glb" position="40 0 0" scale="0.00072 0.00072 0.00072" spin-body="speed: 11" class="planet" data-planet-id="neptune" data-raycastable data-planet-name="Neptune" data-planet-desc="Neptune is the eighth and farthest planet from the Sun. It's an ice giant with the strongest winds in the Solar System.">
+          <a-entity gltf-model="assets/planets/Neptune.glb?v=optimized" position="40 0 0" scale="0.00072 0.00072 0.00072" spin-body="speed: 11" class="planet" data-planet-id="neptune" data-raycastable data-planet-name="Neptune" data-planet-desc="Neptune is the eighth and farthest planet from the Sun. It's an ice giant with the strongest winds in the Solar System.">
             <!-- Fallback sphere in case GLTF fails -->
             <a-sphere position="0 0 0" radius="0.45" color="#4B70DD"></a-sphere>
           </a-entity>
@@ -532,17 +534,22 @@
 
         <a-entity id="rig" position="0 1.6 0">
             <!-- Camera (headset view) -->
-            <a-camera id="camera" wasd-controls-enabled="false" look-controls="enabled: false"></a-camera>
+            <a-camera id="camera" wasd-controls-enabled="false" look-controls="enabled: true"></a-camera>
 
             <!-- Right-hand controller -->
             <a-entity id="rightController"
                       oculus-touch-controls="hand: right"
+                      vive-controls="hand: right"
+                      windows-motion-controls="hand: right"
                       raycaster="objects: [data-raycastable]; far: 100; near: 0.1"
                       line="color: #00FF00; opacity: 1.0; visible: true">
             </a-entity>
 
             <!-- Left-hand controller (optional for later) -->
-            <a-entity id="leftController" oculus-touch-controls="hand: left"></a-entity>
+            <a-entity id="leftController" 
+                      oculus-touch-controls="hand: left"
+                      vive-controls="hand: left"
+                      windows-motion-controls="hand: left"></a-entity>
         </a-entity>
         
         <!-- Fallback VR Cursor for headset-only VR -->
@@ -1644,19 +1651,37 @@
             const rig = document.querySelector("#rig");
             const camera = document.querySelector("#camera");
             const rightController = document.querySelector("#rightController");
+            const leftController = document.querySelector("#leftController");
+            
+            // On-screen debug display
+            const debugDisplay = document.getElementById('vr-debug-content');
+            const debugLog = (msg) => {
+                console.log(msg);
+                if (debugDisplay) {
+                    const timestamp = new Date().toLocaleTimeString();
+                    debugDisplay.innerHTML = `[${timestamp}] ${msg}<br>` + debugDisplay.innerHTML.split('<br>').slice(0, 15).join('<br>');
+                }
+            };
 
-            if (!rig || !camera || !rightController) {
-                console.error('❌ VR elements not found for controller setup');
+            if (!rig || !camera) {
+                debugLog('❌ VR elements not found (rig or camera missing)');
+                return;
+            }
+            
+            if (!rightController && !leftController) {
+                debugLog('❌ No VR controllers found');
                 return;
             }
 
-            console.log('🎮 Setting up VR controller movement and selection...');
+            debugLog('🎮 Setting up VR controller movement...');
+            debugLog(`🎮 Right controller: ${rightController ? '✅ Found' : '❌ Not found'}`);
+            debugLog(`🎮 Left controller: ${leftController ? '✅ Found' : '❌ Not found'}`);
 
             // Make custom pointer always visible and follow controller
             const customPointer = document.getElementById('customPointer');
             if (customPointer) {
                 customPointer.setAttribute('visible', 'true');
-                console.log('🎯 Custom pointer enabled and visible');
+                debugLog('🎯 Custom pointer enabled');
                 
                 // Update pointer position every frame to follow controller
                 function updatePointer() {
@@ -1684,30 +1709,155 @@
                 console.error('❌ Custom pointer not found!');
             }
 
-            // ---- Movement with Thumbstick ----
-            rightController.addEventListener("thumbstickmoved", (e) => {
-                // Don't allow movement during tours
-                if (window.tourRunning || window.isTourActive) {
-                    console.log('🚫 VR movement disabled during tour');
+            // ---- Movement with Thumbstick (works with both controllers) ----
+            const handleThumbstickMovement = (e, controllerName) => {
+                console.log('🕹️ Thumbstick moved:', e.detail);
+                
+                // Check if there's significant thumbstick movement
+                const threshold = 0.1;
+                if (Math.abs(e.detail.x) < threshold && Math.abs(e.detail.y) < threshold) {
+                    console.log('⚪ Thumbstick in deadzone, ignoring');
+                    return; // Ignore small movements (deadzone)
+                }
+                
+                // Don't allow movement during active tours
+                if (window.tourRunning === true) {
+                    console.log('🚫 VR movement disabled during active tour (tourRunning=' + window.tourRunning + ')');
                     return;
                 }
                 
-                const moveSpeed = 0.05; // adjust speed
+                console.log('✅ Processing thumbstick movement...');
+                
+                const moveSpeed = 0.1; // Increased speed for better responsiveness
+                const rotateSpeed = 0.05; // Speed for rotation
+                
+                // Get camera direction for forward/backward movement
                 const direction = new THREE.Vector3();
-
-                // Forward direction (where headset is looking)
                 camera.object3D.getWorldDirection(direction);
+                direction.y = 0; // Keep movement on horizontal plane
+                direction.normalize();
 
-                // Move forward/back
+                // Get camera right vector for strafing
+                const right = new THREE.Vector3();
+                camera.object3D.getWorldDirection(right);
+                right.cross(new THREE.Vector3(0, 1, 0));
+                right.normalize();
+
+                // Apply movement
                 const oldPos = rig.object3D.position.clone();
+                
+                // Forward/backward with Y axis
+                if (Math.abs(e.detail.y) > threshold) {
                 rig.object3D.position.addScaledVector(direction, -e.detail.y * moveSpeed);
-                console.log('🎮 VR Movement:', {
-                    thumbstick: e.detail.y,
-                    oldPos: oldPos,
-                    newPos: rig.object3D.position,
-                    direction: direction
+                }
+                
+                // Strafe left/right with X axis
+                if (Math.abs(e.detail.x) > threshold) {
+                    rig.object3D.position.addScaledVector(right, e.detail.x * moveSpeed);
+                }
+                
+                console.log('🎮 VR Movement (' + controllerName + '):', {
+                    thumbstick: {x: e.detail.x.toFixed(2), y: e.detail.y.toFixed(2)},
+                    moved: !oldPos.equals(rig.object3D.position),
+                    newPos: {
+                        x: rig.object3D.position.x.toFixed(2),
+                        y: rig.object3D.position.y.toFixed(2),
+                        z: rig.object3D.position.z.toFixed(2)
+                    }
                 });
+            };
+            
+            // KEYBOARD MOVEMENT FOR TESTING (Desktop only)
+            const keyState = {};
+            window.addEventListener('keydown', (e) => {
+                keyState[e.key.toLowerCase()] = true;
             });
+            window.addEventListener('keyup', (e) => {
+                keyState[e.key.toLowerCase()] = false;
+            });
+            
+            // Apply keyboard movement every frame
+            setInterval(() => {
+                if (window.tourRunning) return;
+                
+                const moveSpeed = 0.2;
+                const direction = new THREE.Vector3();
+                camera.object3D.getWorldDirection(direction);
+                direction.y = 0;
+                direction.normalize();
+                
+                const right = new THREE.Vector3();
+                camera.object3D.getWorldDirection(right);
+                right.cross(new THREE.Vector3(0, 1, 0));
+                right.normalize();
+                
+                if (keyState['w']) {
+                    rig.object3D.position.addScaledVector(direction, moveSpeed);
+                    console.log('⌨️ W key moving forward');
+                }
+                if (keyState['s']) {
+                    rig.object3D.position.addScaledVector(direction, -moveSpeed);
+                    console.log('⌨️ S key moving backward');
+                }
+                if (keyState['a']) {
+                    rig.object3D.position.addScaledVector(right, -moveSpeed);
+                    console.log('⌨️ A key strafing left');
+                }
+                if (keyState['d']) {
+                    rig.object3D.position.addScaledVector(right, moveSpeed);
+                    console.log('⌨️ D key strafing right');
+                }
+            }, 50);
+            
+            console.log('⌨️ Keyboard movement enabled: W/A/S/D keys');
+            
+            // DEBUG: Log ALL events from controllers
+            const debugAllEvents = (controller, name) => {
+                const events = [
+                    'thumbstickmoved', 'axismove', 'trackpadmoved', 'touchstart', 'touchend',
+                    'triggerdown', 'triggerup', 'gripdown', 'gripup', 'abuttondown', 'bbuttondown',
+                    'xbuttondown', 'ybuttondown', 'thumbstickdown', 'thumbstickup',
+                    'controllerconnected', 'controllerdisconnected'
+                ];
+                
+                events.forEach(eventName => {
+                    controller.addEventListener(eventName, (e) => {
+                        debugLog(`🎮 ${name} Event: ${eventName}`);
+                    });
+                });
+                
+                debugLog(`🔍 ${name}: Listening for events`);
+            };
+            
+            // Attach to both controllers with multiple event types
+            if (leftController) {
+                debugLog('✅ Setting up LEFT controller');
+                debugAllEvents(leftController, 'LEFT');
+                
+                leftController.addEventListener("thumbstickmoved", (e) => handleThumbstickMovement(e, 'LEFT'));
+                leftController.addEventListener("axismove", (e) => {
+                    if (e.detail.axis && e.detail.axis.length >= 2) {
+                        handleThumbstickMovement({detail: {x: e.detail.axis[0], y: e.detail.axis[1]}}, 'LEFT');
+                    }
+                });
+                leftController.addEventListener('controllerconnected', (e) => {
+                    debugLog('🎮 LEFT Controller connected!');
+                });
+            }
+            if (rightController) {
+                debugLog('✅ Setting up RIGHT controller');
+                debugAllEvents(rightController, 'RIGHT');
+                
+                rightController.addEventListener("thumbstickmoved", (e) => handleThumbstickMovement(e, 'RIGHT'));
+                rightController.addEventListener("axismove", (e) => {
+                    if (e.detail.axis && e.detail.axis.length >= 2) {
+                        handleThumbstickMovement({detail: {x: e.detail.axis[0], y: e.detail.axis[1]}}, 'RIGHT');
+                    }
+                });
+                rightController.addEventListener('controllerconnected', (e) => {
+                    debugLog('🎮 RIGHT Controller connected!');
+                });
+            }
 
             // ---- Planet Selection with Trigger ----
             rightController.addEventListener("triggerdown", () => {
@@ -1898,6 +2048,7 @@
         let tourPaused = false;
         let currentTourLanguage = 'en';
         let currentTourStep = 0;
+        window.tourRunning = false; // Initialize to false for VR movement
         
         // Global flags for TTS spam prevention (MUST be initialized early)
         window.modelsFullyLoaded = false; // Set true when all GLTFs done loading
