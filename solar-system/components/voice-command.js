@@ -2,7 +2,7 @@
 AFRAME.registerComponent('voice-command', {
   schema: {
     lang: { type: 'string', default: 'en-US' },
-    wakeWord: { type: 'string', default: 'hi xp' }, // lower-case
+    wakeWord: { type: 'string', default: 'cutie' }, // lower-case
     autoStartAfterGesture: { type: 'boolean', default: true },
     awaitTimeoutMs: { type: 'number', default: 6000 },
     minConfidence: { type: 'number', default: 0.45 } // require this for final commands
@@ -155,17 +155,45 @@ AFRAME.registerComponent('voice-command', {
   },
 
       _containsWakeWord(text) {
-        const w = this.data.wakeWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // escape
-        // Much stricter: wake word must be at the very beginning of the phrase
-        const re = new RegExp(`^${w}\\b`, 'i');
-        return re.test(text.trim());
+        const textLower = text.trim().toLowerCase();
+        
+        // Check for multiple variations of "cutie"
+        const wakeWordVariations = [
+          /^cutie\b/i,      // cutie
+          /^cuty\b/i,       // cuty
+          /^qt\b/i,         // qt
+          /^q\.?t\.?\b/i,   // q.t. or q t
+          /^cutey\b/i,      // cutey
+          /^kuti\b/i,       // kuti (phonetic)
+          /^kyuti\b/i       // kyuti (phonetic)
+        ];
+        
+        // Test if text starts with any variation
+        return wakeWordVariations.some(pattern => pattern.test(textLower));
       },
 
   _textAfterWake(text) {
-    const w = this.data.wakeWord;
-    const idx = text.indexOf(w);
-    if (idx === -1) return '';
-    return text.slice(idx + w.length).trim();
+    const textLower = text.toLowerCase();
+    
+    // Try to find where the wake word ends
+    const patterns = [
+      /^cutie\b/i,
+      /^cuty\b/i,
+      /^qt\b/i,
+      /^q\.?t\.?\b/i,
+      /^cutey\b/i,
+      /^kuti\b/i,
+      /^kyuti\b/i
+    ];
+    
+    for (const pattern of patterns) {
+      const match = textLower.match(pattern);
+      if (match) {
+        return text.slice(match[0].length).trim();
+      }
+    }
+    
+    return '';
   },
 
       _activateAwaitingMode() {

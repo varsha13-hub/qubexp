@@ -1,5 +1,7 @@
 {
   "dependencies": {
+    "@picovoice/picovoice-web": "^3.0.3",
+    "@picovoice/web-voice-processor": "^4.0.9",
     "dotenv": "^17.2.3",
     "node-fetch": "^3.3.2"
   }

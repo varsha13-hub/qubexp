@@ -370,7 +370,7 @@ class VRSceneController {
 
     async loadPlanets() {
         try {
-            const response = await fetch('http://localhost:8080/api/planets');
+            const response = await fetch('/api/planets');
             if (!response.ok) {
                 throw new Error('Failed to load planets');
             }
@@ -555,7 +555,7 @@ class VRSceneController {
         
         try {
             // Always try to translate planet info for better user experience
-            const response = await fetch('http://localhost:8080/api/translate', {
+            const response = await fetch('/api/translate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -961,7 +961,7 @@ class VRSceneController {
     // Translation method
     async translateText(text, sourceLang, targetLang) {
         try {
-            const response = await fetch('http://localhost:8080/api/translate', {
+            const response = await fetch('/api/translate', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

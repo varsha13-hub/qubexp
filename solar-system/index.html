@@ -209,6 +209,7 @@
             align-items: center;
             z-index: 10000;
             font-family: 'Arial', sans-serif;
+            pointer-events: auto;
         }
 
         .menu-content {
@@ -251,6 +252,9 @@
             cursor: pointer;
             transition: all 0.3s ease;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            pointer-events: auto;
+            z-index: 10001;
+            position: relative;
         }
 
         .lang-option:hover {
@@ -398,10 +402,13 @@
         
         <h4>🤖 AI Q&A</h4>
         <div style="display: flex; gap: 8px; flex-direction: column;">
-            <input type="text" id="questionInput" placeholder="Type your question..." style="padding: 8px; border-radius: 6px; border: 1px solid #ccc; font-size: 14px; width: 100%;">
+            <input type="text" id="questionInput" placeholder="Type your question..." style="padding: 12px; border-radius: 8px; border: 2px solid #00ff88; font-size: 16px; width: 100%; background: #f0f8ff;">
             <div style="display: flex; gap: 8px;">
-                <button id="askQuestionBtn" class="test-btn" style="flex: 1;">🎤 Voice</button>
-                <button id="askQuestionTextBtn" class="test-btn" style="flex: 1;">📝 Ask</button>
+                <button id="askQuestionBtn" class="test-btn" style="flex: 1; background: #ff6b6b;">🎤 Voice</button>
+                <button id="askQuestionTextBtn" class="test-btn" style="flex: 1; background: #00ff88; color: #1a1a2e;">📝 Ask</button>
+            </div>
+            <div style="font-size: 12px; color: #ccc; text-align: center; margin-top: 5px;">
+                💡 Voice works on desktop, text input works on VR headsets
             </div>
         </div>
     </div>
@@ -411,23 +418,9 @@
         <!-- Space background -->
         <!-- Background - using starfield instead of a-sky for better performance -->
         
-        <!-- Preload all planet models -->
-        <a-assets timeout="180000">
-            <!-- Sky texture removed to fix visual glitches -->
-            
-            <!-- Sun texture -->
-            <img id="sunTexture" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8ZGVmcz4KICAgIDxyYWRpYWxHcmFkaWVudCBpZD0ic3VuR3JhZGllbnQiIGN4PSI1MCUiIGN5PSI1MCUiIHI9IjUwJSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiNGRkQ3MDAiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSI3MCUiIHN0b3AtY29sb3I9IiNGRkE1MDAiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjRkY2NjAwIi8+CiAgICA8L3JhZGlhbEdyYWRpZW50PgogIDwvZGVmcz4KICA8Y2lyY2xlIGN4PSIyNTYiIGN5PSIyNTYiIHI9IjI1NiIgZmlsbD0idXJsKCNzdW5HcmFkaWVudCkiLz4KICA8Y2lyY2xlIGN4PSIyNTYiIGN5PSIyNTYiIHI9IjI0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRkZENzAwIiBzdHJva2Utd2lkdGg9IjE2IiBvcGFjaXR5PSIwLjMiLz4KICA8Y2lyY2xlIGN4PSIyNTYiIGN5PSIyNTYiIHI9IjIyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRkZBNTAwIiBzdHJva2Utd2lkdGg9IjEyIiBvcGFjaXR5PSIwLjIiLz4KPC9zdmc+">
-            
-            <!-- Planet models -->
-            <a-asset-item id="sun-model" src="assets/planets/Sun.glb"></a-asset-item>
-            <a-asset-item id="mercury-model" src="assets/planets/Mercury.glb"></a-asset-item>
-            <a-asset-item id="venus-model" src="assets/planets/Venus.glb"></a-asset-item>
-            <a-asset-item id="earth-model" src="assets/planets/Earth.glb"></a-asset-item>
-            <a-asset-item id="mars-model" src="assets/planets/Mars.glb"></a-asset-item>
-            <a-asset-item id="jupiter-model" src="assets/planets/Jupiter.glb"></a-asset-item>
-            <a-asset-item id="saturn-model" src="assets/planets/Saturn.glb"></a-asset-item>
-            <a-asset-item id="uranus-model" src="assets/planets/Uranus.glb"></a-asset-item>
-            <a-asset-item id="neptune-model" src="assets/planets/Neptune.glb"></a-asset-item>
+        <!-- Empty assets - models loaded directly for fast initial render -->
+        <a-assets timeout="1000">
+            <!-- Models removed from preload - will load on-demand -->
         </a-assets>
         
         <!-- Direct GLB model loading -->
@@ -443,7 +436,7 @@
         <!-- Sun - USING YOUR 3D MODEL -->
         <a-entity position="0 0 -30" class="planet" data-planet-id="sun" data-planet-name="Sun" data-planet-desc="" data-raycastable>
             <!-- Your 3D Sun Model - Proper scale -->
-            <a-entity gltf-model="#sun-model" position="0 0 0" scale="0.6 0.6 0.6"></a-entity>
+            <a-entity gltf-model="assets/planets/Sun.glb" position="0 0 0" scale="0.6 0.6 0.6"></a-entity>
             <!-- Fallback sphere (hidden by default, shown only if 3D model fails) -->
             <a-sphere position="0 0 0" radius="7.5" color="#FFD700" 
                 material="color: #FFD700; transparent: false" visible="false">
@@ -455,7 +448,7 @@
         
         <!-- Mercury -->
         <a-entity id="mercury-orbit" orbit-parent="speed: 1.6" position="0 0 -30">
-          <a-entity gltf-model="#mercury-model" position="6 0.35 0" scale="0.0003 0.0003 0.0003" spin-body="speed: 40" class="planet" data-planet-id="mercury" data-raycastable data-planet-name="Mercury" data-planet-desc="Mercury is the smallest and innermost planet in the Solar System. It has no moons and is covered in craters.">
+            <a-entity gltf-model="assets/planets/Mercury.glb" position="6 0.35 0" scale="0.0003 0.0003 0.0003" spin-body="speed: 40" class="planet" data-planet-id="mercury" data-raycastable data-planet-name="Mercury" data-planet-desc="Mercury is the smallest and innermost planet in the Solar System. It has no moons and is covered in craters.">
             <!-- Fallback sphere in case GLTF fails -->
             <a-sphere position="0 0 0" radius="0.3" color="#8C7853"></a-sphere>
           </a-entity>
@@ -464,7 +457,7 @@
         
         <!-- Venus -->
         <a-entity id="venus-orbit" orbit-parent="speed: 0.9" position="0 0 -30">
-          <a-entity gltf-model="#venus-model" position="8 0 0" scale="0.00045 0.00045 0.00045" spin-body="speed: 6" class="planet" data-planet-id="venus" data-raycastable data-planet-name="Venus" data-planet-desc="Venus is the second planet from the Sun and is often called Earth's sister planet due to similar size and mass.">
+          <a-entity gltf-model="assets/planets/Venus.glb" position="8 0 0" scale="0.00045 0.00045 0.00045" spin-body="speed: 6" class="planet" data-planet-id="venus" data-raycastable data-planet-name="Venus" data-planet-desc="Venus is the second planet from the Sun and is often called Earth's sister planet due to similar size and mass.">
             <!-- Fallback sphere in case GLTF fails -->
             <a-sphere position="0 0 0" radius="0.45" color="#FFC649"></a-sphere>
           </a-entity>
@@ -473,7 +466,7 @@
         
         <!-- Earth -->
         <a-entity id="earth-orbit" orbit-parent="speed: 0.42" position="0 0 -30">
-          <a-entity gltf-model="#earth-model" position="12 0.5 0" scale="0.00048 0.00048 0.00048" spin-body="speed: 18" class="planet" data-planet-id="earth" data-raycastable data-planet-name="Earth" data-planet-desc="Earth is our home planet and the only known planet with life. It has one natural satellite, the Moon.">
+          <a-entity gltf-model="assets/planets/Earth.glb" position="12 0.5 0" scale="0.00048 0.00048 0.00048" spin-body="speed: 18" class="planet" data-planet-id="earth" data-raycastable data-planet-name="Earth" data-planet-desc="Earth is our home planet and the only known planet with life. It has one natural satellite, the Moon.">
             <!-- Fallback sphere in case GLTF fails -->
             <a-sphere position="0 0 0" radius="0.45" color="#6B93D6"></a-sphere>
           </a-entity>
@@ -482,7 +475,7 @@
         
         <!-- Mars -->
         <a-entity id="mars-orbit" orbit-parent="speed: 0.32" position="0 0 -30">
-          <a-entity gltf-model="#mars-model" position="16 0.45 0" scale="0.00036 0.00036 0.00036" spin-body="speed: 14" class="planet" data-planet-id="mars" data-raycastable data-planet-name="Mars" data-planet-desc="Mars is the fourth planet from the Sun and is often called the Red Planet due to its reddish appearance.">
+          <a-entity gltf-model="assets/planets/Mars.glb" position="16 0.45 0" scale="0.00036 0.00036 0.00036" spin-body="speed: 14" class="planet" data-planet-id="mars" data-raycastable data-planet-name="Mars" data-planet-desc="Mars is the fourth planet from the Sun and is often called the Red Planet due to its reddish appearance.">
             <!-- Fallback sphere in case GLTF fails -->
             <a-sphere position="0 0 0" radius="0.36" color="#CD5C5C"></a-sphere>
           </a-entity>
@@ -492,7 +485,7 @@
         
         <!-- Jupiter -->
         <a-entity id="jupiter-orbit" orbit-parent="speed: 0.14" position="0 0 -30">
-          <a-entity gltf-model="#jupiter-model" position="22 0 0" scale="0.0015 0.0015 0.0015" spin-body="speed: 8" class="planet" data-planet-id="jupiter" data-raycastable data-planet-name="Jupiter" data-planet-desc="Jupiter is the largest planet in our Solar System and is a gas giant with no solid surface.">
+          <a-entity gltf-model="assets/planets/Jupiter.glb" position="22 0 0" scale="0.0015 0.0015 0.0015" spin-body="speed: 8" class="planet" data-planet-id="jupiter" data-raycastable data-planet-name="Jupiter" data-planet-desc="Jupiter is the largest planet in our Solar System and is a gas giant with no solid surface.">
             <!-- Fallback sphere in case GLTF fails -->
             <a-sphere position="0 0 0" radius="0.9" color="#D8CA9D"></a-sphere>
           </a-entity>
@@ -501,7 +494,7 @@
         
         <!-- Saturn -->
         <a-entity id="saturn-orbit" orbit-parent="speed: 0.10" position="0 0 -30">
-          <a-entity gltf-model="#saturn-model" position="28 0 0" scale="0.00135 0.00135 0.00135" spin-body="speed: 10" class="planet" data-planet-id="saturn" data-raycastable data-planet-name="Saturn" data-planet-desc="Saturn is the sixth planet from the Sun and is famous for its spectacular ring system.">
+          <a-entity gltf-model="assets/planets/Saturn.glb" position="28 0 0" scale="0.00135 0.00135 0.00135" spin-body="speed: 10" class="planet" data-planet-id="saturn" data-raycastable data-planet-name="Saturn" data-planet-desc="Saturn is the sixth planet from the Sun and is famous for its spectacular ring system.">
             <!-- Fallback sphere in case GLTF fails -->
             <a-sphere position="0 0 0" radius="0.75" color="#FAD5A5"></a-sphere>
           </a-entity>
@@ -511,7 +504,7 @@
         
         <!-- Uranus -->
         <a-entity id="uranus-orbit" orbit-parent="speed: 0.07" position="0 0 -30">
-          <a-entity gltf-model="#uranus-model" position="34 0 0" scale="0.00075 0.00075 0.00075" spin-body="speed: 9" class="planet" data-planet-id="uranus" data-raycastable data-planet-name="Uranus" data-planet-desc="Uranus is the seventh planet from the Sun and is an ice giant with a unique sideways rotation.">
+          <a-entity gltf-model="assets/planets/Uranus.glb" position="34 0 0" scale="0.00075 0.00075 0.00075" spin-body="speed: 9" class="planet" data-planet-id="uranus" data-raycastable data-planet-name="Uranus" data-planet-desc="Uranus is the seventh planet from the Sun and is an ice giant with a unique sideways rotation.">
             <!-- Fallback sphere in case GLTF fails -->
             <a-sphere position="0 0 0" radius="0.54" color="#4FD0E7"></a-sphere>
           </a-entity>
@@ -520,7 +513,7 @@
         
         <!-- Neptune -->
         <a-entity id="neptune-orbit" orbit-parent="speed: 0.05" position="0 0 -30">
-          <a-entity gltf-model="#neptune-model" position="40 0 0" scale="0.00072 0.00072 0.00072" spin-body="speed: 11" class="planet" data-planet-id="neptune" data-raycastable data-planet-name="Neptune" data-planet-desc="Neptune is the eighth and farthest planet from the Sun. It's an ice giant with the strongest winds in the Solar System.">
+          <a-entity gltf-model="assets/planets/Neptune.glb" position="40 0 0" scale="0.00072 0.00072 0.00072" spin-body="speed: 11" class="planet" data-planet-id="neptune" data-raycastable data-planet-name="Neptune" data-planet-desc="Neptune is the eighth and farthest planet from the Sun. It's an ice giant with the strongest winds in the Solar System.">
             <!-- Fallback sphere in case GLTF fails -->
             <a-sphere position="0 0 0" radius="0.45" color="#4B70DD"></a-sphere>
           </a-entity>
@@ -535,7 +528,7 @@
         
         <!-- VR Rig with Custom Movement Controls -->
         <!-- Voice Control Entity -->
-        <a-entity id="vc" voice-command="lang: en-US; wakeWord: hi xp; autoStartAfterGesture: true; minConfidence: 0.7"></a-entity>
+        <a-entity id="vc" voice-command="lang: en-US; wakeWord: cutie; autoStartAfterGesture: true; minConfidence: 0.7"></a-entity>
 
         <a-entity id="rig" position="0 1.6 0">
             <!-- Camera (headset view) -->
@@ -631,6 +624,60 @@
         <script src="scripts/offline-qa-cache.js"></script>
         <script src="scripts/ai-qa.js"></script>
         <script src="scripts/preload-faqs.js"></script>
+        
+        <!-- Picovoice Integration (optional - falls back to Web Speech API if models not available) -->
+        <script type="module">
+            (async function initPicovoice() {
+                console.log('[Picovoice-Init] Checking for Picovoice models...');
+                
+                // Check if models exist
+                const lang = localStorage.getItem('selectedLanguage') || 'en';
+                const hasModels = await fetch(`pv/cutie_${lang}.ppn`, { method: 'HEAD' })
+                    .then(r => r.ok)
+                    .catch(() => false);
+                
+                if (!hasModels) {
+                    console.log('[Picovoice-Init] Models not found - using Web Speech API fallback');
+                    console.log('[Picovoice-Init] To enable offline voice:');
+                    console.log('[Picovoice-Init] 1. Create models at https://console.picovoice.ai');
+                    console.log('[Picovoice-Init] 2. Place in solar-system/pv/ directory');
+                    console.log('[Picovoice-Init] 3. See solar-system/pv/README.md for instructions');
+                    return;
+                }
+                
+                // Load Picovoice manager
+                try {
+                    const module = await import('./scripts/picovoice-manager.js');
+                    console.log('[Picovoice-Init] Manager loaded');
+                    
+                    // Initialize on user interaction (required for mic access)
+                    const initOnce = async () => {
+                        try {
+                            const success = await window.picovoiceManager.init(lang);
+                            if (success) {
+                                console.log('[Picovoice-Init] ✅ Offline voice active');
+                                // Disable Web Speech API component if Picovoice is active
+                                const vcEl = document.getElementById('vc');
+                                if (vcEl && vcEl.components['voice-command']) {
+                                    vcEl.components['voice-command'].stopHotwordListener();
+                                    console.log('[Picovoice-Init] Web Speech API disabled');
+                                }
+                            }
+                        } catch (err) {
+                            console.warn('[Picovoice-Init] Failed:', err);
+                        }
+                        window.removeEventListener('click', initOnce);
+                        window.removeEventListener('touchstart', initOnce);
+                    };
+                    
+                    window.addEventListener('click', initOnce, { once: true });
+                    window.addEventListener('touchstart', initOnce, { once: true });
+                    
+                } catch (err) {
+                    console.warn('[Picovoice-Init] Could not load manager:', err);
+                }
+            })();
+        </script>
     <script>
         // Example of using the Electron API
         async function testElectronAPI() {
@@ -1244,8 +1291,16 @@
             const langOptions = document.querySelectorAll('.lang-option');
             
             // Handle language selection
-            langOptions.forEach(option => {
-                option.addEventListener('click', () => {
+            console.log('🔧 Setting up language selection...');
+            console.log('🔧 Found language options:', langOptions.length);
+            
+            langOptions.forEach((option, index) => {
+                console.log(`🔧 Setting up option ${index}:`, option);
+                option.addEventListener('click', (e) => {
+                    console.log('🔧 Language option clicked!', e.target);
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
                     // Remove active class from all options
                     langOptions.forEach(opt => opt.classList.remove('active'));
                     // Add active class to clicked option
@@ -1260,7 +1315,17 @@
                     if (enterVRBtn) {
                         enterVRBtn.disabled = false;
                         enterVRBtn.style.opacity = '1';
+                        console.log('🔧 Enter VR button enabled');
                     }
+                });
+                
+                // Add mouse events for debugging
+                option.addEventListener('mouseenter', () => {
+                    console.log('🔧 Mouse entered option:', option.getAttribute('data-lang'));
+                });
+                
+                option.addEventListener('mousedown', () => {
+                    console.log('🔧 Mouse down on option:', option.getAttribute('data-lang'));
                 });
             });
             
@@ -1376,10 +1441,24 @@
                 languageMenu.style.display = 'none';
             }
             
-            // Show VR scene
+            // Show VR scene IMMEDIATELY (don't wait for models)
             const scene = document.querySelector('a-scene');
             if (scene) {
                 scene.style.display = 'block';
+            }
+            
+            // Show quick loading message, then hide after 2 seconds
+            const loadingOverlay2 = document.getElementById('loadingOverlay');
+            if (loadingOverlay2) {
+                loadingOverlay2.style.display = 'flex';
+                const statusEl = document.getElementById('loadingStatus');
+                if (statusEl) statusEl.textContent = 'Entering VR...';
+                
+                // Hide overlay after 2 seconds (models will load in background)
+                setTimeout(() => {
+                    loadingOverlay2.style.display = 'none';
+                    console.log('🎬 VR scene ready - models loading in background');
+                }, 2000);
             }
             
             // Set language for VR and TTS system
@@ -1607,6 +1686,12 @@
 
             // ---- Movement with Thumbstick ----
             rightController.addEventListener("thumbstickmoved", (e) => {
+                // Don't allow movement during tours
+                if (window.tourRunning || window.isTourActive) {
+                    console.log('🚫 VR movement disabled during tour');
+                    return;
+                }
+                
                 const moveSpeed = 0.05; // adjust speed
                 const direction = new THREE.Vector3();
 
@@ -1614,7 +1699,14 @@
                 camera.object3D.getWorldDirection(direction);
 
                 // Move forward/back
+                const oldPos = rig.object3D.position.clone();
                 rig.object3D.position.addScaledVector(direction, -e.detail.y * moveSpeed);
+                console.log('🎮 VR Movement:', {
+                    thumbstick: e.detail.y,
+                    oldPos: oldPos,
+                    newPos: rig.object3D.position,
+                    direction: direction
+                });
             });
 
             // ---- Planet Selection with Trigger ----
@@ -1822,6 +1914,11 @@
         let tourSteps = [];
         let pausedAtStep = 0;
         
+        // Simple wait function
+        function waitWithPause(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+        
         // Helper function to wait with pause support
         async function waitWithPauseCheck(duration) {
             const startTime = Date.now();
@@ -1839,6 +1936,8 @@
         // Pause and Resume Tour Functions
         function pauseTour() {
             console.log('⏸️ Pausing tour...');
+            console.log('⏸️ Current tour step:', currentTourStep);
+            console.log('⏸️ Tour active:', isTourActive);
             tourPaused = true;
             pausedAtStep = currentTourStep;
             
@@ -1865,6 +1964,8 @@
         
         function resumeTour() {
             console.log('▶️ Resuming tour...');
+            console.log('▶️ Current tour step:', currentTourStep);
+            console.log('▶️ Tour active:', isTourActive);
             tourPaused = false;
             
             // Resume audio using new TourController
@@ -1889,6 +1990,10 @@
             // Don't call runTourSequence again - the original tour is still running
             // and will automatically continue when tourPaused becomes false
         }
+        
+        // Make functions available to voice commands
+        window.pauseTour = pauseTour;
+        window.resumeTour = resumeTour;
         
         // Add tour status indicator
         function showTourStatus(message) {
@@ -1985,6 +2090,7 @@
                     // Wait if tour is paused
                     while (tourPaused) {
                         console.log(`⏸️ Tour paused at step ${i}, waiting...`);
+                        console.log(`⏸️ tourPaused: ${tourPaused}, isTourActive: ${isTourActive}`);
                         await waitWithPause(500);
                     }
                     
@@ -2374,8 +2480,19 @@
             // Check if speech recognition is supported
             if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
                 console.warn('⚠️ Speech recognition not supported');
-                showVRDebugDialog('🎤 Voice not supported - please use text input below', '#ff6b6b', 4000);
-                alert('Speech recognition is not supported in this browser. Please use the text input instead.');
+                showVRDebugDialog('🎤 Voice not supported on VR headset - use text input below', '#ff6b6b', 6000);
+                
+                // Show the text input prominently
+                const questionInput = document.getElementById('questionInput');
+                const askQuestionTextBtn = document.getElementById('askQuestionTextBtn');
+                if (questionInput && askQuestionTextBtn) {
+                    questionInput.style.border = '2px solid #ff6b6b';
+                    questionInput.style.backgroundColor = '#ffe6e6';
+                    questionInput.placeholder = 'Type your question here (voice not supported on VR headset)';
+                    askQuestionTextBtn.style.backgroundColor = '#ff6b6b';
+                    askQuestionTextBtn.style.color = 'white';
+                    askQuestionTextBtn.textContent = '📝 Ask (VR Mode)';
+                }
                 return;
             }
             
@@ -2832,7 +2949,7 @@
         function ensureStarted(){ 
           try { 
             vc.components['voice-command'] && vc.components['voice-command'].startHotwordListener(); 
-            show('Voice ready — say "hi XP"', 2500); 
+            show('Voice ready — say "Cutie"', 2500); 
           } 
           catch(e){ 
             console.warn(e); 
@@ -2844,7 +2961,7 @@
 
         vc.addEventListener('voice-state', (e)=> {
           const s=(e.detail && e.detail.state);
-          if (s==='hotword-listening') show('Listening for "hi XP"...');
+          if (s==='hotword-listening') show('Listening for "Cutie"...');
           if (s==='listening') show('Say your command...');
           if (s==='command-handled') show('Command received', 1200);
           if (s==='listening-timeout') show('Command timed out', 1200);
