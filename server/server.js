@@ -35,6 +35,7 @@ app.use('/api/translate', require('./src/routes/translate'));
 app.use('/api/tts', require('./src/routes/tts'));
 // AI endpoints for working-vr.html
 app.use('/api/ai', require('./src/routes/ai-endpoints'));
+app.use('/api', require('./ai-proxy'));
 
 // Serve PWA manifest
 app.get('/manifest.json', (req, res) => {
