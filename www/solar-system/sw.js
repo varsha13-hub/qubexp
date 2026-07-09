@@ -1,4 +1,4 @@
-const CACHE_NAME = "solar-vr-v1";
+const CACHE_NAME = "solar-vr-v3";
 const ASSETS = [
   "./index.html",
   "./vr-scene.js",

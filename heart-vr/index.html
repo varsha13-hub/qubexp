@@ -4,6 +4,15 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Heart VR - WebXR Three.js</title>
+  <script src="../human-anatomy/tts.js"></script>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.164.1/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.164.1/examples/jsm/"
+      }
+    }
+  </script>
   <style>
     :root {
       color-scheme: dark;
@@ -13,7 +22,7 @@
       width: 100%;
       height: 100%;
       overflow: hidden;
-      background: #080102;
+      background: #f5f5dc;
       font-family: Arial, Helvetica, sans-serif;
     }
     #app {
@@ -40,29 +49,195 @@
     #overlay code {
       color: #9ec7ff;
     }
+    #intro-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(8, 1, 2, 0.85);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+      transition: opacity 0.5s ease;
+    }
+    #start-btn {
+      background: rgba(0, 0, 0, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+      color: #e6d8d8;
+      padding: 15px 30px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+      transition: all 0.3s ease;
+    }
+    #start-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: #ff9191;
+      color: #ffffff;
+      transform: scale(1.05);
+    }
+    #caption-overlay {
+      position: fixed;
+      bottom: 12%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 90%;
+      max-width: 600px;
+      z-index: 30;
+      pointer-events: none;
+      text-align: center;
+    }
+    #caption-text-box {
+      background: rgba(0, 0, 0, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+      color: #ffffff;
+      padding: 12px 24px;
+      font-size: 1.1rem;
+      line-height: 1.5;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    }
+    .control-panel {
+      position: fixed;
+      top: 12px;
+      right: 12px;
+      background: rgba(0, 0, 0, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: white;
+      padding: 15px;
+      z-index: 9999;
+      font-family: Arial, sans-serif;
+      border-radius: 10px;
+      min-width: 250px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(10px);
+    }
+    .control-panel h4 {
+      margin: 0 0 10px 0;
+      color: #00ff88;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .control-panel p {
+      margin: 5px 0 15px 0;
+      font-size: 13px;
+      color: #e0e0e0;
+    }
+    .control-panel button {
+      background: #00ff88;
+      color: #1a1a2e;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.3s ease;
+    }
+    .control-panel button:hover {
+      background: #00cc6a;
+      transform: scale(1.02);
+    }
+    .control-panel input[type="text"] {
+      padding: 10px;
+      border-radius: 6px;
+      border: 2px solid #00ff88;
+      font-size: 14px;
+      width: 100%;
+      background: #f0f8ff;
+      color: #000;
+      box-sizing: border-box;
+      outline: none;
+    }
   </style>
 </head>
 <body>
   <div id="app"></div>
+
+  <!-- Visiting Pill (Top Center) -->
+  <div id="visiting-pill" style="position: fixed; top: 12px; left: 50%; transform: translateX(-50%); background: rgba(0, 0, 0, 0.75); color: white; padding: 10px 20px; border-radius: 20px; font-family: sans-serif; font-size: 14px; font-weight: bold; z-index: 9999; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.15); backdrop-filter: blur(10px);">
+    <span>❤️ Visiting Heart</span>
+  </div>
+
+  <!-- Right Floating Panel -->
+  <div class="control-panel">
+    <h4>📍 Current Chamber</h4>
+    <p id="currentPlanet">None selected</p>
+    
+    <h4>🎬 Tour Controls</h4>
+    <div style="margin-bottom: 15px;">
+      <button id="pauseBtn" style="width: 100%;">⏸️ Pause Narration</button>
+    </div>
+
+    <h4>🤖 AI Q&A</h4>
+    <div style="display: flex; gap: 8px; flex-direction: column;">
+      <input type="text" id="questionInput" placeholder="Type your question...">
+      <div style="display: flex; gap: 8px;">
+        <button id="askQuestionBtn" style="flex: 1; background: #ff6b6b; color: white;">🎤 Voice</button>
+        <button id="askQuestionTextBtn" style="flex: 1;">📝 Ask</button>
+      </div>
+      <div style="font-size: 11px; color: #ccc; text-align: center; margin-top: 5px; line-height: 1.3;">
+        💡 Voice works on desktop, text input works on VR headsets
+      </div>
+    </div>
+  </div>
+
+  <!-- VR Debug Panel (Bottom Left) -->
+  <div id="vr-debug" style="position: fixed; bottom: 12px; left: 12px; background: rgba(0,0,0,0.85); color: #00ff00; padding: 10px; border-radius: 8px; font-family: monospace; font-size: 11px; max-width: 90%; max-height: 180px; overflow-y: auto; z-index: 10001; display: block; border: 1px solid rgba(255,255,255,0.15); backdrop-filter: blur(10px); min-width: 200px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+    <div style="color: #ffff00; font-weight: bold; margin-bottom: 4px;">🎮 VR Debug</div>
+    <div id="vr-debug-content">Initializing...</div>
+  </div>
   <div id="overlay">
     <strong>Heart Flow VR</strong><br />
     Click <code>Enter VR</code> for headset mode.<br />
     Desktop fallback: drag to orbit, mouse wheel to zoom.
   </div>
+  <div id="intro-overlay">
+    <button id="start-btn">Tap to Begin</button>
+  </div>
+  <div id="caption-overlay">
+    <div id="caption-text-box"></div>
+  </div>
 
   <script type="module">
-    import * as THREE from "https://unpkg.com/three@0.164.1/build/three.module.js";
-    import { OrbitControls } from "https://unpkg.com/three@0.164.1/examples/jsm/controls/OrbitControls.js?module";
-    import { VRButton } from "https://unpkg.com/three@0.164.1/examples/jsm/webxr/VRButton.js?module";
+    import WebXRPolyfill from "https://cdn.jsdelivr.net/npm/webxr-polyfill@latest/build/webxr-polyfill.module.js";
+    const polyfill = new WebXRPolyfill();
 
-    // --- Basic scene setup with atmospheric red fog ---
+    import * as THREE from "three";
+    import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+    import { VRButton } from "three/addons/webxr/VRButton.js";
+    import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+    import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
+
+    const HEART_INTRO_SENTENCES = [
+      "Welcome to the guided tour of the human heart. Let's first explore the Right Atrium, highlighted in blue. It receives oxygen-poor blood returning from all parts of the body.",
+      "Below it lies the Right Ventricle. This chamber pumps the deoxygenated blood through the pulmonary artery into your lungs to replenish oxygen.",
+      "Now, let's cross over to the Left Atrium, highlighted in red. This chamber receives the newly oxygenated blood directly back from your lungs.",
+      "Next, we move down into the Left Ventricle. This is the strongest chamber of the heart, pumping oxygen-rich blood out through the aorta to your entire body.",
+      "Ultimately, the human heart is a marvel of biological engineering. Over an average lifetime, it beats more than two and a half billion times, tirelessly pumping oxygen and nutrients to sustain every single cell in your body."
+    ];
+    const HEART_INTRO_TEXT = HEART_INTRO_SENTENCES.join(" ");
+
+    // --- Basic scene setup with atmospheric beige fog ---
     const app = document.getElementById("app");
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x1c0607);
-    scene.fog = new THREE.FogExp2(0x6d1b1b, 0.04);
+    scene.background = new THREE.Color(0xf5f5dc);
+    scene.fog = new THREE.FogExp2(0xf5f5dc, 0.02);
 
     const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 300);
     camera.position.set(0, 1.5, 7);
+
+    // Create camera group for VR dolly movements
+    const cameraGroup = new THREE.Group();
+    scene.add(cameraGroup);
+    cameraGroup.add(camera);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -77,17 +252,20 @@
     controls.enableDamping = true;
     controls.dampingFactor = 0.06;
     controls.maxDistance = 30;
-    controls.minDistance = 2;
+    controls.minDistance = 0.05;
+    controls.autoRotate = false;
+    controls.autoRotateSpeed = 1.0;
+    controls.keys = {};
 
-    // --- Lighting (brighter but still organic) ---
-    scene.add(new THREE.AmbientLight(0xa33a3a, 1.05));
-    const keyLight = new THREE.PointLight(0xd45b45, 1.05, 85, 2);
+    // --- Lighting (brighter and cleaner to match the beige theme) ---
+    scene.add(new THREE.AmbientLight(0xffffff, 1.6));
+    const keyLight = new THREE.PointLight(0xffffff, 2.0, 85, 2);
     keyLight.position.set(4, 5, 5);
     scene.add(keyLight);
-    const fillLight = new THREE.PointLight(0x9c3a2b, 0.8, 80, 2);
+    const fillLight = new THREE.PointLight(0xfff5e6, 1.4, 80, 2);
     fillLight.position.set(-4, 3, -4);
     scene.add(fillLight);
-    const contrastLight = new THREE.PointLight(0xffffff, 0.22, 45, 2);
+    const contrastLight = new THREE.PointLight(0xffffff, 0.6, 45, 2);
     contrastLight.position.set(0, 2, 2);
     scene.add(contrastLight);
 
@@ -110,356 +288,582 @@
     );
     scene.add(bgPoints);
 
-    // --- Procedural heart path points ---
-    // Reference anchors for a stylized heart and lungs.
-    const RA = new THREE.Vector3(-1.8, 2.0, 0.3);      // Right Atrium
-    const RV = new THREE.Vector3(-2.1, 0.2, 0.4);      // Right Ventricle
-    const LUNG_R = new THREE.Vector3(-5.2, 3.0, -1.2); // Lung branch right side
-    const LUNG_L = new THREE.Vector3(5.2, 3.0, -1.2);  // Lung branch left side
-    const LA = new THREE.Vector3(1.8, 2.0, 0.3);       // Left Atrium
-    const LV = new THREE.Vector3(2.2, 0.1, 0.5);       // Left Ventricle
-    const AORTA_ARCH = new THREE.Vector3(0.2, 5.0, -0.8);
-    const BODY_DESCENT = new THREE.Vector3(-0.6, -3.8, 1.8);
-    const VENA_CAVA_RETURN = new THREE.Vector3(-2.2, 1.2, 0.9);
-
-    // 1) Right Atrium -> Right Ventricle (deoxygenated, blue)
-    const segment1Points = [
-      RA.clone(),
-      new THREE.Vector3(-2.35, 1.6, 0.7),
-      new THREE.Vector3(-2.5, 1.0, 0.9),
-      RV.clone(),
-    ];
-
-    // 2) Right Ventricle -> Lungs via pulmonary artery (deoxygenated, blue)
-    const segment2Points = [
-      RV.clone(),
-      new THREE.Vector3(-3.2, 1.3, -0.1),
-      new THREE.Vector3(-4.3, 2.4, -0.9),
-      LUNG_R.clone(),
-      new THREE.Vector3(-0.3, 3.6, -2.6),
-      LUNG_L.clone(),
-    ];
-
-    // 3) Lungs -> Left Atrium via pulmonary veins (oxygenated, red)
-    const segment3Points = [
-      LUNG_L.clone(),
-      new THREE.Vector3(4.3, 2.9, -0.9),
-      new THREE.Vector3(3.2, 2.5, -0.2),
-      LA.clone(),
-    ];
-
-    // 4) Left Atrium -> Left Ventricle -> Aorta and systemic return (oxygenated to body, then return)
-    // Return to RA keeps one continuous loop for camera traversal.
-    const segment4Points = [
-      LA.clone(),
-      new THREE.Vector3(2.45, 1.4, 0.8),
-      LV.clone(),
-      new THREE.Vector3(2.4, 1.4, -0.4),
-      AORTA_ARCH.clone(),
-      new THREE.Vector3(-0.2, 4.0, -2.0),
-      BODY_DESCENT.clone(),
-      new THREE.Vector3(-2.7, -1.2, 2.2),
-      VENA_CAVA_RETURN.clone(),
-      RA.clone(),
-    ];
-
-    // Build smooth curves from control points.
-    const curve1 = new THREE.CatmullRomCurve3(segment1Points, false, "centripetal");
-    const curve2 = new THREE.CatmullRomCurve3(segment2Points, false, "centripetal");
-    const curve3 = new THREE.CatmullRomCurve3(segment3Points, false, "centripetal");
-    const curve4 = new THREE.CatmullRomCurve3(segment4Points, false, "centripetal");
-
-    const tubeGroup = new THREE.Group();
-    scene.add(tubeGroup);
-
-    const tubeRadius = 2.4; // Enclosing lumen so the user feels inside tissue
-    const tubeSegments = 320;
-    const radialSegments = 20;
-
-    const deoxygenatedMat = new THREE.MeshStandardMaterial({
-      color: 0x7a0000,
-      emissive: 0x2d0000,
-      emissiveIntensity: 0.28,
-      roughness: 0.8,
-      metalness: 0.06,
-      side: THREE.BackSide,
-      vertexColors: true,
-    });
-    const oxygenatedMat = new THREE.MeshStandardMaterial({
-      color: 0xa00000,
-      emissive: 0x3a0000,
-      emissiveIntensity: 0.32,
-      roughness: 0.74,
-      metalness: 0.08,
-      side: THREE.BackSide,
-      vertexColors: true,
-    });
-
-    function stylizeTubeGeometry(geo, noiseSeed, noiseAmp, radiusWaveAmp) {
-      const posAttr = geo.getAttribute("position");
-      const normalAttr = geo.getAttribute("normal");
-      const uvAttr = geo.getAttribute("uv");
-      const colorAttr = new THREE.BufferAttribute(new Float32Array(posAttr.count * 3), 3);
-      const p = new THREE.Vector3();
-      const n = new THREE.Vector3();
-      const dark = new THREE.Color(0x5a0000);
-      const light = new THREE.Color(0xa00000);
-      const tempColor = new THREE.Color();
-
-      for (let i = 0; i < posAttr.count; i++) {
-        p.fromBufferAttribute(posAttr, i);
-        n.fromBufferAttribute(normalAttr, i).normalize();
-        const u = uvAttr.getX(i);
-        const v = uvAttr.getY(i);
-
-        // Radius variation + subtle wall noise for organic tissue feel.
-        const radiusWave = 1 + Math.sin(v * Math.PI * 8 + noiseSeed) * radiusWaveAmp;
-        const noise = (Math.sin((p.x + noiseSeed) * 2.3) + Math.sin((p.y - noiseSeed) * 2.1) + Math.sin((p.z + noiseSeed) * 2.7)) * 0.333;
-        const push = (radiusWave - 1) * 0.8 + noise * noiseAmp;
-        p.addScaledVector(n, push);
-        posAttr.setXYZ(i, p.x, p.y, p.z);
-
-        // Gradient blend along flow + around wall for depth detail.
-        const mixA = 0.25 + 0.75 * v;
-        const mixB = 0.08 * Math.sin(u * Math.PI * 2.0 + v * Math.PI * 4.0);
-        tempColor.copy(dark).lerp(light, THREE.MathUtils.clamp(mixA + mixB, 0, 1));
-        colorAttr.setXYZ(i, tempColor.r, tempColor.g, tempColor.b);
-      }
-
-      posAttr.needsUpdate = true;
-      geo.setAttribute("color", colorAttr);
-      geo.computeVertexNormals();
-    }
-
-    function makeTube(curve, material, noiseSeed = 0.0, noiseAmp = 0.0, radiusWaveAmp = 0.0) {
-      const geo = new THREE.TubeGeometry(curve, tubeSegments, tubeRadius, radialSegments, false);
-      if (noiseAmp > 0 || radiusWaveAmp > 0) {
-        stylizeTubeGeometry(geo, noiseSeed, noiseAmp, radiusWaveAmp);
-      }
-      const mesh = new THREE.Mesh(geo, material);
-      mesh.castShadow = false;
-      mesh.receiveShadow = false;
-      tubeGroup.add(mesh);
-      return mesh;
-    }
-
-    const tubeMeshes = [
-      makeTube(curve1, deoxygenatedMat, 0.8, 0.08, 0.1),
-      makeTube(curve2, deoxygenatedMat, 1.4, 0.09, 0.11),
-      makeTube(curve3, oxygenatedMat, 2.1, 0.07, 0.1),
-      makeTube(curve4, oxygenatedMat, 2.7, 0.1, 0.12),
-    ];
-
-    // Subtle inner membrane layer for depth without bright, plastic highlights.
-    const membraneMat = new THREE.MeshStandardMaterial({
-      color: 0x5b0000,
-      emissive: 0x1a0000,
-      emissiveIntensity: 0.2,
-      roughness: 0.95,
-      metalness: 0.0,
-      transparent: true,
-      opacity: 0.22,
-      side: THREE.BackSide,
-    });
-    makeTube(curve1, membraneMat).scale.setScalar(0.985);
-    makeTube(curve2, membraneMat).scale.setScalar(0.985);
-    makeTube(curve3, membraneMat).scale.setScalar(0.985);
-    makeTube(curve4, membraneMat).scale.setScalar(0.985);
-
-    // --- One global flow loop for camera and blood-cell animation ---
-    function mergePoints(a, b) {
-      if (a.length === 0) return [...b];
-      const merged = [...a];
-      const last = merged[merged.length - 1];
-      const first = b[0];
-      if (last.distanceTo(first) < 1e-6) {
-        merged.push(...b.slice(1));
-      } else {
-        merged.push(...b);
-      }
-      return merged;
-    }
-
-    let loopPoints = [];
-    loopPoints = mergePoints(loopPoints, segment1Points);
-    loopPoints = mergePoints(loopPoints, segment2Points);
-    loopPoints = mergePoints(loopPoints, segment3Points);
-    loopPoints = mergePoints(loopPoints, segment4Points);
-
-    const fullLoopCurve = new THREE.CatmullRomCurve3(loopPoints, true, "centripetal");
-
-    // Soft point lights distributed through the bloodstream path.
-    const pathLights = [];
-    for (let i = 0; i < 14; i++) {
-      const lt = i / 14;
-      const pos = fullLoopCurve.getPointAt(lt);
-      const warmPalette = [0xd65537, 0xbf3f2e, 0xe06b40];
-      const pathLight = new THREE.PointLight(warmPalette[i % warmPalette.length], 0.27, 26, 2);
-      pathLight.position.copy(pos);
-      scene.add(pathLight);
-      pathLights.push({ light: pathLight, phase: Math.random() * Math.PI * 2, offset: Math.random() });
-    }
-
-    // --- Blood cells: tiny floating spheres moving along flow path ---
-    const bloodCells = [];
-    const bloodCellCount = 110;
-    const bloodGeo = new THREE.SphereGeometry(0.07, 7, 7);
-    for (let i = 0; i < bloodCellCount; i++) {
-      const mat = new THREE.MeshStandardMaterial({
-        color: 0xb53535,
-        emissive: 0x2a0606,
-        emissiveIntensity: 0.18,
-        roughness: 0.65,
-        metalness: 0.0,
-      });
-      const cell = new THREE.Mesh(bloodGeo, mat);
-      scene.add(cell);
-      bloodCells.push({
-        mesh: cell,
-        t: Math.random(),
-        speed: 0.022 + Math.random() * 0.02,
-        lateralPhase: Math.random() * Math.PI * 2,
-        lateralAmp: 0.03 + Math.random() * 0.05,
-      });
-    }
-
-    // Faint glowing streaks moving with the flow to reinforce direction.
-    const flowStreaks = [];
-    const streakGeo = new THREE.SphereGeometry(0.11, 6, 6);
-    for (let i = 0; i < 36; i++) {
-      const streakMat = new THREE.MeshBasicMaterial({
-        color: 0xff8b5e,
-        transparent: true,
-        opacity: 0.18,
-      });
-      const streak = new THREE.Mesh(streakGeo, streakMat);
-      scene.add(streak);
-      flowStreaks.push({
-        mesh: streak,
-        t: Math.random(),
-        speed: 0.045 + Math.random() * 0.03,
-      });
-    }
-
     // --- Camera movement settings ---
-    // Desktop starts in overview mode; VR still auto-starts flow traversal.
     let autoMove = false;
-    let flowT = 0.0;
-    const baseFlowSpeed = 0.03;
-    const lookAhead = 0.012;
     const clock = new THREE.Clock();
-    const smoothedPos = new THREE.Vector3();
-    const smoothedLook = new THREE.Vector3();
-    const flowUp = new THREE.Vector3(0, 1, 0);
 
-    // In VR, movement auto-starts and orbit controls are inactive.
+    // In VR, orbit controls are inactive.
     renderer.xr.addEventListener("sessionstart", () => {
       autoMove = true;
       controls.enabled = false;
       document.getElementById("overlay").style.opacity = "0.3";
+
+      // Copy camera position to cameraGroup and reset camera local position
+      cameraGroup.position.copy(camera.position);
+      camera.position.set(0, 0, 0);
+      
+      // Auto-trigger intro on sessionstart
+      if (!introStarted) {
+        startIntro();
+      }
     });
     renderer.xr.addEventListener("sessionend", () => {
       controls.enabled = true;
       autoMove = false;
       document.getElementById("overlay").style.opacity = "1.0";
+
+      // Restore camera position from cameraGroup
+      camera.position.copy(cameraGroup.position);
+      cameraGroup.position.set(0, 0, 0);
     });
 
-    // Toggle auto-move on desktop if user wants manual orbit.
+    // Custom keyboard Orbit Controls state tracking
+    const activeKeys = {};
     window.addEventListener("keydown", (event) => {
-      if (event.code === "Space") {
-        autoMove = !autoMove;
+      if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Shift"].includes(event.key)) {
+        event.preventDefault();
+        activeKeys[event.key] = true;
       }
     });
-
-    // Approximate "ventricle zones" along normalized path where flow is faster.
-    // These values are tuned by sampling the assembled loop visually.
-    const ventricleZones = [
-      [0.06, 0.16], // near right ventricle
-      [0.58, 0.70], // near left ventricle
-    ];
-    function speedMultiplier(t) {
-      for (const [a, b] of ventricleZones) {
-        if (t >= a && t <= b) return 1.55;
+    window.addEventListener("keyup", (event) => {
+      if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Shift"].includes(event.key)) {
+        event.preventDefault();
+        activeKeys[event.key] = false;
       }
-      return 0.92 + 0.12 * Math.sin(t * Math.PI * 6);
-    }
-
-    function updateCameraAlongFlow(dt) {
-      const speed = baseFlowSpeed * speedMultiplier(flowT);
-      flowT = (flowT + speed * dt) % 1;
-
-      const current = fullLoopCurve.getPointAt(flowT);
-      const next = fullLoopCurve.getPointAt((flowT + lookAhead) % 1);
-      const tangent = fullLoopCurve.getTangentAt(flowT);
-      const desiredLook = next.clone().addScaledVector(tangent, 0.8);
-
-      // Smoothed interpolation avoids mechanical camera movement.
-      smoothedPos.lerp(current, 1 - Math.exp(-dt * 7.5));
-      smoothedLook.lerp(desiredLook, 1 - Math.exp(-dt * 8.2));
-      camera.position.copy(smoothedPos);
-      camera.up.copy(flowUp);
-      camera.lookAt(smoothedLook);
-    }
+    });
 
     function updateHeartbeat(timeSeconds) {
-      // Gentle pulse with layered frequencies for a natural heartbeat feel.
-      const pulse = 1 + Math.sin(timeSeconds * 1.45) * 0.015 + Math.sin(timeSeconds * 2.9) * 0.006;
-      for (const mesh of tubeMeshes) {
-        mesh.scale.setScalar(pulse);
+      // A realistic rest heart rate of ~72 BPM (1.2 Hz) with a quick double pulse.
+      const baseFreq = 7.54; 
+      const pulse = 1 + Math.sin(timeSeconds * baseFreq) * 0.02 + Math.sin(timeSeconds * baseFreq * 2) * 0.008;
+      if (pivotGroup) {
+        pivotGroup.scale.setScalar(pulse);
       }
     }
 
-    function updateBloodCells(dt, elapsed) {
-      const tangent = new THREE.Vector3();
-      const side = new THREE.Vector3();
-      const up = new THREE.Vector3(0, 1, 0);
-      for (const cell of bloodCells) {
-        cell.t = (cell.t + cell.speed * dt * speedMultiplier(cell.t)) % 1;
-        const p = fullLoopCurve.getPointAt(cell.t);
-        tangent.copy(fullLoopCurve.getTangentAt(cell.t)).normalize();
-        side.crossVectors(tangent, up);
-        if (side.lengthSq() < 0.01) side.set(1, 0, 0);
-        side.normalize();
-        const wobble = Math.sin(elapsed * 3.7 + cell.lateralPhase) * cell.lateralAmp;
-        cell.mesh.position.copy(p).addScaledVector(side, wobble);
+    // Camera zoom framing states and intro control flags
+    const startCamPos = new THREE.Vector3();
+    const endCamPos = new THREE.Vector3();
+    const heartCenter = new THREE.Vector3();
+    
+    // Guided tour targets
+    const tourTargetCamPos = new THREE.Vector3();
+    const tourTargetControlsTarget = new THREE.Vector3();
+
+    let heartModel = null;
+    let pivotGroup = null;
+    let introPlaying = false;
+    let idleStateEnabled = false;
+    let introStarted = false;
+    let introFinished = false;
+    let currentSentenceIndex = 0;
+    let zoomT = 0;
+    const chamberLabels = [];
+
+    function updateTourTarget(index) {
+      if (!window.heartRadius) return;
+      const radius = window.heartRadius;
+      
+      const raOffset = new THREE.Vector3(-radius * 0.25, radius * 0.2, radius * 0.1);
+      const rvOffset = new THREE.Vector3(-radius * 0.15, -radius * 0.2, radius * 0.25);
+      const laOffset = new THREE.Vector3(radius * 0.25, radius * 0.2, -radius * 0.1);
+      const lvOffset = new THREE.Vector3(radius * 0.15, -radius * 0.2, -radius * 0.25);
+
+      if (index === 0) {
+        // Right Atrium
+        tourTargetControlsTarget.copy(heartCenter).add(raOffset);
+        tourTargetCamPos.copy(tourTargetControlsTarget).add(new THREE.Vector3(0.02, 0.02, 0.18).multiplyScalar(radius));
+        debugLog("🎬 Tour: Viewing Right Atrium (Inside RA)");
+      } else if (index === 1) {
+        // Right Ventricle
+        tourTargetControlsTarget.copy(heartCenter).add(rvOffset);
+        tourTargetCamPos.copy(tourTargetControlsTarget).add(new THREE.Vector3(0.02, 0.02, 0.18).multiplyScalar(radius));
+        debugLog("🎬 Tour: Viewing Right Ventricle (Inside RV)");
+      } else if (index === 2) {
+        // Left Atrium
+        tourTargetControlsTarget.copy(heartCenter).add(laOffset);
+        tourTargetCamPos.copy(tourTargetControlsTarget).add(new THREE.Vector3(-0.02, 0.02, -0.18).multiplyScalar(radius));
+        debugLog("🎬 Tour: Viewing Left Atrium (Inside LA)");
+      } else if (index === 3) {
+        // Left Ventricle
+        tourTargetControlsTarget.copy(heartCenter).add(lvOffset);
+        tourTargetCamPos.copy(tourTargetControlsTarget).add(new THREE.Vector3(-0.02, -0.02, -0.18).multiplyScalar(radius));
+        debugLog("🎬 Tour: Viewing Left Ventricle (Inside LV)");
+      } else {
+        // Overview / end of intro
+        tourTargetControlsTarget.copy(heartCenter);
+        tourTargetCamPos.copy(endCamPos);
+        debugLog("🎬 Tour: Zooming out to Overview");
       }
     }
 
-    function updateFlowStreaks(dt) {
-      for (const s of flowStreaks) {
-        s.t = (s.t + s.speed * dt) % 1;
-        const p = fullLoopCurve.getPointAt(s.t);
-        const tng = fullLoopCurve.getTangentAt(s.t).normalize();
-        s.mesh.position.copy(p);
-        s.mesh.scale.set(1.0, 1.0, 2.2);
-        s.mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), tng);
+    // Helper to get or instantiate the TTSManager
+    function getTTSManager() {
+      if (!window.ttsManager) {
+        window.ttsManager = new TTSManager();
+      }
+      return window.ttsManager;
+    }
+
+    function createChamberLabel(text, pos, colorHex) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 64;
+      const ctx = canvas.getContext('2d');
+      
+      // Draw background pill
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+      ctx.strokeStyle = colorHex;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      if (ctx.roundRect) {
+        ctx.roundRect(5, 5, 246, 54, 12);
+      } else {
+        ctx.rect(5, 5, 246, 54);
+      }
+      ctx.fill();
+      ctx.stroke();
+      
+      // Draw text
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 20px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, 128, 32);
+      
+      const texture = new THREE.CanvasTexture(canvas);
+      const spriteMaterial = new THREE.SpriteMaterial({ 
+        map: texture, 
+        transparent: true,
+        depthWrite: false,
+        depthTest: true
+      });
+      const sprite = new THREE.Sprite(spriteMaterial);
+      sprite.position.copy(pos);
+      // Scale sprite based on model size for perfect readability inside the chamber
+      const r = window.heartRadius || 0.4;
+      sprite.scale.set(r * 0.05, r * 0.0125, 1.0);
+      return sprite;
+    }
+
+    function showCaption(text) {
+      return new Promise((resolve) => {
+        const box = document.getElementById("caption-text-box");
+        if (!box) {
+          resolve();
+          return;
+        }
+
+        box.style.opacity = "0";
+
+        setTimeout(() => {
+          box.textContent = text;
+          box.style.opacity = "1";
+          setTimeout(resolve, 300);
+        }, 300);
+      });
+    }
+
+    // Hide the caption box
+    function hideCaptionBox() {
+      const box = document.getElementById("caption-text-box");
+      if (box) {
+        box.style.opacity = "0";
       }
     }
 
-    function updatePathLights(elapsed) {
-      for (const item of pathLights) {
-        const t = (elapsed * 0.015 + item.offset) % 1;
-        item.light.position.copy(fullLoopCurve.getPointAt(t));
-        item.light.intensity = 0.2 + 0.12 * (0.5 + 0.5 * Math.sin(elapsed * 0.9 + item.phase));
+    // Robust VR & desktop compatible TTS speak function with client-side SpeechSynthesis fallback
+    async function speakRobust(text, lang = 'en') {
+      const tts = getTTSManager();
+      try {
+        if (!tts) {
+          throw new Error("TTSManager not instantiated");
+        }
+        // Try the server-side/VR-compatible player first
+        await tts.speak(text, lang);
+      } catch (err) {
+        console.warn("Server-side TTS failed or timed out, falling back to client-native SpeechSynthesis:", err);
+        
+        // Browser speechSynthesis fallback
+        const synth = window.speechSynthesis;
+        if (synth) {
+          synth.cancel();
+          await new Promise((resolve) => {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = 0.95;
+            utterance.pitch = 1.0;
+
+            const voicesList = synth.getVoices();
+            let voice = voicesList.find(v => v.lang.startsWith("en-IN") || v.lang.includes("india"));
+            if (!voice) voice = voicesList.find(v => v.lang.startsWith("en"));
+            if (voice) utterance.voice = voice;
+
+            utterance.onend = () => resolve();
+            utterance.onerror = (e) => {
+              console.error("SpeechSynthesis error:", e);
+              resolve();
+            };
+            synth.speak(utterance);
+          });
+        } else {
+          // If no speechSynthesis (like some VR browsers), wait for a silent reading delay
+          console.warn("Client-side SpeechSynthesis is also unsupported in this browser.");
+          const delay = Math.max(3000, text.split(" ").length * 350);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
       }
-      const cT = (elapsed * 0.02) % 1;
-      contrastLight.position.copy(fullLoopCurve.getPointAt(cT)).add(new THREE.Vector3(0.4, 0.3, 0.3));
     }
+
+    async function playIntroSequence() {
+      const tts = getTTSManager();
+      if (!tts) {
+        console.warn("TTSManager is unavailable. Skipping to silent fallback.");
+        playSilentFallback();
+        return;
+      }
+
+      // Stop any current audio
+      tts.stopAudio();
+
+      for (let i = 0; i < HEART_INTRO_SENTENCES.length; i++) {
+        if (introFinished && !introPlaying) break;
+        currentSentenceIndex = i;
+        const sentence = HEART_INTRO_SENTENCES[i];
+
+        updateTourTarget(i);
+        await showCaption(sentence);
+
+        // Wait 1.5s but check if paused
+        let waitTime = 1500;
+        while (waitTime > 0) {
+          if (!isNarrationPaused) {
+            waitTime -= 100;
+          }
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+
+        // Wait for robust TTS audio/speech playback (compatible with both browser and VR headset!)
+        await speakRobust(sentence, 'en');
+      }
+
+      endIntro();
+    }
+
+    async function playSilentFallback() {
+      // Start camera zoom framing move
+      currentSentenceIndex = 0;
+
+      // Skip straight to the idle state after a 2-second pause
+      setTimeout(() => {
+        currentSentenceIndex = 3;
+        switchToIdleState();
+      }, 2000);
+
+      // Display all captions on a timer
+      for (let i = 0; i < HEART_INTRO_SENTENCES.length; i++) {
+        if (introFinished && !introPlaying) break;
+        currentSentenceIndex = i;
+        const sentence = HEART_INTRO_SENTENCES[i];
+
+        updateTourTarget(i);
+        await showCaption(sentence);
+        await new Promise(resolve => setTimeout(resolve, 6500)); // slightly longer to read
+      }
+
+      endIntro();
+    }
+
+    window.startIntro = function() {
+      if (introStarted) return;
+      introStarted = true;
+
+      const overlay = document.getElementById("intro-overlay");
+      if (overlay) {
+        overlay.style.opacity = "0";
+        setTimeout(() => {
+          overlay.style.display = "none";
+        }, 500);
+      }
+
+      // Initialize guided tour camera targets to avoid sudden jumps
+      tourTargetCamPos.copy(camera.position);
+      tourTargetControlsTarget.copy(controls.target);
+
+      // Enable introPlaying so camera animates to targets, and keep controls active for user inputs
+      introPlaying = true;
+      zoomT = 0;
+      controls.enabled = true;
+
+      playIntroSequence();
+    };
+
+    function switchToIdleState() {
+      if (idleStateEnabled) return;
+      idleStateEnabled = true;
+      introPlaying = false;
+      controls.autoRotate = false;
+
+      if (!renderer.xr.isPresenting) {
+        controls.enabled = true;
+        controls.target.copy(heartCenter);
+        controls.update();
+      }
+    }
+
+    function endIntro() {
+      if (introFinished) return;
+      introFinished = true;
+
+      const tts = getTTSManager();
+      if (tts) {
+        tts.stopAudio();
+      }
+      const synth = tts ? tts.synthesis || window.speechSynthesis : window.speechSynthesis;
+      if (synth && synth.speaking) {
+        synth.cancel();
+      }
+
+      hideCaptionBox();
+      switchToIdleState();
+    }
+
+    // Set click listener for desktop Tap to Begin
+    document.getElementById("start-btn").addEventListener("click", () => {
+      window.startIntro();
+    });
+
+    // GLTFLoader initialization to load optimized heart model
+    const loader = new GLTFLoader();
+    // Register MeshoptDecoder for meshopt-compressed model support
+    loader.setMeshoptDecoder(MeshoptDecoder);
+
+    // Note: Date.now() is a temporary debug measure and should be replaced with a real version string or build hash once confirmed working.
+    loader.load('models/realistic_human_heart.glb?v=' + Date.now(), (gltf) => {
+      heartModel = gltf.scene;
+
+      // Create pivot group and position it at (0, 1.8, 0)
+      pivotGroup = new THREE.Group();
+      pivotGroup.position.set(0, 1.8, 0);
+      scene.add(pivotGroup);
+
+      // Add loaded model to pivot group
+      pivotGroup.add(heartModel);
+
+      // Analyze bounding box
+      const box = new THREE.Box3().setFromObject(heartModel);
+      const center = box.getCenter(new THREE.Vector3());
+      const size = box.getSize(new THREE.Vector3());
+
+      // Offset loaded model inside pivotGroup so its bounding box center is at (0, 0, 0)
+      heartModel.position.copy(center).negate();
+
+      // Analyze and log loaded scene bounding box size and mesh/material counts
+      console.log("Loaded scene bounding box size:", size);
+
+      let meshCount = 0;
+      let uniqueMaterials = new Set();
+      heartModel.traverse((node) => {
+        if (node.isMesh) {
+          meshCount++;
+          if (Array.isArray(node.material)) {
+            node.material.forEach(mat => {
+              uniqueMaterials.add(mat.uuid);
+              mat.side = THREE.DoubleSide;
+              mat.transparent = false;
+              mat.roughness = 0.55;
+              mat.metalness = 0.08;
+            });
+          } else if (node.material) {
+            uniqueMaterials.add(node.material.uuid);
+            node.material.side = THREE.DoubleSide;
+            node.material.transparent = false;
+            node.material.roughness = 0.55;
+            node.material.metalness = 0.08;
+          }
+        }
+      });
+      console.log(`Mesh count: ${meshCount}, Unique Material count: ${uniqueMaterials.size}`);
+
+      // Calculate camera setup based on model dimensions
+      heartCenter.set(0, 1.8, 0);
+      const maxDim = Math.max(size.x, size.y, size.z);
+      const radius = maxDim * 0.5;
+
+      // Store radius globally so animate loop can access it
+      window.heartRadius = radius;
+
+      // --- Internal Chamber Lights (Blue for Right, Red for Left) ---
+      // Right Atrium (Blue)
+      const raLight = new THREE.PointLight(0x0055ff, 4.0, radius * 1.2, 1.2);
+      raLight.position.set(-radius * 0.25, radius * 0.2, radius * 0.1);
+      pivotGroup.add(raLight);
+
+      // Right Ventricle (Blue)
+      const rvLight = new THREE.PointLight(0x00aaff, 4.0, radius * 1.2, 1.2);
+      rvLight.position.set(-radius * 0.15, -radius * 0.2, radius * 0.25);
+      pivotGroup.add(rvLight);
+
+      // Left Atrium (Red)
+      const laLight = new THREE.PointLight(0xff3300, 4.0, radius * 1.2, 1.2);
+      laLight.position.set(radius * 0.25, radius * 0.2, -radius * 0.1);
+      pivotGroup.add(laLight);
+
+      // Left Ventricle (Red)
+      const lvLight = new THREE.PointLight(0xff0044, 4.0, radius * 1.2, 1.2);
+      lvLight.position.set(radius * 0.15, -radius * 0.2, -radius * 0.25);
+      pivotGroup.add(lvLight);
+
+      // --- Internal 3D Labels ---
+      const raLabel = createChamberLabel("Right Atrium (RA)", raLight.position, "#0055ff");
+      const rvLabel = createChamberLabel("Right Ventricle (RV)", rvLight.position, "#00aaff");
+      const laLabel = createChamberLabel("Left Atrium (LA)", laLight.position, "#ff3300");
+      const lvLabel = createChamberLabel("Left Ventricle (LV)", lvLight.position, "#ff0044");
+
+      pivotGroup.add(raLabel);
+      pivotGroup.add(rvLabel);
+      pivotGroup.add(laLabel);
+      pivotGroup.add(lvLabel);
+
+      chamberLabels.push(raLabel, rvLabel, laLabel, lvLabel);
+
+      startCamPos.copy(heartCenter).add(new THREE.Vector3(radius * 2.5, radius * 1.0, radius * 3.25));
+      endCamPos.copy(heartCenter).add(new THREE.Vector3(radius * 1.25, radius * 0.5, radius * 1.62));
+
+      // Initially set camera to wide overview shot
+      camera.position.copy(startCamPos);
+      controls.target.copy(heartCenter);
+      camera.lookAt(heartCenter);
+      controls.update();
+    });
 
     function animate() {
       const dt = Math.min(clock.getDelta(), 0.05);
       const elapsed = clock.elapsedTime;
 
-      if (autoMove || renderer.xr.isPresenting) {
-        updateCameraAlongFlow(dt);
+      if (introPlaying) {
+        // Smoothly lerp both the camera position and the controls target to focus on the active chamber
+        if (renderer.xr.isPresenting) {
+          cameraGroup.position.lerp(tourTargetCamPos, dt * 1.5);
+          camera.position.set(0, 0, 0); // Keep camera local position reset in WebXR
+          camera.lookAt(tourTargetControlsTarget);
+        } else {
+          camera.position.lerp(tourTargetCamPos, dt * 1.5);
+          controls.target.lerp(tourTargetControlsTarget, dt * 1.5);
+          controls.update();
+        }
       } else if (controls.enabled) {
+        // Manual camera spherical orbit rotation around heartCenter (1.5 rad/sec)
+        const rotateSpeed = 1.5 * dt;
+        let rotated = false;
+
+        if (activeKeys["ArrowLeft"] || activeKeys["ArrowRight"] || activeKeys["ArrowUp"] || activeKeys["ArrowDown"]) {
+          const orbitCenter = controls.target;
+          const offset = new THREE.Vector3().subVectors(camera.position, orbitCenter);
+          const spherical = new THREE.Spherical().setFromVector3(offset);
+
+          if (activeKeys["ArrowLeft"]) {
+            spherical.theta += rotateSpeed;
+            rotated = true;
+          }
+          if (activeKeys["ArrowRight"]) {
+            spherical.theta -= rotateSpeed;
+            rotated = true;
+          }
+          if (activeKeys["ArrowUp"]) {
+            if (activeKeys["Shift"]) {
+              const length = offset.length();
+              // Zoom in (decrease camera distance)
+              offset.setLength(Math.max(0.05, length - rotateSpeed * 3));
+              camera.position.copy(orbitCenter).add(offset);
+              rotated = true;
+            } else {
+              spherical.phi = Math.max(0.01, spherical.phi - rotateSpeed);
+              rotated = true;
+            }
+          }
+          if (activeKeys["ArrowDown"]) {
+            if (activeKeys["Shift"]) {
+              const length = offset.length();
+              // Zoom out (increase camera distance)
+              offset.setLength(Math.min(30, length + rotateSpeed * 3));
+              camera.position.copy(orbitCenter).add(offset);
+              rotated = true;
+            } else {
+              spherical.phi = Math.min(Math.PI - 0.01, spherical.phi + rotateSpeed);
+              rotated = true;
+            }
+          }
+
+          if (rotated) {
+            if (!activeKeys["Shift"]) {
+              spherical.makeSafe();
+              offset.setFromSpherical(spherical);
+              camera.position.copy(orbitCenter).add(offset);
+            }
+            camera.lookAt(orbitCenter);
+          }
+        }
+
         controls.update();
       }
 
-      updateHeartbeat(elapsed);
-      updateBloodCells(dt, elapsed);
-      updateFlowStreaks(dt);
-      updatePathLights(elapsed);
+      if (introStarted) {
+        updateHeartbeat(elapsed);
+        // Add gentle rotation to the pivotGroup in the idle state
+        if (idleStateEnabled && pivotGroup) {
+          pivotGroup.rotation.y += dt * 0.1;
+        }
+      } else {
+        // Keep heart static before intro starts
+        if (pivotGroup) {
+          pivotGroup.scale.setScalar(1.0);
+          pivotGroup.rotation.set(0, 0, 0);
+        }
+      }
+
+      // Check which chamber the camera is closest to / inside
+      if (heartModel && window.heartRadius) {
+        const radius = window.heartRadius;
+        const raPosWorld = new THREE.Vector3(-radius * 0.25, radius * 0.2, radius * 0.1).applyMatrix4(pivotGroup.matrixWorld);
+        const rvPosWorld = new THREE.Vector3(-radius * 0.15, -radius * 0.2, radius * 0.25).applyMatrix4(pivotGroup.matrixWorld);
+        const laPosWorld = new THREE.Vector3(radius * 0.25, radius * 0.2, -radius * 0.1).applyMatrix4(pivotGroup.matrixWorld);
+        const lvPosWorld = new THREE.Vector3(radius * 0.15, -radius * 0.2, -radius * 0.25).applyMatrix4(pivotGroup.matrixWorld);
+
+        const distRA = camera.position.distanceTo(raPosWorld);
+        const distRV = camera.position.distanceTo(rvPosWorld);
+        const distLA = camera.position.distanceTo(laPosWorld);
+        const distLV = camera.position.distanceTo(lvPosWorld);
+
+        const threshold = radius * 0.75;
+        let currentChamber = "Whole Heart";
+        let minD = Infinity;
+
+        if (distRA < threshold && distRA < minD) { currentChamber = "Right Atrium (RA)"; minD = distRA; }
+        if (distRV < threshold && distRV < minD) { currentChamber = "Right Ventricle (RV)"; minD = distRV; }
+        if (distLA < threshold && distLA < minD) { currentChamber = "Left Atrium (LA)"; minD = distLA; }
+        if (distLV < threshold && distLV < minD) { currentChamber = "Left Ventricle (LV)"; minD = distLV; }
+
+        const chamberTextEl = document.getElementById('currentPlanet');
+        if (chamberTextEl && chamberTextEl.textContent !== currentChamber) {
+          chamberTextEl.textContent = currentChamber;
+          document.getElementById('visiting-pill').innerHTML = `<span>❤️ Visiting ${currentChamber}</span>`;
+          debugLog(`📍 Entered: ${currentChamber}`);
+        }
+      }
+
+      // Dynamically adjust label sizes depending on whether we are in the guided tour animation
+      if (chamberLabels && chamberLabels.length > 0 && window.heartRadius) {
+        const r = window.heartRadius;
+        // Small during animation (0.05), normal (0.16) once animation is done
+        const targetScaleW = introPlaying ? (r * 0.05) : (r * 0.16);
+        const targetScaleH = introPlaying ? (r * 0.0125) : (r * 0.04);
+        
+        chamberLabels.forEach(label => {
+          label.scale.x += (targetScaleW - label.scale.x) * dt * 5.0;
+          label.scale.y += (targetScaleH - label.scale.y) * dt * 5.0;
+        });
+      }
+
       bgPoints.rotation.y += dt * 0.006;
       bgPoints.rotation.x += dt * 0.002;
 
@@ -468,25 +872,272 @@
 
     renderer.setAnimationLoop(animate);
 
-    // Initial overview framing: show full 3D model at startup.
-    {
-      const bounds = new THREE.Box3().setFromObject(tubeGroup);
-      const center = bounds.getCenter(new THREE.Vector3());
-      const size = bounds.getSize(new THREE.Vector3());
-      const radius = Math.max(size.x, size.y, size.z) * 0.52;
-      camera.position.copy(center).add(new THREE.Vector3(radius * 1.0, radius * 0.4, radius * 1.3));
-      controls.target.copy(center);
-      camera.lookAt(center);
-      smoothedPos.copy(camera.position);
-      smoothedLook.copy(center);
-      controls.update();
-    }
-
     window.addEventListener("resize", () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
     });
+
+    // --- VR Debug log helper ---
+    const debugDisplay = document.getElementById('vr-debug-content');
+    function debugLog(msg) {
+      console.log(`[VR-DEBUG] ${msg}`);
+      if (debugDisplay) {
+        const timestamp = new Date().toLocaleTimeString();
+        debugDisplay.innerHTML = `[${timestamp}] ${msg}<br>` + debugDisplay.innerHTML.split('<br>').slice(0, 12).join('<br>');
+      }
+    }
+
+    debugLog("Initializing...");
+    if ('xr' in navigator) {
+      debugLog("✅ WebXR supported");
+    } else {
+      debugLog("⚠️ WebXR not supported");
+    }
+
+    // --- WebXR Controllers setup ---
+    const controller1 = renderer.xr.getController(0);
+    const controller2 = renderer.xr.getController(1);
+
+    // Build visual pointer lines (laser beams) so controllers are visible
+    const laserGeo = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(0, 0, 0),
+      new THREE.Vector3(0, 0, -3)
+    ]);
+    const laserMat = new THREE.LineBasicMaterial({
+      color: 0x00ff88,
+      linewidth: 3
+    });
+    const laserLine1 = new THREE.Line(laserGeo, laserMat);
+    const laserLine2 = new THREE.Line(laserGeo, laserMat);
+    controller1.add(laserLine1);
+    controller2.add(laserLine2);
+
+    scene.add(controller1);
+    scene.add(controller2);
+
+    // Controller button interactions
+    let vrChamberIndex = -1; // -1: Overview, 0: RA, 1: RV, 2: LA, 3: LV
+    function onControllerSelect(event) {
+      debugLog("🎮 VR: Controller trigger clicked");
+      if (!window.heartRadius) return;
+      const r = window.heartRadius;
+
+      // Cycle between chambers and overview
+      vrChamberIndex = (vrChamberIndex + 2) % 5 - 1; 
+
+      if (vrChamberIndex === -1) {
+        debugLog("🚁 VR: Moving to Overview (Outside)");
+        tourTargetControlsTarget.copy(heartCenter);
+        tourTargetCamPos.copy(endCamPos);
+      } else {
+        const raOffset = new THREE.Vector3(-r * 0.25, r * 0.2, r * 0.1);
+        const rvOffset = new THREE.Vector3(-r * 0.15, -r * 0.2, r * 0.25);
+        const laOffset = new THREE.Vector3(r * 0.25, r * 0.2, -r * 0.1);
+        const lvOffset = new THREE.Vector3(r * 0.15, -r * 0.2, -r * 0.25);
+
+        if (vrChamberIndex === 0) {
+          debugLog("🚁 VR: Entering Right Atrium (Inside)");
+          tourTargetControlsTarget.copy(heartCenter).add(raOffset);
+          tourTargetCamPos.copy(tourTargetControlsTarget).add(new THREE.Vector3(0.02, 0.02, 0.18).multiplyScalar(r));
+        } else if (vrChamberIndex === 1) {
+          debugLog("🚁 VR: Entering Right Ventricle (Inside)");
+          tourTargetControlsTarget.copy(heartCenter).add(rvOffset);
+          tourTargetCamPos.copy(tourTargetControlsTarget).add(new THREE.Vector3(0.02, 0.02, 0.18).multiplyScalar(r));
+        } else if (vrChamberIndex === 2) {
+          debugLog("🚁 VR: Entering Left Atrium (Inside)");
+          tourTargetControlsTarget.copy(heartCenter).add(laOffset);
+          tourTargetCamPos.copy(tourTargetControlsTarget).add(new THREE.Vector3(-0.02, 0.02, -0.18).multiplyScalar(r));
+        } else if (vrChamberIndex === 3) {
+          debugLog("🚁 VR: Entering Left Ventricle (Inside)");
+          tourTargetControlsTarget.copy(heartCenter).add(lvOffset);
+          tourTargetCamPos.copy(tourTargetControlsTarget).add(new THREE.Vector3(-0.02, -0.02, -0.18).multiplyScalar(r));
+        }
+      }
+      zoomT = 0;
+      introPlaying = true;
+    }
+
+    controller1.addEventListener('selectstart', onControllerSelect);
+    controller2.addEventListener('selectstart', onControllerSelect);
+
+    controller1.addEventListener('connected', (event) => {
+      debugLog(`🟢 Setting up ${event.data.handedness.toUpperCase()} controller`);
+      debugLog(`🎮 ${event.data.handedness.toUpperCase()} controller: ✅ Ready`);
+    });
+    controller1.addEventListener('disconnected', (event) => {
+      debugLog(`🔴 Disconnected ${event.data.handedness.toUpperCase()} controller`);
+    });
+
+    controller2.addEventListener('connected', (event) => {
+      debugLog(`🟢 Setting up ${event.data.handedness.toUpperCase()} controller`);
+      debugLog(`🎮 ${event.data.handedness.toUpperCase()} controller: ✅ Ready`);
+    });
+    controller2.addEventListener('disconnected', (event) => {
+      debugLog(`🔴 Disconnected ${event.data.handedness.toUpperCase()} controller`);
+    });
+
+    // In VR, print setup logs
+    renderer.xr.addEventListener("sessionstart", () => {
+      debugLog("🥽 VR session started");
+      debugLog("🎯 Laser pointers enabled");
+      debugLog("🎮 Squeeze trigger to cycle view Inside/Outside");
+    });
+    renderer.xr.addEventListener("sessionend", () => {
+      debugLog("🖥️ VR session ended");
+    });
+
+    // --- Raycasting click handler to select heart parts ---
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+    window.addEventListener("click", (event) => {
+      // Avoid clicking if clicking on UI controls
+      if (event.target.closest('.control-panel') || event.target.closest('#visiting-pill') || event.target.closest('#intro-overlay') || event.target.closest('#vr-debug') || event.target.closest('.enter-vr-btn')) {
+        return;
+      }
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+      raycaster.setFromCamera(mouse, camera);
+      if (heartModel) {
+        const intersects = raycaster.intersectObjects(heartModel.children, true);
+        if (intersects.length > 0) {
+          document.getElementById('currentPlanet').textContent = "Myocardium (Heart Muscle)";
+          document.getElementById('visiting-pill').innerHTML = "<span>❤️ Myocardium (Heart Muscle)</span>";
+          debugLog("🎯 Selected: Myocardium (Heart Muscle)");
+        }
+      }
+    });
+
+    // --- Tour narration Pause/Play controls ---
+    let isNarrationPaused = false;
+    const pauseBtn = document.getElementById("pauseBtn");
+    if (pauseBtn) {
+      pauseBtn.addEventListener("click", () => {
+        const tts = getTTSManager();
+        
+        if (!isNarrationPaused) {
+          isNarrationPaused = true;
+          if (tts) {
+            tts.pauseAudio();
+          }
+          pauseBtn.textContent = "▶️ Resume Narration";
+          pauseBtn.style.background = "#ffb300";
+          debugLog("⏸️ Narration paused");
+        } else {
+          isNarrationPaused = false;
+          if (tts) {
+            tts.resumeAudio();
+          }
+          pauseBtn.textContent = "⏸️ Pause Narration";
+          pauseBtn.style.background = "#00ff88";
+          debugLog("▶️ Narration resumed");
+        }
+      });
+    }
+
+    // --- AI Q&A implementation ---
+    const askQuestionBtn = document.getElementById("askQuestionBtn");
+    const askQuestionTextBtn = document.getElementById("askQuestionTextBtn");
+    const questionInput = document.getElementById("questionInput");
+
+    if (askQuestionTextBtn && questionInput) {
+      askQuestionTextBtn.addEventListener("click", async () => {
+        const question = questionInput.value.trim();
+        if (!question) {
+          alert("Please type a question first");
+          return;
+        }
+
+        debugLog(`🤖 Processing: ${question}`);
+        
+        try {
+          const selectedLang = localStorage.getItem('selectedLanguage') || 'en';
+          
+          const response = await fetch('/api/ai-ask', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ question, lang: selectedLang })
+          });
+
+          if (!response.ok) {
+            throw new Error(`API error: ${response.status}`);
+          }
+
+          const data = await response.json();
+          if (!data.ok) {
+            throw new Error(data.error || 'Unknown error');
+          }
+
+          const answer = data.answer;
+          debugLog(`🤖 AI Answer: ${answer}`);
+          
+          // Display answer in the captions box
+          showCaption(answer);
+          
+          // Speak the answer using the robust fallback TTS
+          speakRobust(answer, selectedLang);
+
+          questionInput.value = '';
+        } catch (error) {
+          console.error("Text Q&A failed:", error);
+          debugLog("❌ Failed to get answer");
+        }
+      });
+
+      questionInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          askQuestionTextBtn.click();
+        }
+      });
+    }
+
+    if (askQuestionBtn) {
+      askQuestionBtn.addEventListener("click", () => {
+        if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+          debugLog("🎤 Voice not supported on this browser");
+          return;
+        }
+
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
+        
+        const selectedLang = localStorage.getItem('selectedLanguage') || 'en';
+        recognition.lang = selectedLang === 'hi' ? 'hi-IN' : 'en-US';
+        recognition.continuous = false;
+        recognition.interimResults = false;
+
+        recognition.onstart = () => {
+          debugLog("🎤 Listening for your question...");
+          askQuestionBtn.textContent = "🔴 Listening...";
+          askQuestionBtn.style.background = "#ff0000";
+        };
+
+        recognition.onerror = (event) => {
+          console.error("Speech recognition error:", event.error);
+          debugLog(`❌ Speech error: ${event.error}`);
+          askQuestionBtn.textContent = "🎤 Voice";
+          askQuestionBtn.style.background = "#ff6b6b";
+        };
+
+        recognition.onend = () => {
+          askQuestionBtn.textContent = "🎤 Voice";
+          askQuestionBtn.style.background = "#ff6b6b";
+        };
+
+        recognition.onresult = async (event) => {
+          const question = event.results[0][0].transcript;
+          debugLog(`🎤 Question: ${question}`);
+          if (questionInput) {
+            questionInput.value = question;
+          }
+          if (askQuestionTextBtn) {
+            askQuestionTextBtn.click();
+          }
+        };
+
+        recognition.start();
+      });
+    }
   </script>
 </body>
 </html>
