@@ -234,6 +234,11 @@
     const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 300);
     camera.position.set(0, 1.5, 7);
 
+    // Create camera group for VR dolly movements
+    const cameraGroup = new THREE.Group();
+    scene.add(cameraGroup);
+    cameraGroup.add(camera);
+
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -292,6 +297,10 @@
       autoMove = true;
       controls.enabled = false;
       document.getElementById("overlay").style.opacity = "0.3";
+
+      // Copy camera position to cameraGroup and reset camera local position
+      cameraGroup.position.copy(camera.position);
+      camera.position.set(0, 0, 0);
       
       // Auto-trigger intro on sessionstart
       if (!introStarted) {
@@ -302,6 +311,10 @@
       controls.enabled = true;
       autoMove = false;
       document.getElementById("overlay").style.opacity = "1.0";
+
+      // Restore camera position from cameraGroup
+      camera.position.copy(cameraGroup.position);
+      cameraGroup.position.set(0, 0, 0);
     });
 
     // Custom keyboard Orbit Controls state tracking
@@ -461,25 +474,14 @@
 
     async function playIntroSequence() {
       const tts = getTTSManager();
-      const synth = tts ? tts.synthesis || window.speechSynthesis : window.speechSynthesis;
-
-      let voices = [];
-      if (tts && tts.voices && tts.voices.length > 0) {
-        voices = tts.voices;
-      } else if (synth && synth.getVoices) {
-        voices = synth.getVoices();
-      }
-
-      const hasSpeech = synth && synth.speak && voices.length > 0;
-
-      if (!hasSpeech) {
-        console.warn("speechSynthesis is unavailable or has no voices. Skipping to silent fallback.");
+      if (!tts) {
+        console.warn("TTSManager is unavailable. Skipping to silent fallback.");
         playSilentFallback();
         return;
       }
 
-      // Stop any current synthesis
-      synth.cancel();
+      // Stop any current audio
+      tts.stopAudio();
 
       for (let i = 0; i < HEART_INTRO_SENTENCES.length; i++) {
         if (introFinished && !introPlaying) break;
@@ -489,24 +491,28 @@
         updateTourTarget(i);
         await showCaption(sentence);
 
-        await new Promise((resolve) => {
-          const utterance = new SpeechSynthesisUtterance(sentence);
-          utterance.rate = 0.95;
-          utterance.pitch = 1.0;
+        // Wait 1.5s but check if paused
+        let waitTime = 1500;
+        while (waitTime > 0) {
+          if (!isNarrationPaused) {
+            waitTime -= 100;
+          }
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
 
-          const voicesList = synth.getVoices();
-          let voice = voicesList.find(v => v.lang.startsWith("en-IN") || v.lang.includes("india"));
-          if (!voice) voice = voicesList.find(v => v.lang.startsWith("en"));
-          if (voice) utterance.voice = voice;
-
-          utterance.onend = () => resolve();
-          utterance.onerror = (err) => {
-            console.error("Utterance error:", err);
-            resolve();
-          };
-
-          synth.speak(utterance);
-        });
+        // Wait for TTS audio to finish playing (compatible with VR headsets!)
+        try {
+          await tts.speak(sentence, 'en');
+        } catch (err) {
+          console.error("TTS speak failed, falling back to simple delay", err);
+          let delay = 6500;
+          while (delay > 0) {
+            if (!isNarrationPaused) {
+              delay -= 100;
+            }
+            await new Promise(resolve => setTimeout(resolve, 100));
+          }
+        }
       }
 
       endIntro();
@@ -705,9 +711,15 @@
 
       if (introPlaying) {
         // Smoothly lerp both the camera position and the controls target to focus on the active chamber
-        camera.position.lerp(tourTargetCamPos, dt * 1.5);
-        controls.target.lerp(tourTargetControlsTarget, dt * 1.5);
-        controls.update();
+        if (renderer.xr.isPresenting) {
+          cameraGroup.position.lerp(tourTargetCamPos, dt * 1.5);
+          camera.position.set(0, 0, 0); // Keep camera local position reset in WebXR
+          camera.lookAt(tourTargetControlsTarget);
+        } else {
+          camera.position.lerp(tourTargetCamPos, dt * 1.5);
+          controls.target.lerp(tourTargetControlsTarget, dt * 1.5);
+          controls.update();
+        }
       } else if (controls.enabled) {
         // Manual camera spherical orbit rotation around heartCenter (1.5 rad/sec)
         const rotateSpeed = 1.5 * dt;
@@ -852,22 +864,83 @@
       debugLog("⚠️ WebXR not supported");
     }
 
-    // --- WebXR Controller connection logging ---
+    // --- WebXR Controllers setup ---
     const controller1 = renderer.xr.getController(0);
+    const controller2 = renderer.xr.getController(1);
+
+    // Build visual pointer lines (laser beams) so controllers are visible
+    const laserGeo = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(0, 0, 0),
+      new THREE.Vector3(0, 0, -3)
+    ]);
+    const laserMat = new THREE.LineBasicMaterial({
+      color: 0x00ff88,
+      linewidth: 3
+    });
+    const laserLine1 = new THREE.Line(laserGeo, laserMat);
+    const laserLine2 = new THREE.Line(laserGeo, laserMat);
+    controller1.add(laserLine1);
+    controller2.add(laserLine2);
+
+    scene.add(controller1);
+    scene.add(controller2);
+
+    // Controller button interactions
+    let vrChamberIndex = -1; // -1: Overview, 0: RA, 1: RV, 2: LA, 3: LV
+    function onControllerSelect(event) {
+      debugLog("🎮 VR: Controller trigger clicked");
+      if (!window.heartRadius) return;
+      const r = window.heartRadius;
+
+      // Cycle between chambers and overview
+      vrChamberIndex = (vrChamberIndex + 2) % 5 - 1; 
+
+      if (vrChamberIndex === -1) {
+        debugLog("🚁 VR: Moving to Overview (Outside)");
+        tourTargetControlsTarget.copy(heartCenter);
+        tourTargetCamPos.copy(endCamPos);
+      } else {
+        const raOffset = new THREE.Vector3(-r * 0.25, r * 0.2, r * 0.1);
+        const rvOffset = new THREE.Vector3(-r * 0.15, -r * 0.2, r * 0.25);
+        const laOffset = new THREE.Vector3(r * 0.25, r * 0.2, -r * 0.1);
+        const lvOffset = new THREE.Vector3(r * 0.15, -r * 0.2, -r * 0.25);
+
+        if (vrChamberIndex === 0) {
+          debugLog("🚁 VR: Entering Right Atrium (Inside)");
+          tourTargetControlsTarget.copy(heartCenter).add(raOffset);
+          tourTargetCamPos.copy(tourTargetControlsTarget).add(new THREE.Vector3(0.02, 0.02, 0.18).multiplyScalar(r));
+        } else if (vrChamberIndex === 1) {
+          debugLog("🚁 VR: Entering Right Ventricle (Inside)");
+          tourTargetControlsTarget.copy(heartCenter).add(rvOffset);
+          tourTargetCamPos.copy(tourTargetControlsTarget).add(new THREE.Vector3(0.02, 0.02, 0.18).multiplyScalar(r));
+        } else if (vrChamberIndex === 2) {
+          debugLog("🚁 VR: Entering Left Atrium (Inside)");
+          tourTargetControlsTarget.copy(heartCenter).add(laOffset);
+          tourTargetCamPos.copy(tourTargetControlsTarget).add(new THREE.Vector3(-0.02, 0.02, -0.18).multiplyScalar(r));
+        } else if (vrChamberIndex === 3) {
+          debugLog("🚁 VR: Entering Left Ventricle (Inside)");
+          tourTargetControlsTarget.copy(heartCenter).add(lvOffset);
+          tourTargetCamPos.copy(tourTargetControlsTarget).add(new THREE.Vector3(-0.02, -0.02, -0.18).multiplyScalar(r));
+        }
+      }
+      zoomT = 0;
+      introPlaying = true;
+    }
+
+    controller1.addEventListener('selectstart', onControllerSelect);
+    controller2.addEventListener('selectstart', onControllerSelect);
+
     controller1.addEventListener('connected', (event) => {
       debugLog(`🟢 Setting up ${event.data.handedness.toUpperCase()} controller`);
-      debugLog(`🗣️ ${event.data.handedness.toUpperCase()}: Listening for events`);
-      debugLog(`🎮 ${event.data.handedness.toUpperCase()} controller: ✅ Found`);
+      debugLog(`🎮 ${event.data.handedness.toUpperCase()} controller: ✅ Ready`);
     });
     controller1.addEventListener('disconnected', (event) => {
       debugLog(`🔴 Disconnected ${event.data.handedness.toUpperCase()} controller`);
     });
 
-    const controller2 = renderer.xr.getController(1);
     controller2.addEventListener('connected', (event) => {
       debugLog(`🟢 Setting up ${event.data.handedness.toUpperCase()} controller`);
-      debugLog(`🗣️ ${event.data.handedness.toUpperCase()}: Listening for events`);
-      debugLog(`🎮 ${event.data.handedness.toUpperCase()} controller: ✅ Found`);
+      debugLog(`🎮 ${event.data.handedness.toUpperCase()} controller: ✅ Ready`);
     });
     controller2.addEventListener('disconnected', (event) => {
       debugLog(`🔴 Disconnected ${event.data.handedness.toUpperCase()} controller`);
@@ -876,8 +949,8 @@
     // In VR, print setup logs
     renderer.xr.addEventListener("sessionstart", () => {
       debugLog("🥽 VR session started");
-      debugLog("🎯 Custom pointer enabled");
-      debugLog("🎮 Setting up VR controller movement...");
+      debugLog("🎯 Laser pointers enabled");
+      debugLog("🎮 Squeeze trigger to cycle view Inside/Outside");
     });
     renderer.xr.addEventListener("sessionend", () => {
       debugLog("🖥️ VR session ended");
@@ -910,20 +983,19 @@
     if (pauseBtn) {
       pauseBtn.addEventListener("click", () => {
         const tts = getTTSManager();
-        const synth = tts ? tts.synthesis || window.speechSynthesis : window.speechSynthesis;
         
         if (!isNarrationPaused) {
           isNarrationPaused = true;
-          if (synth && synth.speaking) {
-            synth.pause();
+          if (tts) {
+            tts.pauseAudio();
           }
           pauseBtn.textContent = "▶️ Resume Narration";
           pauseBtn.style.background = "#ffb300";
           debugLog("⏸️ Narration paused");
         } else {
           isNarrationPaused = false;
-          if (synth && synth.paused) {
-            synth.resume();
+          if (tts) {
+            tts.resumeAudio();
           }
           pauseBtn.textContent = "⏸️ Pause Narration";
           pauseBtn.style.background = "#00ff88";
@@ -971,19 +1043,10 @@
           // Display answer in the captions box
           showCaption(answer);
           
-          // Speak the answer using window speechSynthesis
+          // Speak the answer using the robust server-side/VR-compatible TTSManager
           const tts = getTTSManager();
-          const synth = tts ? tts.synthesis || window.speechSynthesis : window.speechSynthesis;
-          if (synth) {
-            synth.cancel();
-            const utterance = new SpeechSynthesisUtterance(answer);
-            utterance.rate = 0.95;
-            utterance.pitch = 1.0;
-            const voicesList = synth.getVoices();
-            let voice = voicesList.find(v => v.lang.startsWith("en-IN") || v.lang.includes("india"));
-            if (!voice) voice = voicesList.find(v => v.lang.startsWith("en"));
-            if (voice) utterance.voice = voice;
-            synth.speak(utterance);
+          if (tts) {
+            tts.speak(answer, selectedLang);
           }
 
           questionInput.value = '';
