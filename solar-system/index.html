@@ -417,6 +417,22 @@
                 💡 Voice works on desktop, text input works on VR headsets
             </div>
         </div>
+
+        <!-- Simulation Controls -->
+        <div style="border-top: 1px solid #444; margin-top: 15px; padding-top: 15px; display: flex; gap: 8px; flex-direction: column;">
+            <h4>⚙️ Simulation Controls</h4>
+            <div style="margin-bottom: 5px;">
+                <label style="font-size: 12px; color: #ccc; display: block; margin-bottom: 4px;">Time Speed: <span id="timeSpeedVal" style="color: #00ff88; font-weight: bold;">1.0x</span></label>
+                <input type="range" id="timeSpeedSlider" min="0" max="10" step="0.5" value="1" style="width: 100%; accent-color: #00ff88; cursor: pointer;">
+            </div>
+            <div style="margin-bottom: 5px;">
+                <label style="font-size: 12px; color: #ccc; display: block; margin-bottom: 4px;">Planet Size: <span id="planetScaleVal" style="color: #00ff88; font-weight: bold;">1.0x</span></label>
+                <input type="range" id="planetScaleSlider" min="1" max="20" step="0.5" value="1" style="width: 100%; accent-color: #00ff88; cursor: pointer;">
+            </div>
+            <div>
+                <button id="toggleOrbitsBtn" class="test-btn" style="width: 100%; background: #9b51e0; color: #1a1a2e; font-weight: bold; margin: 5px 0 0 0;">👁️ Hide Orbits</button>
+            </div>
+        </div>
     </div>
 
 
@@ -2947,6 +2963,61 @@
                     }, 2000); // Give controllers time to initialize
                 });
             }
+
+            // --- Custom Simulation Controls Event Listeners ---
+            window.timeScale = 1.0;
+            const timeSpeedSlider = document.getElementById('timeSpeedSlider');
+            const timeSpeedVal = document.getElementById('timeSpeedVal');
+            if (timeSpeedSlider && timeSpeedVal) {
+                timeSpeedSlider.addEventListener('input', (e) => {
+                    const val = parseFloat(e.target.value);
+                    window.timeScale = val;
+                    timeSpeedVal.textContent = val.toFixed(1) + 'x';
+                });
+            }
+
+            const planetBaseScales = new Map();
+            function initPlanetScales() {
+                document.querySelectorAll('.planet').forEach(planet => {
+                    const s = planet.getAttribute('scale');
+                    if (s) {
+                        planetBaseScales.set(planet, { x: s.x, y: s.y, z: s.z });
+                    } else {
+                        planetBaseScales.set(planet, { x: 1, y: 1, z: 1 });
+                    }
+                });
+            }
+
+            const planetScaleSlider = document.getElementById('planetScaleSlider');
+            const planetScaleVal = document.getElementById('planetScaleVal');
+            if (planetScaleSlider && planetScaleVal) {
+                planetScaleSlider.addEventListener('input', (e) => {
+                    const factor = parseFloat(e.target.value);
+                    planetScaleVal.textContent = factor.toFixed(1) + 'x';
+                    if (planetBaseScales.size === 0) {
+                        initPlanetScales();
+                    }
+                    planetBaseScales.forEach((base, planet) => {
+                        const isSun = planet.getAttribute('data-planet-id') === 'sun';
+                        const mult = isSun ? Math.min(2.0, 1.0 + (factor - 1) * 0.05) : factor;
+                        planet.setAttribute('scale', `${base.x * mult} ${base.y * mult} ${base.z * mult}`);
+                    });
+                });
+            }
+
+            let orbitsVisible = true;
+            const toggleOrbitsBtn = document.getElementById('toggleOrbitsBtn');
+            if (toggleOrbitsBtn) {
+                toggleOrbitsBtn.addEventListener('click', () => {
+                    orbitsVisible = !orbitsVisible;
+                    document.querySelectorAll('[orbit-ring]').forEach(ring => {
+                        ring.setAttribute('visible', orbitsVisible);
+                    });
+                    toggleOrbitsBtn.textContent = orbitsVisible ? '👁️ Hide Orbits' : '👁️ Show Orbits';
+                    toggleOrbitsBtn.style.background = orbitsVisible ? '#9b51e0' : '#444';
+                    toggleOrbitsBtn.style.color = orbitsVisible ? '#1a1a2e' : '#fff';
+                });
+            }
         });
     </script>
 
@@ -2968,9 +3039,10 @@
         // delta is ms since last tick; convert to seconds
         if (!delta) return;
         const dt = delta / 1000;
+        const scale = (typeof window.timeScale === 'number') ? window.timeScale : 1.0;
         // rotate around Y axis in world-space by incrementing parent's rotation.y
         // We rotate the object3D directly to avoid setAttribute thrashing.
-        this.el.object3D.rotation.y += this.data.speed * dt;
+        this.el.object3D.rotation.y += this.data.speed * scale * dt;
       }
     });
 
@@ -2992,7 +3064,8 @@
         const dt = delta / 1000;
         const degToRad = Math.PI / 180;
         const rot = this.el.object3D.rotation;
-        const deltaRad = this.data.speed * degToRad * dt;
+        const scale = (typeof window.timeScale === 'number') ? window.timeScale : 1.0;
+        const deltaRad = this.data.speed * scale * degToRad * dt;
         if (this.data.axis === 'x') rot.x += deltaRad;
         else if (this.data.axis === 'z') rot.z += deltaRad;
         else rot.y += deltaRad;
