@@ -585,9 +585,17 @@
         }, 500);
       }
 
-      // Initialize guided tour camera targets to avoid sudden jumps
-      tourTargetCamPos.copy(camera.position);
-      tourTargetControlsTarget.copy(controls.target);
+      // Initialize camera to starting overview position
+      if (renderer.xr.isPresenting) {
+        cameraGroup.position.copy(startCamPos);
+        camera.position.set(0, 0, 0);
+      } else {
+        camera.position.copy(startCamPos);
+      }
+
+      // Initialize guided tour targets
+      tourTargetCamPos.copy(startCamPos);
+      tourTargetControlsTarget.copy(heartCenter);
 
       // Enable introPlaying so camera animates to targets, and keep controls active for user inputs
       introPlaying = true;
@@ -739,6 +747,50 @@
     function animate() {
       const dt = Math.min(clock.getDelta(), 0.05);
       const elapsed = clock.elapsedTime;
+
+      // Handle VR thumbstick/joystick movement
+      if (renderer.xr.isPresenting) {
+        const session = renderer.xr.getSession();
+        if (session) {
+          const inputSources = session.inputSources;
+          for (let i = 0; i < inputSources.length; i++) {
+            const inputSource = inputSources[i];
+            if (inputSource.gamepad) {
+              const axes = inputSource.gamepad.axes;
+              let stickX = 0;
+              let stickY = 0;
+              if (axes.length >= 4) {
+                stickX = axes[2];
+                stickY = axes[3];
+              } else if (axes.length >= 2) {
+                stickX = axes[0];
+                stickY = axes[1];
+              }
+
+              const threshold = 0.15;
+              if (Math.abs(stickX) > threshold || Math.abs(stickY) > threshold) {
+                // Squeezing the thumbstick lets you manually fly around, stopping active camera animations
+                if (introPlaying) {
+                  introPlaying = false;
+                  debugLog("🕹️ VR: Joystick input detected, switched to free navigation");
+                }
+
+                const moveSpeed = 2.0 * dt; // meters per second
+                const direction = new THREE.Vector3();
+                camera.getWorldDirection(direction);
+                direction.y = 0; // Keep movement horizontal
+                direction.normalize();
+
+                const right = new THREE.Vector3();
+                right.copy(direction).cross(camera.up).normalize();
+
+                cameraGroup.position.addScaledVector(direction, -stickY * moveSpeed);
+                cameraGroup.position.addScaledVector(right, stickX * moveSpeed);
+              }
+            }
+          }
+        }
+      }
 
       if (introPlaying) {
         // Smoothly lerp both the camera position and the controls target to focus on the active chamber
