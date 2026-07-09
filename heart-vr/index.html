@@ -215,6 +215,7 @@
     import { VRButton } from "three/addons/webxr/VRButton.js";
     import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
     import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
+    import { XRControllerModelFactory } from "three/addons/webxr/XRControllerModelFactory.js";
 
     const HEART_INTRO_SENTENCES = [
       "Welcome to the guided tour of the human heart. Let's first explore the Right Atrium, highlighted in blue. It receives oxygen-poor blood returning from all parts of the body.",
@@ -298,9 +299,9 @@
       controls.enabled = false;
       document.getElementById("overlay").style.opacity = "0.3";
 
-      // Copy camera position to cameraGroup and reset camera local position
-      cameraGroup.position.copy(camera.position);
-      camera.position.set(0, 0, 0);
+      // Copy camera position to virtualCamPos and offset cameraGroup
+      virtualCamPos.copy(camera.position);
+      cameraGroup.position.copy(camera.position).sub(camera.position); // which is (0,0,0)
       
       // Auto-trigger intro on sessionstart
       if (!introStarted) {
@@ -312,8 +313,8 @@
       autoMove = false;
       document.getElementById("overlay").style.opacity = "1.0";
 
-      // Restore camera position from cameraGroup
-      camera.position.copy(cameraGroup.position);
+      // Restore camera position from virtualCamPos
+      camera.position.copy(virtualCamPos);
       cameraGroup.position.set(0, 0, 0);
     });
 
@@ -359,6 +360,7 @@
     let currentSentenceIndex = 0;
     let zoomT = 0;
     const chamberLabels = [];
+    const virtualCamPos = new THREE.Vector3();
 
     function updateTourTarget(index) {
       if (!window.heartRadius) return;
@@ -472,19 +474,41 @@
       }
     }
 
-    // Robust VR & desktop compatible TTS speak function with client-side SpeechSynthesis fallback
+    // Robust VR & desktop compatible TTS speak function with client-side SpeechSynthesis fallback and safety timeouts
     async function speakRobust(text, lang = 'en') {
       const tts = getTTSManager();
+      let serverTtsSuccess = false;
+
+      // 1) Try the server-side/VR-compatible player first with a safety timeout
       try {
         if (!tts) {
           throw new Error("TTSManager not instantiated");
         }
-        // Try the server-side/VR-compatible player first
-        await tts.speak(text, lang);
-      } catch (err) {
-        console.warn("Server-side TTS failed or timed out, falling back to client-native SpeechSynthesis:", err);
         
-        // Browser speechSynthesis fallback
+        // Wrap tts.speak in a timeout (500ms per word + 6s base)
+        const serverTimeoutMs = Math.max(6000, text.split(" ").length * 500);
+        await new Promise((resolve, reject) => {
+          const timeoutId = setTimeout(() => {
+            reject(new Error("Server TTS playback timed out"));
+          }, serverTimeoutMs);
+          
+          tts.speak(text, lang)
+            .then(() => {
+              clearTimeout(timeoutId);
+              resolve();
+            })
+            .catch((err) => {
+              clearTimeout(timeoutId);
+              reject(err);
+            });
+        });
+        serverTtsSuccess = true;
+      } catch (err) {
+        console.warn("Server-side TTS failed or timed out, falling back to client-native SpeechSynthesis:", err.message);
+      }
+
+      // 2) Fallback to client-native SpeechSynthesis if server TTS failed
+      if (!serverTtsSuccess) {
         const synth = window.speechSynthesis;
         if (synth) {
           synth.cancel();
@@ -498,9 +522,20 @@
             if (!voice) voice = voicesList.find(v => v.lang.startsWith("en"));
             if (voice) utterance.voice = voice;
 
-            utterance.onend = () => resolve();
+            // Set a client-side safety timeout to prevent hanging the tour (500ms per word + 4s base)
+            const clientTimeoutMs = Math.max(4000, text.split(" ").length * 500);
+            const timeoutId = setTimeout(() => {
+              console.warn("SpeechSynthesis safety timeout fired. Resolving to prevent tour freeze.");
+              resolve();
+            }, clientTimeoutMs);
+
+            utterance.onend = () => {
+              clearTimeout(timeoutId);
+              resolve();
+            };
             utterance.onerror = (e) => {
               console.error("SpeechSynthesis error:", e);
+              clearTimeout(timeoutId);
               resolve();
             };
             synth.speak(utterance);
@@ -587,8 +622,8 @@
 
       // Initialize camera to starting overview position
       if (renderer.xr.isPresenting) {
-        cameraGroup.position.copy(startCamPos);
-        camera.position.set(0, 0, 0);
+        virtualCamPos.copy(startCamPos);
+        cameraGroup.position.copy(startCamPos).sub(camera.position);
       } else {
         camera.position.copy(startCamPos);
       }
@@ -784,8 +819,9 @@
                 const right = new THREE.Vector3();
                 right.copy(direction).cross(camera.up).normalize();
 
-                cameraGroup.position.addScaledVector(direction, -stickY * moveSpeed);
-                cameraGroup.position.addScaledVector(right, stickX * moveSpeed);
+                // Move virtualCamPos instead of cameraGroup directly to preserve headset offset compensation
+                virtualCamPos.addScaledVector(direction, -stickY * moveSpeed);
+                virtualCamPos.addScaledVector(right, stickX * moveSpeed);
               }
             }
           }
@@ -793,16 +829,19 @@
       }
 
       if (introPlaying) {
-        // Smoothly lerp both the camera position and the controls target to focus on the active chamber
+        // Smoothly lerp virtualCamPos and subtract headset offset in VR mode
         if (renderer.xr.isPresenting) {
-          cameraGroup.position.lerp(tourTargetCamPos, dt * 1.5);
-          camera.position.set(0, 0, 0); // Keep camera local position reset in WebXR
+          virtualCamPos.lerp(tourTargetCamPos, dt * 1.5);
+          cameraGroup.position.copy(virtualCamPos).sub(camera.position);
           camera.lookAt(tourTargetControlsTarget);
         } else {
           camera.position.lerp(tourTargetCamPos, dt * 1.5);
           controls.target.lerp(tourTargetControlsTarget, dt * 1.5);
           controls.update();
         }
+      } else if (renderer.xr.isPresenting) {
+        // Update dolly position to track virtualCamPos with headset offset even in idle VR state!
+        cameraGroup.position.copy(virtualCamPos).sub(camera.position);
       } else if (controls.enabled) {
         // Manual camera spherical orbit rotation around heartCenter (1.5 rad/sec)
         const rotateSpeed = 1.5 * dt;
@@ -967,6 +1006,17 @@
 
     scene.add(controller1);
     scene.add(controller2);
+
+    // Add controller model factory for realistic 3D touch controller models
+    const controllerModelFactory = new XRControllerModelFactory();
+    
+    const controllerGrip1 = renderer.xr.getControllerGrip(0);
+    controllerGrip1.add(controllerModelFactory.createControllerModel(controllerGrip1));
+    scene.add(controllerGrip1);
+
+    const controllerGrip2 = renderer.xr.getControllerGrip(1);
+    controllerGrip2.add(controllerModelFactory.createControllerModel(controllerGrip2));
+    scene.add(controllerGrip2);
 
     // Controller button interactions
     let vrChamberIndex = -1; // -1: Overview, 0: RA, 1: RV, 2: LA, 3: LV
