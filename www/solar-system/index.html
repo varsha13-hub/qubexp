@@ -1,0 +1,3142 @@
+<!DOCTYPE html>
+<html lang="en">
+
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#000000">
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png">
+    <title>Working SolarLearn VR - India</title>
+    <!-- Cache bust: 2024-12-19-SARVAM-ONLY-TTS -->
+    
+    <!-- PWA Configuration -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#001133">
+    
+    <!-- A-Frame for VR -->
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    
+        <!-- THREE.js compatibility shim for aframe-extras -->
+        <script>
+            // Fix THREE.Math.degToRad compatibility issue
+            if (typeof THREE !== 'undefined') {
+                if (!THREE.Math && THREE.MathUtils) {
+                    THREE.Math = THREE.Math || {}
+                    
+                    THREE.Math.degToRad = THREE.MathUtils.degToRad;
+                    THREE.Math.radToDeg = THREE.MathUtils.radToDeg;
+                }
+            }
+        </script>
+        
+        <!-- A-Frame Extras for GLTF loader -->
+        <script src="https://unpkg.com/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
+        
+        <!-- Service Worker Registration -->
+        <script>
+            if ("serviceWorker" in navigator) {
+                window.addEventListener("load", () => {
+                    navigator.serviceWorker.register("./sw.js")
+                        .then(reg => console.log("✅ Service Worker registered:", reg))
+                        .catch(err => console.log("❌ Service Worker failed:", err));
+                });
+            }
+        </script>
+    <style>
+        body { margin: 0; padding: 0; }
+        a-scene { width: 100%; height: 100vh; }
+        
+        .loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #1a1a2e;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+        }
+        .control-panel {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 15px;
+            z-index: 1000;
+            font-family: Arial, sans-serif;
+            border-radius: 10px;
+            min-width: 250px;
+        }
+        .control-panel h4 {
+            margin: 0 0 10px 0;
+            color: #00ff88;
+        }
+        .control-panel button {
+            background: #00ff88;
+            color: #1a1a2e;
+            border: none;
+            padding: 8px 12px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .control-panel button:hover {
+            background: #00cc6a;
+        }
+        .control-panel select {
+            background: #333;
+            color: white;
+            border: 1px solid #555;
+            padding: 5px;
+            margin: 5px;
+            border-radius: 3px;
+        }
+        
+        /* Voice command styles */
+        .voice-controls {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 15px;
+            z-index: 1000;
+            font-family: Arial, sans-serif;
+            border-radius: 10px;
+            min-width: 200px;
+        }
+        .voice-controls h4 {
+            margin: 0 0 10px 0;
+            color: #ff6b6b;
+        }
+        .voice-btn {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .voice-btn:hover {
+            background: #ff5252;
+        }
+        .voice-btn.listening {
+            background: #ff0000;
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        .voice-status {
+            color: #ff6b6b;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+        .info-panel {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 15px;
+            z-index: 1000;
+            font-family: Arial, sans-serif;
+            border-radius: 10px;
+            max-width: 300px;
+        }
+        .status {
+            color: #00ff88;
+            font-weight: bold;
+        }
+        
+        /* Ensure panels are visible in VR mode */
+        .control-panel, .info-panel {
+            z-index: 9999 !important;
+        }
+        
+        /* VR-specific styles */
+        .vr-controls {
+            display: none; /* Hidden by default, shown in VR */
+        }
+        
+        /* Show VR controls when in VR mode */
+        .a-enter-vr .vr-controls {
+            display: block;
+        }
+        
+        /* 3D Button styles for VR */
+        .vr-button {
+            background: #00ff88;
+            color: #1a1a2e;
+            border: 2px solid #00cc6a;
+            border-radius: 8px;
+            padding: 10px 15px;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .vr-button:hover {
+            background: #00cc6a;
+            transform: scale(1.05);
+        }
+        
+        /* Language Menu Styles */
+        .language-menu {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #0a0a0a, #1a1a2e, #16213e);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            font-family: 'Arial', sans-serif;
+            pointer-events: auto;
+        }
+
+        .menu-content {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 3rem;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .menu-content h2 {
+            color: #fff;
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .menu-content p {
+            color: #ccc;
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+        }
+
+        .language-options {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .lang-option {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            pointer-events: auto;
+            z-index: 10001;
+            position: relative;
+        }
+
+        .lang-option:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .lang-option.active {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+        }
+
+        .enter-vr-btn {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            border: none;
+            padding: 1.2rem 2.5rem;
+            border-radius: 12px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+        }
+
+        .enter-vr-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+        }
+        
+        .tour-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            margin: 10px 0;
+        }
+        
+        .tour-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+        }
+        
+        .tour-btn:active {
+            transform: translateY(0);
+        }
+        
+        .test-btn {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+            margin: 5px 0;
+        }
+        
+        .test-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+    </style>
+<script src="components/planet-surface.js"></script>
+<script src="components/planet-landing.js"></script>
+<script src="components/storm-system.js"></script>
+<script src="components/ambient-audio.js"></script>
+<script src="components/voice-command.js"></script>
+    <style>
+      /* Voice Control UI */
+      #voice-label { 
+        position: fixed; left: 16px; bottom: 16px; padding: 8px 12px; 
+        background: rgba(0,0,0,0.6); color: #fff; border-radius: 8px; 
+        font-family: sans-serif; z-index: 99999; display:none; 
+        }
+    </style>
+</head>
+<body>
+    <!-- Pre-VR Language Selection Screen -->
+    <div id="languageMenu" class="language-menu">
+        <div class="menu-content">
+            <h2>🌍 Choose Your Language</h2>
+            <p>Select your preferred language before entering VR</p>
+            <div class="language-options">
+                <button class="lang-option active" data-lang="en">
+                    🇺🇸 English
+                </button>
+                <button class="lang-option" data-lang="hi">
+                    🇮🇳 हिंदी (Hindi)
+                </button>
+                <button class="lang-option" data-lang="kn">
+                    🇮🇳 ಕನ್ನಡ (Kannada)
+                </button>
+                <button class="lang-option" data-lang="ta">
+                    🇮🇳 தமிழ் (Tamil)
+                </button>
+                <button class="lang-option" data-lang="te">
+                    🇮🇳 తెలుగు (Telugu)
+                </button>
+                <button class="lang-option" data-lang="bn">
+                    🇮🇳 বাংলা (Bengali)
+                </button>
+    </div>
+            <button id="enterVRBtn" class="enter-vr-btn" disabled style="opacity: 0.5;">🚀 Enter VR Experience</button>
+            
+            <h4>🎬 Guided Tour</h4>
+            <button id="startTourBtn" class="tour-btn">Start Guided Tour</button>
+            <p class="info-text">Experience a cinematic journey through the Solar System</p>
+    </div>
+    </div>
+
+    <div class="control-panel">
+        <h4>📍 Current Planet</h4>
+        <p id="currentPlanet">None selected</p>
+        
+        <!-- Tour Controls (only shown during guided tour) -->
+        <div id="tourControls" style="display: none;">
+            <h4>🎬 Tour Controls</h4>
+            <button id="pauseBtn" class="test-btn">⏸️ Pause</button>
+            <button id="resumeBtn" class="test-btn" style="display: none;" disabled>▶️ Resume</button>
+        </div>
+
+        <!-- Voice Control UI -->
+        <div id="voice-label"></div>
+        
+        <!-- VR Controller Debug Display -->
+        <div id="vr-debug" style="position: fixed; bottom: 10px; left: 10px; background: rgba(0,0,0,0.9); color: #00ff00; padding: 10px; border-radius: 5px; font-family: monospace; font-size: 11px; max-width: 90%; max-height: 200px; overflow-y: auto; z-index: 10001; display: block;">
+            <div style="color: #ffff00; font-weight: bold;">🎮 VR Debug</div>
+            <div id="vr-debug-content">Initializing...</div>
+        </div>
+        
+        <!-- Loading Progress Overlay -->
+        <div id="loadingOverlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 17, 0.95); display: none; justify-content: center; align-items: center; z-index: 999999; flex-direction: column;">
+            <div style="text-align: center; color: white; font-family: Arial, sans-serif;">
+                <h2 style="font-size: 32px; margin-bottom: 20px;">🌌 Loading Solar System...</h2>
+                <div style="font-size: 18px; margin-bottom: 10px;" id="loadingStatus">Preparing experience...</div>
+                <div style="font-size: 14px; color: #64B5F6;" id="loadingProgress">0 / 9 models loaded</div>
+                <div style="margin-top: 20px; font-size: 12px; color: #999;">This may take 30-60 seconds on VR headsets</div>
+            </div>
+        </div>
+        
+        <h4>🤖 AI Q&A</h4>
+        <div style="display: flex; gap: 8px; flex-direction: column;">
+            <input type="text" id="questionInput" placeholder="Type your question..." style="padding: 12px; border-radius: 8px; border: 2px solid #00ff88; font-size: 16px; width: 100%; background: #f0f8ff;">
+            <div style="display: flex; gap: 8px;">
+                <button id="askQuestionBtn" class="test-btn" style="flex: 1; background: #ff6b6b;">🎤 Voice</button>
+                <button id="askQuestionTextBtn" class="test-btn" style="flex: 1; background: #00ff88; color: #1a1a2e;">📝 Ask</button>
+            </div>
+            <div style="font-size: 12px; color: #ccc; text-align: center; margin-top: 5px;">
+                💡 Voice works on desktop, text input works on VR headsets
+            </div>
+        </div>
+    </div>
+
+
+    <a-scene background="color: #000011" style="display: none;">
+        <!-- Space background -->
+        <!-- Background - using starfield instead of a-sky for better performance -->
+        
+        <!-- Empty assets - models loaded directly for fast initial render -->
+        <a-assets timeout="1000">
+            <!-- Models removed from preload - will load on-demand -->
+        </a-assets>
+        
+        <!-- Direct GLB model loading -->
+        <!-- Starry sky background + procedural starfield -->
+        <!-- Sky removed to fix visual glitches - using starfield instead -->
+        <a-entity starfield="count: 1000; radius: 220; size: 0.5"></a-entity>
+        
+        <!-- Enhanced lighting -->
+        <a-entity light="type: point; intensity: 1.6; distance: 120; decay: 2" position="0 0 -30"></a-entity>
+        <a-entity light="type: ambient; color: #404040; intensity: 0.45"></a-entity>
+        
+        
+        <!-- Sun - USING YOUR 3D MODEL -->
+        <a-entity position="0 0 -30" class="planet" data-planet-id="sun" data-planet-name="Sun" data-planet-desc="" data-raycastable>
+            <!-- Your 3D Sun Model - Proper scale -->
+            <a-entity gltf-model="assets/planets/Sun.glb?v=optimized" position="0 0 0" scale="0.6 0.6 0.6"></a-entity>
+            <!-- Fallback sphere (hidden by default, shown only if 3D model fails) -->
+            <a-sphere position="0 0 0" radius="7.5" color="#FFD700" 
+                material="color: #FFD700; transparent: false" visible="false">
+        </a-sphere>
+            <!-- Light source for illumination -->
+            <a-light type="point" color="#FFD700" intensity="2" distance="125" decay="2"></a-light>
+            <a-animation attribute="rotation" to="0 360 0" dur="20000" repeat="indefinite"></a-animation>
+        </a-entity>
+        
+        <!-- Mercury -->
+        <a-entity id="mercury-orbit" orbit-parent="speed: 1.6" position="0 0 -30">
+            <a-entity gltf-model="assets/planets/Mercury.glb?v=optimized" position="6 0.35 0" scale="0.0003 0.0003 0.0003" spin-body="speed: 40" class="planet" data-planet-id="mercury" data-raycastable data-planet-name="Mercury" data-planet-desc="Mercury is the smallest and innermost planet in the Solar System. It has no moons and is covered in craters.">
+            <!-- Fallback sphere in case GLTF fails -->
+            <a-sphere position="0 0 0" radius="0.3" color="#8C7853"></a-sphere>
+          </a-entity>
+        </a-entity>
+        <a-entity orbit-ring="radius: 6; thickness: 0.15; color: #bfbfbf; opacity: 0.5" position="0 0 -30"></a-entity>
+        
+        <!-- Venus -->
+        <a-entity id="venus-orbit" orbit-parent="speed: 0.9" position="0 0 -30">
+          <a-entity gltf-model="assets/planets/Venus.glb?v=optimized" position="8 0 0" scale="0.00045 0.00045 0.00045" spin-body="speed: 6" class="planet" data-planet-id="venus" data-raycastable data-planet-name="Venus" data-planet-desc="Venus is the second planet from the Sun and is often called Earth's sister planet due to similar size and mass.">
+          </a-entity>
+        </a-entity>
+        <a-entity orbit-ring="radius: 8; thickness: 0.15; color: #e0d6c6; opacity: 0.5" position="0 0 -30"></a-entity>
+        
+        <!-- Earth -->
+        <a-entity id="earth-orbit" orbit-parent="speed: 0.42" position="0 0 -30">
+          <a-entity gltf-model="assets/planets/Earth.glb?v=optimized" position="12 0.5 0" scale="0.00048 0.00048 0.00048" spin-body="speed: 18" class="planet" data-planet-id="earth" data-raycastable data-planet-name="Earth" data-planet-desc="Earth is our home planet and the only known planet with life. It has one natural satellite, the Moon.">
+            <!-- Fallback sphere in case GLTF fails -->
+            <a-sphere position="0 0 0" radius="0.45" color="#6B93D6"></a-sphere>
+          </a-entity>
+        </a-entity>
+        <a-entity orbit-ring="radius: 12; thickness: 0.18; color: #5fb3ff; opacity: 0.55" position="0 0 -30"></a-entity>
+        
+        <!-- Mars -->
+        <a-entity id="mars-orbit" orbit-parent="speed: 0.32" position="0 0 -30">
+          <a-entity gltf-model="assets/planets/Mars.glb?v=optimized" position="16 0.45 0" scale="0.00036 0.00036 0.00036" spin-body="speed: 14" class="planet" data-planet-id="mars" data-raycastable data-planet-name="Mars" data-planet-desc="Mars is the fourth planet from the Sun and is often called the Red Planet due to its reddish appearance.">
+            <!-- Fallback sphere in case GLTF fails -->
+            <a-sphere position="0 0 0" radius="0.36" color="#CD5C5C"></a-sphere>
+          </a-entity>
+        </a-entity>
+        <a-entity orbit-ring="radius: 16; thickness: 0.2; color: #ff8c66; opacity: 0.55" position="0 0 -30"></a-entity>
+        
+        
+        <!-- Jupiter -->
+        <a-entity id="jupiter-orbit" orbit-parent="speed: 0.14" position="0 0 -30">
+          <a-entity gltf-model="assets/planets/Jupiter.glb?v=optimized" position="22 0 0" scale="0.0015 0.0015 0.0015" spin-body="speed: 8" class="planet" data-planet-id="jupiter" data-raycastable data-planet-name="Jupiter" data-planet-desc="Jupiter is the largest planet in our Solar System and is a gas giant with no solid surface.">
+          </a-entity>
+        </a-entity>
+        <a-entity orbit-ring="radius: 22; thickness: 0.2; color: #d4c090; opacity: 0.5" position="0 0 -30"></a-entity>
+        
+        <!-- Saturn -->
+        <a-entity id="saturn-orbit" orbit-parent="speed: 0.10" position="0 0 -30">
+          <a-entity gltf-model="assets/planets/Saturn.glb?v=optimized" position="28 0 0" scale="0.00135 0.00135 0.00135" spin-body="speed: 10" class="planet" data-planet-id="saturn" data-raycastable data-planet-name="Saturn" data-planet-desc="Saturn is the sixth planet from the Sun and is famous for its spectacular ring system.">
+            <!-- Fallback sphere in case GLTF fails -->
+            <a-sphere position="0 0 0" radius="0.75" color="#FAD5A5"></a-sphere>
+          </a-entity>
+        </a-entity>
+        <a-entity orbit-ring="radius: 28; thickness: 0.2; color: #f0e6c0; opacity: 0.45" position="0 0 -30"></a-entity>
+        
+        
+        <!-- Uranus -->
+        <a-entity id="uranus-orbit" orbit-parent="speed: 0.07" position="0 0 -30">
+          <a-entity gltf-model="assets/planets/Uranus.glb?v=optimized" position="34 0 0" scale="0.00075 0.00075 0.00075" spin-body="speed: 9" class="planet" data-planet-id="uranus" data-raycastable data-planet-name="Uranus" data-planet-desc="Uranus is the seventh planet from the Sun and is an ice giant with a unique sideways rotation.">
+            <!-- Fallback sphere in case GLTF fails -->
+            <a-sphere position="0 0 0" radius="0.54" color="#4FD0E7"></a-sphere>
+          </a-entity>
+        </a-entity>
+        <a-entity orbit-ring="radius: 34; thickness: 0.2; color: #6fd9ed; opacity: 0.45" position="0 0 -30"></a-entity>
+        
+        <!-- Neptune -->
+        <a-entity id="neptune-orbit" orbit-parent="speed: 0.05" position="0 0 -30">
+          <a-entity gltf-model="assets/planets/Neptune.glb?v=optimized" position="40 0 0" scale="0.00072 0.00072 0.00072" spin-body="speed: 11" class="planet" data-planet-id="neptune" data-raycastable data-planet-name="Neptune" data-planet-desc="Neptune is the eighth and farthest planet from the Sun. It's an ice giant with the strongest winds in the Solar System.">
+            <!-- Fallback sphere in case GLTF fails -->
+            <a-sphere position="0 0 0" radius="0.45" color="#4B70DD"></a-sphere>
+          </a-entity>
+        </a-entity>
+        <a-entity orbit-ring="radius: 40; thickness: 0.2; color: #6b8fe6; opacity: 0.45" position="0 0 -30"></a-entity>
+        
+        <!-- Pluto -->
+        <a-sphere position="170 0 -30" radius="0.15" color="#C0C0C0" class="planet" data-planet-id="pluto" data-raycastable data-planet-name="Pluto" data-planet-desc="Pluto is a dwarf planet in the Kuiper Belt. Though no longer classified as a planet, it remains an important celestial body.">
+            <a-animation attribute="rotation" to="0 360 0" dur="35000" repeat="indefinite"></a-animation>
+
+        </a-sphere>
+        
+        <!-- VR Rig with Custom Movement Controls -->
+        <!-- Voice Control Entity -->
+        <a-entity id="vc" voice-command="lang: en-US; wakeWord: cutie; autoStartAfterGesture: true; minConfidence: 0.7"></a-entity>
+
+        <a-entity id="rig" position="0 1.6 0">
+            <!-- Camera (headset view) -->
+            <a-camera id="camera" wasd-controls-enabled="false" look-controls="enabled: true"></a-camera>
+
+            <!-- Right-hand controller -->
+            <a-entity id="rightController"
+                      oculus-touch-controls="hand: right"
+                      vive-controls="hand: right"
+                      windows-motion-controls="hand: right"
+                      raycaster="objects: [data-raycastable]; far: 100; near: 0.1"
+                      line="color: #00FF00; opacity: 1.0; visible: true">
+            </a-entity>
+
+            <!-- Left-hand controller (optional for later) -->
+            <a-entity id="leftController" 
+                      oculus-touch-controls="hand: left"
+                      vive-controls="hand: left"
+                      windows-motion-controls="hand: left"></a-entity>
+        </a-entity>
+        
+        <!-- Fallback VR Cursor for headset-only VR -->
+        <a-entity 
+            cursor="fuse: true; fuseTimeout: 1000" 
+            position="0 0 -1" 
+            geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03" 
+            material="color: cyan; shader: flat">
+        </a-entity>
+
+        <!-- Debug pointer for VR controllers -->
+        <a-entity id="debugPointer" 
+                  position="0 0 -1" 
+                  geometry="primitive: sphere; radius: 0.02" 
+                  material="color: red; shader: flat"
+                  visible="false">
+        </a-entity>
+
+        <!-- Visual feedback for controller trigger -->
+        <a-entity id="triggerFeedback" 
+                  position="0 0 -1" 
+                  geometry="primitive: sphere; radius: 0.05" 
+                  material="color: yellow; shader: flat; transparent: true; opacity: 0.8"
+                  visible="false">
+        </a-entity>
+
+        <!-- Enhanced pointer cursor for better visibility -->
+        <a-entity id="pointerCursor" 
+                  position="0 0 -1" 
+                  geometry="primitive: sphere; radius: 0.03" 
+                  material="color: #00FF00; shader: flat"
+                  visible="false">
+        </a-entity>
+
+        <!-- Simple green sphere selector -->
+        <a-entity id="customPointer" 
+                  position="0 0 0" 
+                  visible="false">
+            <a-sphere position="0 0 -0.5" 
+                      radius="0.03" 
+                      material="color: #00FF00; transparent: true; opacity: 1.0">
+            </a-sphere>
+        </a-entity>
+        
+        <!-- Lighting -->
+        <a-light type="ambient" color="#404040" intensity="0.6"></a-light>
+        <a-light type="point" color="#FDB813" intensity="1.5" position="0 0 -10" distance="200"></a-light>
+        <a-light type="directional" color="#ffffff" intensity="0.4" position="0 10 0"></a-light>
+    </a-scene>
+
+    <script>
+        // Register Service Worker for offline support
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', async () => {
+                try {
+                    // First unregister any existing service workers
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    for (let registration of registrations) {
+                        await registration.unregister();
+                    }
+                    
+                    // Register the new service worker
+                    const registration = await navigator.serviceWorker.register('/solar-system/service-worker.js', {
+                        scope: '/solar-system/'
+                    });
+                    console.log('ServiceWorker registration successful:', registration.scope);
+                    
+                    // Force immediate activation
+                    if (registration.waiting) {
+                        registration.waiting.postMessage({type: 'SKIP_WAITING'});
+                    }
+                } catch (err) {
+                    console.error('ServiceWorker registration failed:', err);
+                }
+            });
+        }
+    </script>
+        <script src="scripts/tts-offline.js"></script>
+        <script src="scripts/offline-qa-cache.js"></script>
+        <script src="scripts/ai-qa.js"></script>
+        <script src="scripts/preload-faqs.js"></script>
+        
+        <!-- Picovoice Integration (optional - falls back to Web Speech API if models not available) -->
+        <script type="module">
+            (async function initPicovoice() {
+                console.log('[Picovoice-Init] Checking for Picovoice models...');
+                
+                // Check if models exist
+                const lang = localStorage.getItem('selectedLanguage') || 'en';
+                const hasModels = await fetch(`pv/cutie_${lang}.ppn`, { method: 'HEAD' })
+                    .then(r => r.ok)
+                    .catch(() => false);
+                
+                if (!hasModels) {
+                    console.log('[Picovoice-Init] Models not found - using Web Speech API fallback');
+                    console.log('[Picovoice-Init] To enable offline voice:');
+                    console.log('[Picovoice-Init] 1. Create models at https://console.picovoice.ai');
+                    console.log('[Picovoice-Init] 2. Place in solar-system/pv/ directory');
+                    console.log('[Picovoice-Init] 3. See solar-system/pv/README.md for instructions');
+                    return;
+                }
+                
+                // Load Picovoice manager
+                try {
+                    const module = await import('./scripts/picovoice-manager.js');
+                    console.log('[Picovoice-Init] Manager loaded');
+                    
+                    // Initialize on user interaction (required for mic access)
+                    const initOnce = async () => {
+                        try {
+                            const success = await window.picovoiceManager.init(lang);
+                            if (success) {
+                                console.log('[Picovoice-Init] ✅ Offline voice active');
+                                // Disable Web Speech API component if Picovoice is active
+                                const vcEl = document.getElementById('vc');
+                                if (vcEl && vcEl.components['voice-command']) {
+                                    vcEl.components['voice-command'].stopHotwordListener();
+                                    console.log('[Picovoice-Init] Web Speech API disabled');
+                                }
+                            }
+                        } catch (err) {
+                            console.warn('[Picovoice-Init] Failed:', err);
+                        }
+                        window.removeEventListener('click', initOnce);
+                        window.removeEventListener('touchstart', initOnce);
+                    };
+                    
+                    window.addEventListener('click', initOnce, { once: true });
+                    window.addEventListener('touchstart', initOnce, { once: true });
+                    
+                } catch (err) {
+                    console.warn('[Picovoice-Init] Could not load manager:', err);
+                }
+            })();
+        </script>
+    <script>
+        // Example of using the Electron API
+        async function testElectronAPI() {
+            try {
+                // Test offline Q&A
+                const answer = await window.api.offlineAsk('what is the sun');
+                console.log('Q&A Test:', answer);
+
+                // Test local audio playback
+                const audioUrl = await window.api.playLocalAudio('audio/en/overview.mp3');
+                if (audioUrl) {
+                    const audio = new Audio(audioUrl);
+                    audio.play();
+                }
+
+                // Test Sarvam TTS (if API key is set)
+                const ttsUrl = await window.api.genSarvamTTS(
+                    'Welcome to Solar Learn VR!',
+                    'en',
+                    'welcome'
+                );
+                console.log('TTS generated:', ttsUrl);
+            } catch (error) {
+                console.error('API Test Error:', error);
+            }
+        }
+
+        // Uncomment to test the API
+        // testElectronAPI();
+    </script>
+    <script src="scripts/voice.js?v=2"></script>
+    <script src="scripts/vr-scene.js?v=6"></script>
+    
+    <script>
+        // Simple TTS helper for tour - updated to use SarvamTTS
+        async function speakAndWait(text, lang = 'hi') {
+            if (window.SarvamTTS) {
+                await window.SarvamTTS.speakAndWait(text, lang);
+            }
+        }
+
+        // Safe tour starter that preloads models first
+        async function startGuidedTourSafe() {
+            try {
+                console.log('🎬 Starting guided tour safely...');
+                
+                // 1) preload models (so narration doesn't start before visuals are ready)
+                if (window.ModelPreloader) {
+                    console.log('📦 Preloading models...');
+                    await window.ModelPreloader.preloadAll(12000); // 12s timeout
+                    window.ModelPreloader.applyCachedToEntities();
+                    console.log('✅ Models preloaded');
+                }
+
+                // 2) ensure SarvamTTS exists and is usable before starting narration
+                if (!window.SarvamTTS) {
+                    console.warn('⚠️ SarvamTTS not found - using fallback');
+                    return startGuidedTour(); // fallback to old method
+                }
+
+                // 3) start the original tour runner
+                console.log('🎤 Starting narration...');
+                await startGuidedTour();
+                
+            } catch (e) {
+                console.warn('⚠️ startGuidedTourSafe error:', e);
+                // fallback so UI still works
+                await startGuidedTour();
+            }
+        }
+        
+        console.log('✅ Simple Sarvam TTS ready');
+    </script>
+
+    <script>
+        console.log('Working VR page loaded');
+        
+        // Force hide loading screen after 2 seconds as fallback
+        setTimeout(() => {
+            const loadingElement = document.getElementById('loading');
+            if (loadingElement && loadingElement.style.display !== 'none') {
+                console.log('Force hiding loading screen (fallback)');
+                loadingElement.style.display = 'none';
+            }
+        }, 2000);
+        
+        let currentPlanet = null;
+        let currentLanguage = 'en';
+        let languageIndex = 0;
+        let vrStarted = false; // Flag to prevent auto-speak before VR starts
+        let allowPlanetSelection = false; // Flag to prevent auto-selection
+        let userHasInteracted = false; // Flag to track user interaction
+        const languages = [
+            { code: 'en', name: '🇺🇸 English' },
+            { code: 'hi', name: '🇮🇳 हिंदी' },
+            { code: 'kn', name: '🇮🇳 ಕನ್ನಡ' },
+            { code: 'ta', name: '🇮🇳 தமிழ்' },
+            { code: 'te', name: '🇮🇳 తెలుగు' },
+            { code: 'mr', name: '🇮🇳 मराठी' },
+            { code: 'bn', name: '🇮🇳 বাংলা' }
+        ];
+        
+        // Audio unlock function for browser autoplay policy
+        function unlockAudio() {
+            console.log('🔊 Unlocking audio for autoplay...');
+            
+            try {
+                // Create a silent audio buffer and play it to unlock audio
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const buffer = audioContext.createBuffer(1, 1, 22050);
+                const source = audioContext.createBufferSource();
+                source.buffer = buffer;
+                source.connect(audioContext.destination);
+                source.start(0);
+                
+                // Resume audio context if suspended
+                if (audioContext.state === 'suspended') {
+                    audioContext.resume();
+                }
+                
+                // Also try to unlock with a simple audio element
+                const audio = new Audio();
+                audio.volume = 0.01;
+                audio.play().catch(() => {
+                    console.log('🔊 Audio element unlock failed, but AudioContext should work');
+                });
+                
+                console.log('✅ Audio unlocked successfully');
+            } catch (error) {
+                console.warn('⚠️ Audio unlock failed:', error);
+            }
+        }
+
+        // Initialize VR-specific audio context
+        function initializeVRAudio() {
+            console.log('🎧 Initializing VR audio context...');
+            unlockAudio();
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM loaded');
+            
+            // Debug: Check if custom pointer exists
+            const customPointer = document.getElementById('customPointer');
+            console.log('🎯 Custom pointer found:', customPointer);
+            if (customPointer) {
+                console.log('🎯 Pointer initial visibility:', customPointer.getAttribute('visible'));
+                console.log('🎯 Pointer initial position:', customPointer.getAttribute('position'));
+            }
+            
+            // Setup language selection first
+            setupLanguageSelection();
+            
+            // Hide VR scene initially
+            const scene = document.querySelector('a-scene');
+            if (scene) {
+                scene.style.display = 'none';
+            }
+            
+            // Show language menu
+            const languageMenu = document.getElementById('languageMenu');
+            if (languageMenu) {
+                languageMenu.style.display = 'flex';
+            }
+            
+            const statusElement = document.getElementById('vrStatus');
+            
+            if (scene) {
+                console.log('Scene found');
+                if (statusElement) {
+                    statusElement.textContent = 'Scene found';
+                }
+                
+                scene.addEventListener('loaded', () => {
+                    console.log('Scene loaded successfully');
+                    if (statusElement) {
+                        statusElement.textContent = 'Ready!';
+                    }
+                    
+                    // Hide loading screen
+                    setTimeout(() => {
+                        const loadingScreen = document.getElementById('loadingScreen');
+                        if (loadingScreen) {
+                            loadingScreen.style.display = 'none';
+                        }
+                        const loadingElement = document.getElementById('loading');
+                        if (loadingElement) {
+                            loadingElement.style.display = 'none';
+                        }
+                        console.log('Loading screen hidden');
+                    }, 1000);
+                    
+                    setupPlanetInteractions();
+                    setupVRControls();
+                    setupDesktopControls();
+                });
+                
+                        // Timeout check
+        setTimeout(() => {
+            if (statusElement && statusElement.textContent === 'Loading...') {
+                statusElement.textContent = 'Ready (timeout)';
+                const loadingElement = document.getElementById('loading');
+                if (loadingElement) {
+                    loadingElement.style.display = 'none';
+                }
+                setupPlanetInteractions();
+                setupVRControls();
+                setupDesktopControls();
+            }
+        }, 3000);
+            } else {
+                console.error('Scene not found');
+                if (statusElement) {
+                    statusElement.textContent = 'Error: Scene not found';
+                }
+            }
+        });
+        
+        // Store original camera position
+        let originalCameraPosition = { x: 0, y: 1.6, z: 5 };
+        let originalCameraRotation = { x: 0, y: 0, z: 0 };
+        
+        // Zoom functionality removed - planets now just show info without camera movement
+        
+        // Models loaded completion handler (defensive)
+        function onAllModelsLoaded() {
+            console.log("✅✅✅ All models loaded and safe for narration ✅✅✅");
+
+            // Hide loading overlay
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            if (loadingOverlay) {
+                const statusEl = document.getElementById('loadingStatus');
+                if (statusEl) statusEl.textContent = 'Complete! ✅';
+                setTimeout(() => {
+                    loadingOverlay.style.display = 'none';
+                }, 1000);
+            }
+
+            // Mark ready and ensure selectionAllowed is set only once
+            window.modelsFullyLoaded = true;
+            window.selectionDisabled = true; // keep disabled until we finish initial setup
+            
+            if (!window._modelsLoadedOnce) {
+                window._modelsLoadedOnce = true;
+
+                // Visual-only initial highlight: do NOT speak
+                const sunEl = document.querySelector('[data-planet-id="sun"]');
+                if (sunEl) {
+                    try {
+                        // Use guardedSelectPlanet but skipSpeak to avoid TTS
+                        guardedSelectPlanet(sunEl, { skipSpeak: true, force: true });
+                    } catch (e) {
+                        console.warn("initial highlight failure:", e);
+                    }
+                }
+            }
+
+            // Small delay to finish asset registration then enable selection
+            setTimeout(() => {
+                window.selectionDisabled = false;
+                console.log("✅ selectionDisabled = false; interactive selection re-enabled");
+            }, 300); // allow a short settle time
+        }
+        
+        // Guarded selection function (prevents repeated auto-selection)
+        function guardedSelectPlanet(planetEl, opts = {}) {
+            // opts: { force: boolean, skipSpeak: boolean }
+            try {
+                if (!planetEl) return;
+                const id = planetEl.getAttribute && planetEl.getAttribute('data-planet-id') || planetEl.id || (planetEl.dataset && planetEl.dataset.planetId);
+                const now = Date.now();
+
+                // If selection disabled globally (tour / loading), ignore unless forced
+                if (window.selectionDisabled && !opts.force) {
+                    console.debug("guardedSelectPlanet: selectionDisabled -> ignoring", id);
+                    return;
+                }
+
+                // Debounce: ignore repeated selections on same id within 1500ms
+                if (id && id === window._lastSelectedPlanetId && (now - window._lastSelectionTs) < 1500 && !opts.force) {
+                    console.debug("guardedSelectPlanet: debounced repeated selection", id);
+                    return;
+                }
+
+                window._lastSelectedPlanetId = id;
+                window._lastSelectionTs = now;
+
+                // Visual feedback only - NO TTS here
+                try {
+                    document.querySelectorAll('.planet-selected').forEach(e => e.classList.remove('planet-selected'));
+                    planetEl.classList.add('planet-selected');
+                    if (typeof highlightPlanet === 'function' && !opts.skipSpeak) {
+                        highlightPlanet(planetEl);
+                    }
+                } catch(e) {
+                    console.warn('Visual highlight error:', e);
+                }
+
+                // Only speak if not explicitly skipped and not in tour-loading mode
+                if (!opts.skipSpeak && !window.selectionDisabled && !window.tourActive) {
+                    const desc = planetEl.getAttribute('data-planet-desc');
+                    if (desc && desc.trim() !== '') {
+                        speakText(desc, window.currentLanguage || 'en')
+                            .catch(err => console.error('speakText error:', err));
+                    }
+                }
+            } catch (err) {
+                console.error("guardedSelectPlanet error:", err);
+            }
+        }
+        
+        // Attach planet selection listeners safely
+        function setupPlanetInteractions() {
+            const planets = document.querySelectorAll('.planet');
+            planets.forEach(planet => {
+                attachPlanetSelection(planet);
+            });
+        }
+        
+        function attachPlanetSelection(planetEl) {
+            if (!planetEl) return;
+            // Avoid adding listener twice
+            if (planetEl.__hasSelectionListener) return;
+            planetEl.__hasSelectionListener = true;
+
+            planetEl.addEventListener('click', () => {
+                // If selection is locked (tour / loading), skip
+                if (window.selectionDisabled || window.tourActive) {
+                    console.log('🛑 Selection disabled (tour/loading)');
+                    return;
+                }
+                // Don't allow selection until models fully loaded
+                if (!window.modelsFullyLoaded) {
+                    console.warn('🛑 Selection ignored until models loaded');
+                    return;
+                }
+                guardedSelectPlanet(planetEl);
+            });
+        }
+
+
+        // Legacy wrapper - redirects to guardedSelectPlanet
+        function handlePlanetSelection(planet) {
+            if (!planet) return;
+            
+            // Check basic user interaction requirements
+            if (!userHasInteracted || !allowPlanetSelection || !vrStarted) {
+                console.log('🛑 Planet selection disabled - waiting for user interaction');
+                return;
+            }
+            
+            // Delegate to guarded selection
+            guardedSelectPlanet(planet);
+        }
+        
+        function setupVRControls() {
+            // VR controls are now handled by the original fixed position panel
+            // The panel should be visible in VR mode with high z-index
+            console.log('VR controls setup - using original fixed position panel');
+        }
+        
+        function setupDesktopControls() {
+            // Language selector - check if element exists before adding listener
+            const languageSelect = document.getElementById('languageSelect');
+            if (languageSelect) {
+                languageSelect.addEventListener('change', (e) => {
+                    currentLanguage = e.target.value;
+                    languageIndex = languages.findIndex(lang => lang.code === currentLanguage);
+                    updateVRLanguageDisplay();
+                    console.log('Language changed to:', currentLanguage);
+                });
+            } else {
+                console.warn('Language selector element not found');
+            }
+            
+            // Test TTS button removed for cleaner UI
+        }
+        
+        function cycleLanguage() {
+            languageIndex = (languageIndex + 1) % languages.length;
+            currentLanguage = languages[languageIndex].code;
+            
+            // Update desktop selector
+            const desktopSelector = document.getElementById('languageSelect');
+            if (desktopSelector) {
+                desktopSelector.value = currentLanguage;
+            }
+            
+            updateVRLanguageDisplay();
+            console.log('Language cycled to:', currentLanguage);
+        }
+        
+        function updateVRLanguageDisplay() {
+            // Language display is handled by the original fixed position panel
+            console.log('Language updated to:', languages[languageIndex].name);
+        }
+        
+        function showVRMessage(message) {
+            // Show message using alert for simplicity
+            alert(message);
+        }
+        
+        // VR Debug Dialog function for AI Q&A feedback
+        function showVRDebugDialog(message, color = '#00ff88', duration = 3000) {
+            console.log(`🔍 VR Debug: ${message}`);
+            
+            // For now, use console.log and alert for debugging
+            // In a full VR implementation, this would show a 3D dialog in VR space
+            if (message.includes('🎤') || message.includes('🤖') || message.includes('❌')) {
+                // Show important AI Q&A messages as alerts
+                alert(message);
+            }
+        }
+        
+        async function speakPlanetInfo() {
+            if (!currentPlanet) return;
+            if (!vrStarted) {
+                console.log('🔇 TTS blocked - VR not started yet');
+                return;
+            }
+            
+            // 🛑 GUARD: Check if TTS is busy or selection is disabled
+            if (window.ttsBusy) {
+                console.log('🛑 speakPlanetInfo: TTS busy, skipping');
+                return;
+            }
+            
+            if (window.selectionDisabled) {
+                console.log('🛑 speakPlanetInfo: selection disabled, skipping');
+                return;
+            }
+            
+            if (window.tourActive) {
+                console.log('🛑 speakPlanetInfo: tour active, skipping');
+                return;
+            }
+            
+            // Get the selected language from localStorage
+            const selectedLang = localStorage.getItem('selectedLanguage') || 'en';
+            console.log(`🔊 TTS Request - Language: ${selectedLang}, Planet: ${currentPlanet.name}`);
+            
+            try {
+                // First translate the text to the selected language
+                const translationResponse = await fetch('/api/translate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        text: currentPlanet.description,
+                        sourceLang: 'en',
+                        targetLang: selectedLang
+                    })
+                });
+                
+                if (translationResponse.ok) {
+                    const result = await translationResponse.json();
+                    const translatedText = result.translatedText || result.text || currentPlanet.description;
+                    
+                    console.log(`🔄 Translated text for TTS: ${translatedText}`);
+                    
+                    // Always use Sarvam TTS via ttsManager with separated fetch/play
+                    if (window.ttsManager && window.ttsManager.fetchServerTTSAudio) {
+                        console.log(`🎯 Fetching Sarvam TTS for ${selectedLang}`);
+                        const audioData = await window.ttsManager.fetchServerTTSAudio(translatedText, selectedLang);
+                        console.log(`🎵 Playing TTS for: ${currentPlanet.name} in ${selectedLang} using Sarvam API`);
+                        await window.ttsManager.playServerTTSAudio(audioData);
+                    } else {
+                        throw new Error('TTS Manager not available');
+                    }
+                } else {
+                    throw new Error('Translation service not available');
+                }
+            } catch (error) {
+                console.error('TTS error:', error);
+                console.log('❌ TTS failed - no fallback available');
+            }
+        }
+        
+        async function translatePlanetInfo() {
+            if (!currentPlanet) return;
+            
+            console.log(`🔄 Translation Request - Target Language: ${currentLanguage}, Planet: ${currentPlanet.name}`);
+            
+            try {
+                // Use the main server translation endpoint
+                const response = await fetch('/api/translate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        text: currentPlanet.description,
+                        sourceLang: 'en',
+                        targetLang: currentLanguage
+                    })
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.success || result.translatedText) {
+                        const translatedText = result.translatedText || result.text;
+                        console.log('Translation successful:', translatedText);
+                        showVRMessage(`Translated ${currentPlanet.name} to ${languages[languageIndex].name}`);
+                        
+                        // Update the planet description temporarily for TTS
+                        const originalDesc = currentPlanet.description;
+                        currentPlanet.description = translatedText;
+                        
+                        // Speak the translation
+                        await speakPlanetInfo();
+                        
+                        // Restore original description
+                        currentPlanet.description = originalDesc;
+                    } else {
+                        throw new Error('Translation failed');
+                    }
+                } else {
+                    throw new Error('Translation service not available');
+                }
+            } catch (error) {
+                console.error('Translation error:', error);
+                // Don't show error dialog - just log it
+            }
+        }
+
+        // Smooth camera movement controls
+        let camera = null;
+        let cameraPosition = { x: 0, y: 1.6, z: 5 };
+        let targetPosition = { x: 0, y: 1.6, z: 5 };
+        let cameraRotation = { x: 0, y: 0, z: 0 };
+        const moveSpeed = 0.2;
+        const rotationSpeed = 3;
+        const smoothingFactor = 0.08;
+        let keysPressed = {};
+        let animationRunning = false;
+
+        function initializeCamera() {
+            camera = document.querySelector('a-camera');
+            if (camera) {
+                console.log('Camera found, setting up smooth controls');
+                startSmoothAnimation();
+            }
+        }
+
+        function startSmoothAnimation() {
+            if (!animationRunning) {
+                animationRunning = true;
+                smoothUpdate();
+            }
+        }
+
+        function smoothUpdate() {
+            if (camera && animationRunning) {
+                // Smooth interpolation for position
+                cameraPosition.x += (targetPosition.x - cameraPosition.x) * smoothingFactor;
+                cameraPosition.y += (targetPosition.y - cameraPosition.y) * smoothingFactor;
+                cameraPosition.z += (targetPosition.z - cameraPosition.z) * smoothingFactor;
+                
+                camera.setAttribute('position', `${cameraPosition.x} ${cameraPosition.y} ${cameraPosition.z}`);
+                camera.setAttribute('rotation', `${cameraRotation.x} ${cameraRotation.y} ${cameraRotation.z}`);
+                
+                requestAnimationFrame(smoothUpdate);
+            }
+        }
+
+        document.addEventListener('keydown', (event) => {
+            if (!camera) return;
+
+            switch(event.key) {
+                case 'ArrowUp':
+                    targetPosition.z -= moveSpeed;
+                    break;
+                case 'ArrowDown':
+                    targetPosition.z += moveSpeed;
+                    break;
+                case 'ArrowLeft':
+                    targetPosition.x -= moveSpeed;
+                    break;
+                case 'ArrowRight':
+                    targetPosition.x += moveSpeed;
+                    break;
+                case 'PageUp':
+                    targetPosition.y += moveSpeed;
+                    break;
+                case 'PageDown':
+                    targetPosition.y -= moveSpeed;
+                    break;
+                case 'w':
+                case 'W':
+                    cameraRotation.x -= rotationSpeed;
+                    break;
+                case 's':
+                case 'S':
+                    cameraRotation.x += rotationSpeed;
+                    break;
+                case 'a':
+                case 'A':
+                    cameraRotation.y += rotationSpeed;
+                    break;
+                case 'd':
+                case 'D':
+                    cameraRotation.y -= rotationSpeed;
+                    break;
+            }
+            
+            event.preventDefault();
+        });
+
+        // Language Selection and VR Entry
+        function setupLanguageSelection() {
+            const languageMenu = document.getElementById('languageMenu');
+            const enterVRBtn = document.getElementById('enterVRBtn');
+            const langOptions = document.querySelectorAll('.lang-option');
+            
+            // Handle language selection
+            console.log('🔧 Setting up language selection...');
+            console.log('🔧 Found language options:', langOptions.length);
+            
+            langOptions.forEach((option, index) => {
+                console.log(`🔧 Setting up option ${index}:`, option);
+                option.addEventListener('click', (e) => {
+                    console.log('🔧 Language option clicked!', e.target);
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    // Remove active class from all options
+                    langOptions.forEach(opt => opt.classList.remove('active'));
+                    // Add active class to clicked option
+                    option.classList.add('active');
+                    
+                    const selectedLang = option.getAttribute('data-lang');
+                    localStorage.setItem('selectedLanguage', selectedLang);
+                    console.log(`🌍 Language selected: ${selectedLang}`);
+                    console.log(`🌍 Language stored in localStorage: ${localStorage.getItem('selectedLanguage')}`);
+                    
+                    // Enable the Enter VR button
+                    if (enterVRBtn) {
+                        enterVRBtn.disabled = false;
+                        enterVRBtn.style.opacity = '1';
+                        console.log('🔧 Enter VR button enabled');
+                    }
+                });
+                
+                // Add mouse events for debugging
+                option.addEventListener('mouseenter', () => {
+                    console.log('🔧 Mouse entered option:', option.getAttribute('data-lang'));
+                });
+                
+                option.addEventListener('mousedown', () => {
+                    console.log('🔧 Mouse down on option:', option.getAttribute('data-lang'));
+                });
+            });
+            
+            // Handle VR entry
+            if (enterVRBtn) {
+                enterVRBtn.addEventListener('click', () => {
+                    console.log('Enter VR button clicked!');
+                    unlockAudio(); // Unlock audio on user interaction
+                    startVRExperience();
+                });
+            }
+            
+            // Handle guided tour start
+            const startTourBtn = document.getElementById('startTourBtn');
+            if (startTourBtn) {
+                startTourBtn.addEventListener('click', () => {
+                    console.log('Start tour button clicked!');
+                    startGuidedTourSafe(); // Use safe starter with model preloading
+                    
+                    // Show pause button when tour starts
+                    document.getElementById('pauseBtn').style.display = 'inline-block';
+                });
+            }
+            
+            // Handle pause button
+            const pauseBtn = document.getElementById('pauseBtn');
+            if (pauseBtn) {
+                pauseBtn.addEventListener('click', () => {
+                    console.log('Pause button clicked!');
+                    pauseTour();
+                });
+            }
+            
+            // Handle resume button
+            const resumeBtn = document.getElementById('resumeBtn');
+            if (resumeBtn) {
+                resumeBtn.addEventListener('click', () => {
+                    console.log('Resume button clicked!');
+                    resumeTour();
+                });
+            }
+            
+            // Test TTS button removed for cleaner UI
+            
+            // Handle AI Q&A buttons
+            const askQuestionBtn = document.getElementById('askQuestionBtn');
+            const askQuestionTextBtn = document.getElementById('askQuestionTextBtn');
+            const questionInput = document.getElementById('questionInput');
+            
+            if (askQuestionBtn) {
+                askQuestionBtn.addEventListener('click', () => {
+                    console.log('Voice Question button clicked!');
+                    unlockAudio(); // Unlock audio on user interaction
+                    startVoiceQuestion();
+                });
+            }
+            
+            if (askQuestionTextBtn && questionInput) {
+                askQuestionTextBtn.addEventListener('click', async () => {
+                    const question = questionInput.value.trim();
+                    if (!question) {
+                        alert('Please type a question first');
+                        return;
+                    }
+                    
+                    console.log('📝 Text Question:', question);
+                    unlockAudio();
+                    
+                    const selectedLang = localStorage.getItem('selectedLanguage') || 'en';
+                    
+                    try {
+                        showVRDebugDialog(`🤖 Processing: ${question}`, '#00ff88', 3000);
+                        
+                        // Use the AI Q&A system
+                        if (window.aiQA) {
+                            await window.aiQA.ask(question, selectedLang);
+                        } else {
+                            // Fallback to getAIAnswer
+                            const answer = await getAIAnswer(question, selectedLang);
+                            showVRDebugDialog(`🤖 ${answer}`, '#ffffff', 15000);
+                            await speakAIAnswer(answer);
+                        }
+                        
+                        questionInput.value = ''; // Clear input
+                    } catch (error) {
+                        console.error('❌ Text Q&A failed:', error);
+                        showVRDebugDialog('❌ Failed to get answer', '#ff6b6b', 3000);
+                    }
+                });
+                
+                // Allow Enter key to submit
+                questionInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        askQuestionTextBtn.click();
+                    }
+                });
+            }
+        }
+        
+        function startVRExperience() {
+            const selectedLang = localStorage.getItem('selectedLanguage') || 'en';
+            console.log(`Starting VR with language: ${selectedLang}`);
+            
+            // Show loading overlay
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            if (loadingOverlay) {
+                loadingOverlay.style.display = 'flex';
+            }
+            
+            // Hide language menu
+            const languageMenu = document.getElementById('languageMenu');
+            if (languageMenu) {
+                languageMenu.style.display = 'none';
+            }
+            
+            // Show VR scene IMMEDIATELY (don't wait for models)
+            const scene = document.querySelector('a-scene');
+            if (scene) {
+                scene.style.display = 'block';
+            }
+            
+            // Show quick loading message, then hide after 2 seconds
+            const loadingOverlay2 = document.getElementById('loadingOverlay');
+            if (loadingOverlay2) {
+                loadingOverlay2.style.display = 'flex';
+                const statusEl = document.getElementById('loadingStatus');
+                if (statusEl) statusEl.textContent = 'Entering VR...';
+                
+                // Hide overlay after 2 seconds (models will load in background)
+                setTimeout(() => {
+                    loadingOverlay2.style.display = 'none';
+                    console.log('🎬 VR scene ready - models loading in background');
+                }, 2000);
+            }
+            
+            // Set language for VR and TTS system
+            currentLanguage = selectedLang;
+            languageIndex = languages.findIndex(lang => lang.code === currentLanguage);
+            
+            // Update the language selector in the control panel to match
+            const languageSelect = document.getElementById('languageSelect');
+            if (languageSelect) {
+                languageSelect.value = selectedLang;
+            }
+            
+            // Update the current language display
+            updateVRLanguageDisplay();
+            
+            // Set VR flag to enable auto-speak (but don't auto-select any planet)
+            vrStarted = true;
+            
+            // Enable planet selection for user interaction
+            allowPlanetSelection = true;
+            userHasInteracted = true;
+            
+            // Clear any previously selected planet
+            currentPlanet = null;
+            
+            // Add VR enter event listener to unlock audio
+            if (scene) {
+                scene.addEventListener('enter-vr', () => {
+                    console.log('🎧 Entering VR - unlocking audio...');
+                    initializeVRAudio();
+                });
+            }
+            
+            console.log(`✅ VR started with language: ${selectedLang} (${languages[languageIndex].name})`);
+            console.log(`✅ TTS will now use: ${selectedLang}`);
+            console.log(`✅ Auto-speak enabled: ${vrStarted}`);
+            console.log(`✅ No planet auto-selected on VR start`);
+        }
+        
+        // Initialize camera when scene loads
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🚀 DOM loaded - Cache bust version: 2024-12-19-SUN-FALLBACK-VISIBLE');
+            setTimeout(initializeCamera, 1000);
+            
+
+            
+            // Enhanced GLTF debugging with Sun focus
+            console.log('🌞 Checking Sun model loading...');
+            const sunEntity = document.querySelector('[data-planet-id="sun"]');
+            if (sunEntity) {
+                console.log('✅ Sun entity found:', sunEntity);
+                const gltfModel = sunEntity.querySelector('[gltf-model]');
+                const fallbackSphere = sunEntity.querySelector('a-sphere');
+                
+                if (gltfModel) {
+                    console.log('✅ Sun GLTF model element found:', gltfModel);
+                    console.log('🔍 Sun model src:', gltfModel.getAttribute('gltf-model'));
+                    
+                    gltfModel.addEventListener('model-loaded', () => {
+                        console.log('🎉 Sun 3D model loaded successfully!');
+                        console.log('📏 Sun model scale:', gltfModel.getAttribute('scale'));
+                        // Hide fallback sphere when model loads
+                        if (fallbackSphere) {
+                            fallbackSphere.setAttribute('visible', 'false');
+                        }
+                    });
+                    
+                    gltfModel.addEventListener('model-error', (e) => {
+                        console.error('❌ Sun 3D model failed to load:', e);
+                        console.error('❌ Error details:', e.detail);
+                        // Show fallback sphere when model fails
+                        if (fallbackSphere) {
+                            fallbackSphere.setAttribute('visible', 'true');
+                        }
+                    });
+                    
+                    // Timeout check removed - let the model load naturally
+                } else {
+                    console.error('❌ Sun GLTF model element not found');
+                }
+            } else {
+                console.error('❌ Sun entity not found');
+            }
+            
+            // Track ALL model loading to set modelsFullyLoaded flag
+            setTimeout(() => {
+                const modelEls = document.querySelectorAll('[gltf-model]');
+                let modelsRemaining = modelEls.length;
+                
+                console.log(`🔍 Tracking ${modelsRemaining} GLTF models for loading...`);
+                
+                const totalModels = modelsRemaining;
+                
+                // Update loading progress
+                const updateProgress = () => {
+                    const loaded = totalModels - modelsRemaining;
+                    const progressEl = document.getElementById('loadingProgress');
+                    const statusEl = document.getElementById('loadingStatus');
+                    if (progressEl) {
+                        progressEl.textContent = `${loaded} / ${totalModels} models loaded`;
+                    }
+                    if (statusEl && modelsRemaining > 0) {
+                        statusEl.textContent = `Loading 3D models... (${Math.round((loaded/totalModels)*100)}%)`;
+                    }
+                };
+                
+                if (modelsRemaining === 0) {
+                    window.modelsFullyLoaded = true;
+                    console.log('✅ No models to load - safe for narration');
+                } else {
+                    updateProgress(); // Initial update
+                    
+                    modelEls.forEach(el => {
+                        const handleLoaded = () => {
+                            modelsRemaining--;
+                            const planetId = el.closest('[data-planet-id]')?.getAttribute('data-planet-id') || 'unknown';
+                            console.log(`✅ Model loaded: ${planetId} (${modelsRemaining} remaining)`);
+                            
+                            updateProgress(); // Update progress
+                            
+                            if (modelsRemaining <= 0) {
+                                onAllModelsLoaded();
+                            }
+                        };
+                        
+                        el.addEventListener('model-loaded', handleLoaded, { once: true });
+                        el.addEventListener('model-error', handleLoaded, { once: true }); // Count errors too
+                    });
+                }
+            }, 100);
+            
+            setTimeout(() => {
+                console.log('🔍 Checking GLTF models...');
+                
+                // Check all GLTF models
+                const gltfModels = document.querySelectorAll('a-gltf-model');
+                gltfModels.forEach((model, index) => {
+                    const src = model.getAttribute('src');
+                    const planetId = model.closest('.planet')?.getAttribute('data-planet-id');
+                    console.log(`GLTF Model ${index + 1} (${planetId}):`, src);
+                    console.log('Model loaded:', model.hasAttribute('loaded'));
+                    console.log('Model visible:', model.getAttribute('visible') !== 'false');
+                    console.log('Model scale:', model.getAttribute('scale'));
+                    
+                    // Add event listeners to track loading
+                    model.addEventListener('model-loaded', () => {
+                        console.log(`✅ ${planetId} GLTF model loaded successfully!`);
+                    });
+                    model.addEventListener('model-error', (e) => {
+                        console.error(`❌ ${planetId} GLTF model failed to load:`, e);
+                    });
+                });
+                
+                console.log(`Found ${gltfModels.length} GLTF models total`);
+                
+                // Special debugging for Venus
+                const venusModel = document.querySelector('[data-planet-id="venus"] a-gltf-model');
+                if (venusModel) {
+                    console.log('🌟 VENUS MODEL FOUND:', venusModel);
+                    venusModel.addEventListener('model-loaded', () => {
+                        console.log('✅ VENUS MODEL LOADED SUCCESSFULLY!');
+                    });
+                    venusModel.addEventListener('model-error', (e) => {
+                        console.error('❌ VENUS MODEL ERROR:', e);
+                    });
+                }
+                
+                // Check if Venus is visible
+                const venus = document.querySelector('[data-planet-id="venus"]');
+                if (venus) {
+                    console.log('🌟 Venus element found:', venus);
+                    console.log('🌟 Venus position:', venus.getAttribute('position'));
+                    console.log('🌟 Venus scale:', venus.getAttribute('scale'));
+                    console.log('🌟 Venus visible:', venus.getAttribute('visible'));
+                } else {
+                    console.error('❌ Venus element NOT FOUND!');
+                }
+            }, 1000);
+        });
+        
+        // Movement + Selection in VR
+        function setupVRControllerMovement() {
+            const rig = document.querySelector("#rig");
+            const camera = document.querySelector("#camera");
+            const rightController = document.querySelector("#rightController");
+            const leftController = document.querySelector("#leftController");
+            
+            // On-screen debug display
+            const debugDisplay = document.getElementById('vr-debug-content');
+            const debugLog = (msg) => {
+                console.log(msg);
+                if (debugDisplay) {
+                    const timestamp = new Date().toLocaleTimeString();
+                    debugDisplay.innerHTML = `[${timestamp}] ${msg}<br>` + debugDisplay.innerHTML.split('<br>').slice(0, 15).join('<br>');
+                }
+            };
+
+            if (!rig || !camera) {
+                debugLog('❌ VR elements not found (rig or camera missing)');
+                return;
+            }
+            
+            if (!rightController && !leftController) {
+                debugLog('❌ No VR controllers found');
+                return;
+            }
+
+            debugLog('🎮 Setting up VR controller movement...');
+            debugLog(`🎮 Right controller: ${rightController ? '✅ Found' : '❌ Not found'}`);
+            debugLog(`🎮 Left controller: ${leftController ? '✅ Found' : '❌ Not found'}`);
+
+            // Make custom pointer always visible and follow controller
+            const customPointer = document.getElementById('customPointer');
+            if (customPointer) {
+                customPointer.setAttribute('visible', 'true');
+                debugLog('🎯 Custom pointer enabled');
+                
+                // Update pointer position every frame to follow controller
+                function updatePointer() {
+                    if (customPointer && rightController) {
+                        const controllerPos = rightController.getAttribute('position');
+                        const controllerRot = rightController.getAttribute('rotation');
+                        
+                        // Position pointer slightly in front of controller for visibility
+                        const forwardOffset = new THREE.Vector3(0, 0, -0.2);
+                        forwardOffset.applyEuler(new THREE.Euler(0, THREE.MathUtils.degToRad(controllerRot.y), 0));
+                        
+                        const pointerPos = {
+                            x: controllerPos.x + forwardOffset.x,
+                            y: controllerPos.y + forwardOffset.y,
+                            z: controllerPos.z + forwardOffset.z
+                        };
+                        
+                        customPointer.setAttribute('position', pointerPos);
+                        customPointer.setAttribute('rotation', controllerRot);
+                    }
+                    requestAnimationFrame(updatePointer);
+                }
+                updatePointer();
+            } else {
+                console.error('❌ Custom pointer not found!');
+            }
+
+            // ---- Movement with Thumbstick (works with both controllers) ----
+            const handleThumbstickMovement = (e, controllerName) => {
+                console.log('🕹️ Thumbstick moved:', e.detail);
+                
+                // Check if there's significant thumbstick movement
+                const threshold = 0.1;
+                if (Math.abs(e.detail.x) < threshold && Math.abs(e.detail.y) < threshold) {
+                    console.log('⚪ Thumbstick in deadzone, ignoring');
+                    return; // Ignore small movements (deadzone)
+                }
+                
+                // Don't allow movement during active tours
+                if (window.tourRunning === true) {
+                    console.log('🚫 VR movement disabled during active tour (tourRunning=' + window.tourRunning + ')');
+                    return;
+                }
+                
+                console.log('✅ Processing thumbstick movement...');
+                
+                const moveSpeed = 0.1; // Increased speed for better responsiveness
+                const rotateSpeed = 0.05; // Speed for rotation
+                
+                // Get camera direction for forward/backward movement
+                const direction = new THREE.Vector3();
+                camera.object3D.getWorldDirection(direction);
+                direction.y = 0; // Keep movement on horizontal plane
+                direction.normalize();
+
+                // Get camera right vector for strafing
+                const right = new THREE.Vector3();
+                camera.object3D.getWorldDirection(right);
+                right.cross(new THREE.Vector3(0, 1, 0));
+                right.normalize();
+
+                // Apply movement
+                const oldPos = rig.object3D.position.clone();
+                
+                // Forward/backward with Y axis
+                if (Math.abs(e.detail.y) > threshold) {
+                rig.object3D.position.addScaledVector(direction, -e.detail.y * moveSpeed);
+                }
+                
+                // Strafe left/right with X axis
+                if (Math.abs(e.detail.x) > threshold) {
+                    rig.object3D.position.addScaledVector(right, e.detail.x * moveSpeed);
+                }
+                
+                console.log('🎮 VR Movement (' + controllerName + '):', {
+                    thumbstick: {x: e.detail.x.toFixed(2), y: e.detail.y.toFixed(2)},
+                    moved: !oldPos.equals(rig.object3D.position),
+                    newPos: {
+                        x: rig.object3D.position.x.toFixed(2),
+                        y: rig.object3D.position.y.toFixed(2),
+                        z: rig.object3D.position.z.toFixed(2)
+                    }
+                });
+            };
+            
+            // KEYBOARD MOVEMENT FOR TESTING (Desktop only)
+            const keyState = {};
+            window.addEventListener('keydown', (e) => {
+                keyState[e.key.toLowerCase()] = true;
+            });
+            window.addEventListener('keyup', (e) => {
+                keyState[e.key.toLowerCase()] = false;
+            });
+            
+            // Apply keyboard movement every frame
+            setInterval(() => {
+                if (window.tourRunning) return;
+                
+                const moveSpeed = 0.2;
+                const direction = new THREE.Vector3();
+                camera.object3D.getWorldDirection(direction);
+                direction.y = 0;
+                direction.normalize();
+                
+                const right = new THREE.Vector3();
+                camera.object3D.getWorldDirection(right);
+                right.cross(new THREE.Vector3(0, 1, 0));
+                right.normalize();
+                
+                if (keyState['w']) {
+                    rig.object3D.position.addScaledVector(direction, moveSpeed);
+                    console.log('⌨️ W key moving forward');
+                }
+                if (keyState['s']) {
+                    rig.object3D.position.addScaledVector(direction, -moveSpeed);
+                    console.log('⌨️ S key moving backward');
+                }
+                if (keyState['a']) {
+                    rig.object3D.position.addScaledVector(right, -moveSpeed);
+                    console.log('⌨️ A key strafing left');
+                }
+                if (keyState['d']) {
+                    rig.object3D.position.addScaledVector(right, moveSpeed);
+                    console.log('⌨️ D key strafing right');
+                }
+            }, 50);
+            
+            console.log('⌨️ Keyboard movement enabled: W/A/S/D keys');
+            
+            // DEBUG: Log ALL events from controllers
+            const debugAllEvents = (controller, name) => {
+                const events = [
+                    'thumbstickmoved', 'axismove', 'trackpadmoved', 'touchstart', 'touchend',
+                    'triggerdown', 'triggerup', 'gripdown', 'gripup', 'abuttondown', 'bbuttondown',
+                    'xbuttondown', 'ybuttondown', 'thumbstickdown', 'thumbstickup',
+                    'controllerconnected', 'controllerdisconnected'
+                ];
+                
+                events.forEach(eventName => {
+                    controller.addEventListener(eventName, (e) => {
+                        debugLog(`🎮 ${name} Event: ${eventName}`);
+                    });
+                });
+                
+                debugLog(`🔍 ${name}: Listening for events`);
+            };
+            
+            // Attach to both controllers with multiple event types
+            if (leftController) {
+                debugLog('✅ Setting up LEFT controller');
+                debugAllEvents(leftController, 'LEFT');
+                
+                leftController.addEventListener("thumbstickmoved", (e) => handleThumbstickMovement(e, 'LEFT'));
+                leftController.addEventListener("axismove", (e) => {
+                    if (e.detail.axis && e.detail.axis.length >= 2) {
+                        handleThumbstickMovement({detail: {x: e.detail.axis[0], y: e.detail.axis[1]}}, 'LEFT');
+                    }
+                });
+                leftController.addEventListener('controllerconnected', (e) => {
+                    debugLog('🎮 LEFT Controller connected!');
+                });
+            }
+            if (rightController) {
+                debugLog('✅ Setting up RIGHT controller');
+                debugAllEvents(rightController, 'RIGHT');
+                
+                rightController.addEventListener("thumbstickmoved", (e) => handleThumbstickMovement(e, 'RIGHT'));
+                rightController.addEventListener("axismove", (e) => {
+                    if (e.detail.axis && e.detail.axis.length >= 2) {
+                        handleThumbstickMovement({detail: {x: e.detail.axis[0], y: e.detail.axis[1]}}, 'RIGHT');
+                    }
+                });
+                rightController.addEventListener('controllerconnected', (e) => {
+                    debugLog('🎮 RIGHT Controller connected!');
+                });
+            }
+
+            // ---- Planet Selection with Trigger ----
+            rightController.addEventListener("triggerdown", () => {
+                console.log('🎯 Trigger pressed - checking for planet selection');
+                unlockAudio(); // Unlock audio on VR controller interaction
+                
+                // Show visual feedback
+                const triggerFeedback = document.getElementById('triggerFeedback');
+                if (triggerFeedback) {
+                    triggerFeedback.setAttribute('visible', 'true');
+                    triggerFeedback.setAttribute('position', rightController.getAttribute('position'));
+                    setTimeout(() => {
+                        triggerFeedback.setAttribute('visible', 'false');
+                    }, 200);
+                }
+                
+                // Method 1: Try raycaster first
+                const raycaster = rightController.components.raycaster;
+                if (raycaster && raycaster.intersections && raycaster.intersections.length > 0) {
+                    const intersection = raycaster.intersections[0];
+                    const planetEl = intersection.object.el;
+                    
+                    if (planetEl && planetEl.classList.contains("planet")) {
+                        console.log("🌍 Planet selected via raycaster:", planetEl.dataset.planetName);
+                        handlePlanetSelection(planetEl);
+                        return;
+                    }
+                }
+
+                // Method 2: Find closest planet to controller (simplified)
+                console.log('🎯 Raycaster failed, using simple proximity method');
+                const controllerPosition = rightController.getAttribute('position');
+                const planets = document.querySelectorAll('.planet');
+                let closestPlanet = null;
+                let closestDistance = Infinity;
+
+                planets.forEach(planet => {
+                    const planetPosition = planet.getAttribute('position');
+                    const distance = Math.sqrt(
+                        Math.pow(controllerPosition.x - planetPosition.x, 2) +
+                        Math.pow(controllerPosition.y - planetPosition.y, 2) +
+                        Math.pow(controllerPosition.z - planetPosition.z, 2)
+                    );
+                    
+                    // Only consider planets within 10 units and in front of controller
+                    if (distance < 10) {
+                        const controllerRotation = rightController.getAttribute('rotation');
+                        const forwardVector = new THREE.Vector3(0, 0, -1);
+                        forwardVector.applyEuler(new THREE.Euler(0, THREE.MathUtils.degToRad(controllerRotation.y), 0));
+                        
+                        const toPlanet = new THREE.Vector3(
+                            planetPosition.x - controllerPosition.x,
+                            planetPosition.y - controllerPosition.y,
+                            planetPosition.z - controllerPosition.z
+                        ).normalize();
+                        
+                        const dotProduct = forwardVector.dot(toPlanet);
+                        
+                        // Only select planets that are clearly in front (dot product > 0.7)
+                        if (dotProduct > 0.7 && distance < closestDistance) {
+                            closestDistance = distance;
+                            closestPlanet = planet;
+                        }
+                    }
+                });
+
+                if (closestPlanet) {
+                    console.log(`🌍 Proximity method: Planet found: ${closestPlanet.dataset.planetName} at distance ${closestDistance}`);
+                    handlePlanetSelection(closestPlanet);
+                } else {
+                    console.log("🎯 No planets found in front within 10 units");
+                }
+            });
+
+            // Add click event as backup for desktop testing
+            rightController.addEventListener('click', () => {
+                console.log('🎯 Controller clicked - this should work in VR');
+            });
+
+            console.log('✅ VR controller movement and selection setup complete');
+        }
+        
+        // ===== GUIDED TOUR SYSTEM =====
+        
+        // Narration data in multiple languages
+        const tourData = {
+            overview: {
+                en: "Welcome to the Solar System. Let us take a journey through the planets orbiting our Sun. From the scorching heat of Mercury to the icy depths of Neptune, each world has its own unique story to tell.",
+                hi: "सौर मंडल में आपका स्वागत है। आइए हमारे सूर्य के चारों ओर घूमने वाले ग्रहों की यात्रा करें। बुध की जलती हुई गर्मी से लेकर नेपच्यून की बर्फीली गहराई तक, हर दुनिया की अपनी अनूठी कहानी है।",
+                kn: "ಸೌರವ್ಯೂಹಕ್ಕೆ ಸುಸ್ವಾಗತ. ನಮ್ಮ ಸೂರ್ಯನ ಸುತ್ತಲು ಸುತ್ತುತ್ತಿರುವ ಗ್ರಹಗಳ ಮೂಲಕ ಪ್ರಯಾಣ ಮಾಡೋಣ. ಬುಧದ ಸುಡುತ್ತಿರುವ ಶಾಖದಿಂದ ನೆಪ್ಚೂನ್ನ ಹಿಮದ ಆಳಕ್ಕೆ, ಪ್ರತಿ ಜಗತ್ತಿಗೂ ತನ್ನದೇ ಆದ ವಿಶಿಷ್ಟ ಕಥೆ ಇದೆ.",
+                ta: "சூரிய குடும்பத்திற்கு வரவேற்கிறோம். நமது சூரியனைச் சுற்றி வரும் கோள்கள் வழியாக ஒரு பயணத்தை மேற்கொள்வோம். புதனின் சுடும் வெப்பத்திலிருந்து நெப்டியூனின் பனி ஆழங்கள் வரை, ஒவ்வொரு உலகத்திற்கும் அதன் சொந்த தனித்துவமான கதை உள்ளது.",
+                te: "సౌర వ్యవస్థకు స్వాగతం. మన సూర్యుని చుట్టూ తిరిగే గ్రహాల ద్వారా ఒక ప్రయాణాన్ని చేద్దాం. బుధుని మండే వేడి నుండి నెప్ట్యూన్ యొక్క మంచు లోతు వరకు, ప్రతి ప్రపంచానికి దాని స్వంత ప్రత్యేక కథ ఉంది.",
+                bn: "সৌরজগতে স্বাগতম। আসুন আমাদের সূর্যের চারপাশে ঘূর্ণায়মান গ্রহগুলির মধ্য দিয়ে একটি যাত্রা করি। বুধের জ্বলন্ত তাপ থেকে নেপচুনের বরফের গভীরতা পর্যন্ত, প্রতিটি জগতের নিজস্ব অনন্য গল্প রয়েছে।"
+            },
+            sun: {
+                en: "The Sun is the heart of our Solar System. This massive ball of hydrogen and helium provides light and heat to all the planets. Without it, life as we know it would not exist.",
+                hi: "सूर्य हमारे सौर मंडल का हृदय है। हाइड्रोजन और हीलियम का यह विशाल गोला सभी ग्रहों को प्रकाश और गर्मी प्रदान करता है। इसके बिना, जीवन जैसा हम जानते हैं, वह मौजूद नहीं होगा।",
+                kn: "ಸೂರ್ಯನು ನಮ್ಮ ಸೌರವ್ಯೂಹದ ಹೃದಯ. ಜಲಜನಕ ಮತ್ತು ಹೀಲಿಯಮ್‌ನ ಈ ಭಾರಿ ಚೆಂಡು ಎಲ್ಲಾ ಗ್ರಹಗಳಿಗೆ ಬೆಳಗು ಮತ್ತು ಶಾಖವನ್ನು ಒದಗಿಸುತ್ತದೆ. ಇದು ಇಲ್ಲದಿದ್ದರೆ, ನಾವು ತಿಳಿದಿರುವ ಜೀವನ ಅಸ್ತಿತ್ವದಲ್ಲಿರುವುದಿಲ್ಲ.",
+                ta: "சூரியன் நமது சூரிய குடும்பத்தின் இதயம். ஹைட்ரஜன் மற்றும் ஹீலியத்தின் இந்த பெரிய பந்து அனைத்து கோள்களுக்கும் ஒளி மற்றும் வெப்பத்தை வழங்குகிறது. இது இல்லாமல், நாம் அறிந்த வாழ்க்கை இருக்காது.",
+                te: "సూర్యుడు మన సౌర వ్యవస్థ యొక్క గుండె. హైడ్రోజన్ మరియు హీలియం యొక్క ఈ భారీ బంతి అన్ని గ్రహాలకు కాంతి మరియు వేడిని అందిస్తుంది. దీని లేకపోవడం వల్ల, మనం తెలిసిన జీవితం ఉండదు.",
+                bn: "সূর্য আমাদের সৌরজগতের হৃদয়। হাইড্রোজেন এবং হিলিয়ামের এই বিশাল বল সমস্ত গ্রহকে আলো এবং তাপ প্রদান করে। এটি ছাড়া, আমরা যেমন জানি তেমন জীবন বিদ্যমান থাকবে না।"
+            },
+            mercury: {
+                en: "Mercury, the smallest and innermost planet. This rocky world is covered in craters and experiences extreme temperature changes, from scorching hot to freezing cold.",
+                hi: "बुध, सबसे छोटा और सबसे भीतरी ग्रह। यह चट्टानी दुनिया क्रेटरों से ढकी है और चरम तापमान परिवर्तनों का अनुभव करती है, जलती हुई गर्मी से लेकर जमने वाली ठंड तक।",
+                kn: "ಬುಧ, ಚಿಕ್ಕ ಮತ್ತು ಒಳಗಿನ ಗ್ರಹ. ಈ ಬಂಡೆ ಜಗತ್ತು ಕುಳಿಗಳಿಂದ ಆವೃತವಾಗಿದೆ ಮತ್ತು ತೀವ್ರ ತಾಪಮಾನ ಬದಲಾವಣೆಗಳನ್ನು ಅನುಭವಿಸುತ್ತದೆ, ಸುಡುತ್ತಿರುವ ಬಿಸಿಯಿಂದ ಹಿಮದ ಶೀತತೆ ವರೆಗೆ.",
+                ta: "புதன், மிகச் சிறிய மற்றும் உள்ளேயுள்ள கோள். இந்த பாறை உலகம் குழிகளால் மூடப்பட்டுள்ளது மற்றும் தீவிர வெப்பநிலை மாற்றங்களை அனுபவிக்கிறது, சுடும் வெப்பத்திலிருந்து உறைந்த குளிர் வரை.",
+                te: "బుధుడు, చిన్న మరియు లోపలి గ్రహం. ఈ రాతి ప్రపంచం గోతులతో కప్పబడి ఉంది మరియు తీవ్రమైన ఉష్ణోగ್ರత మార్పులను అనుభవిస్తుంది, మండే వేడి నుండి ఘనీభవించే చలి వరకు.",
+                bn: "বুধ, সবচেয়ে ছোট এবং সবচেয়ে ভিতরের গ্রহ। এই পাথুরে জগতটি গর্তে আবৃত এবং চরম তাপমাত্রার পরিবর্তন অনুভব করে, জ্বলন্ত গরম থেকে হিমশীতল ঠান্ডা পর্যন্ত।"
+            },
+            venus: {
+                en: "Venus, Earth's sister planet. This beautiful world is shrouded in thick clouds of sulfuric acid, creating a runaway greenhouse effect that makes it the hottest planet in our Solar System.",
+                hi: "शुक्र, पृथ्वी की बहन ग्रह। यह सुंदर दुनिया सल्फ्यूरिक एसिड के घने बादलों से ढकी है, जो एक भगोड़ा ग्रीनहाउस प्रभाव पैदा करती है जो इसे हमारे सौर मंडल का सबसे गर्म ग्रह बनाती है।",
+                kn: "ಶುಕ್ರ, ಭೂಮಿಯ ಸಹೋದರಿ ಗ್ರಹ. ಈ ಸುಂದರವಾದ ಜಗತ್ತು ಸಲ್ಫ್ಯೂರಿಕ್ ಆಮ್ಲದ ದಟ್ಟವಾದ ಮೋಡಗಳಿಂದ ಆವೃತವಾಗಿದೆ, ಇದು ಓಡಿಹೋಗುವ ಹಸಿರುಮನೆ ಪರಿಣಾಮವನ್ನು ಸೃಷ್ಟಿಸುತ್ತದೆ ಮತ್ತು ಇದು ನಮ್ಮ ಸೌರವ್ಯೂಹದ ಅತ್ಯಂತ ಬಿಸಿ ಗ್ರಹವಾಗಿದೆ.",
+                ta: "வெள்ளி, பூமியின் சகோதரி கோள். இந்த அழகான உலகம் கந்தக அமிலத்தின் அடர்ந்த மேகங்களால் மூடப்பட்டுள்ளது, இது ஒரு தப்பியோடும் கிரீன்ஹவுஸ் விளைவை உருவாக்குகிறது, இது இதை நமது சூரிய குடும்பத்தின் வெப்பமான கோளாக ஆக்குகிறது.",
+                te: "శుక్రుడు, భూమి యొక్క సోదరి గ్రహం. ఈ అందమైన ప్రపంచం సల్ఫ్యూరిక్ యాసిడ్ యొక్క దట్టమైన మేఘాలతో కప్పబడి ఉంది, ఇది ఓడిపోయే గ్రీన్‌హౌస్ ప్రభావాన్ని సృష్టిస్తుంది మరియు దీనిని మన సౌర వ్యవస్థలో అత్యంత వేడి గ్రహంగా చేస్తుంది.",
+                bn: "শুক্র, পৃথিবীর বোন গ্রহ। এই সুন্দর জগতটি সালফিউরিক অ্যাসিডের ঘন মেঘে আবৃত, যা একটি পালিয়ে যাওয়া গ্রিনহাউস প্রভাব সৃষ্টি করে এবং এটিকে আমাদের সৌরজগতের সবচেয়ে গরম গ্রহ করে তোলে।"
+            },
+            earth: {
+                en: "Earth, our home planet. This blue and green world is the only known planet with life, featuring vast oceans, diverse continents, and a protective atmosphere that sustains all living things.",
+                hi: "पृथ्वी, हमारा घर ग्रह। यह नीला और हरा संसार जीवन के साथ एकमात्र ज्ञात ग्रह है, जिसमें विशाल महासागर, विविध महाद्वीप और एक सुरक्षात्मक वायुमंडल है जो सभी जीवित चीजों को बनाए रखता है।",
+                kn: "ಭೂಮಿ, ನಮ್ಮ ಮನೆ ಗ್ರಹ. ಈ ನೀಲಿ ಮತ್ತು ಹಸಿರು ಜಗತ್ತು ಜೀವನದೊಂದಿಗೆ ಏಕೈಕ ತಿಳಿದಿರುವ ಗ್ರಹವಾಗಿದೆ, ಇದು ವಿಶಾಲ ಸಾಗರಗಳು, ವೈವಿಧ್ಯಮಯ ಖಂಡಗಳು ಮತ್ತು ಎಲ್ಲಾ ಜೀವಿಗಳನ್ನು ನಿರ್ವಹಿಸುವ ರಕ್ಷಣಾತ್ಮಕ ವಾಯುಮಂಡಲವನ್ನು ಹೊಂದಿದೆ.",
+                ta: "பூமி, நமது வீட்டு கோள். இந்த நீல மற்றும் பச்சை உலகம் வாழ்க்கையுடன் கூடிய ஒரே அறியப்பட்ட கோளாகும், இதில் பரந்த கடல்கள், பல்வேறு கண்டங்கள் மற்றும் அனைத்து உயிரினங்களையும் பராமரிக்கும் ஒரு பாதுகாப்பு வளிமண்டலம் உள்ளது.",
+                te: "భూమి, మన ఇంటి గ్రహం. ఈ నీలం మరియు ఆకుపచ్చ ప్రపంచం జీవితంతో కూడిన ఏకైక తెలిసిన గ్రహం, ఇందులో విశాలమైన మహాసముద్రాలు, వైవిధ్యమైన ఖండాలు మరియు అన్ని జీవులను నిర్వహించే రక్షణ వాతావరణం ఉంది.",
+                bn: "পৃথিবী, আমাদের বাড়ির গ্রহ। এই নীল এবং সবুজ জগতটি জীবনের সাথে একমাত্র পরিচিত গ্রহ, যেখানে বিশাল মহাসাগর, বৈচিত্র্যময় মহাদেশ এবং একটি সুরক্ষামূলক বায়ুমণ্ডল রয়েছে যা সমস্ত জীবিত জিনিসকে বজায় রাখে।"
+            },
+            mars: {
+                en: "Mars, the Red Planet. This dusty world has the largest volcano in the Solar System, Olympus Mons, and shows evidence of ancient water flows. Scientists believe Mars may have once supported life.",
+                hi: "मंगल, लाल ग्रह। इस धूल भरी दुनिया में सौर मंडल का सबसे बड़ा ज्वालामुखी, ओलंपस मॉन्स है, और प्राचीन जल प्रवाह के साक्ष्य दिखाता है। वैज्ञानिकों का मानना है कि मंगल ने कभी जीवन का समर्थन किया होगा।",
+                kn: "ಮಂಗಳ, ಕೆಂಪು ಗ್ರಹ. ಈ ಧೂಳಿನ ಜಗತ್ತು ಸೌರವ್ಯೂಹದ ಅತ್ಯಂತ ದೊಡ್ಡ ಜ್ವಾಲಾಮುಖಿ, ಒಲಿಂಪಸ್ ಮಾನ್ಸ್ ಅನ್ನು ಹೊಂದಿದೆ ಮತ್ತು ಪ್ರಾಚೀನ ನೀರಿನ ಹರಿವಿನ ಪುರಾವೆಗಳನ್ನು ತೋರಿಸುತ್ತದೆ. ವಿಜ್ಞಾನಿಗಳು ಮಂಗಳವು ಒಮ್ಮೆ ಜೀವನವನ್ನು ಬೆಂಬಲಿಸಿರಬಹುದು ಎಂದು ನಂಬುತ್ತಾರೆ.",
+                ta: "செவ்வாய், சிவப்பு கோள். இந்த தூசி நிறைந்த உலகம் சூரிய குடும்பத்தின் மிகப்பெரிய எரிமலை, ஒலிம்பஸ் மான்ஸ் மற்றும் பண்டைய நீர் ஓட்டத்தின் சான்றுகளைக் காட்டுகிறது. செவ்வாய் ஒரு காலத்தில் வாழ்க்கையை ஆதரித்திருக்கலாம் என்று விஞ்ஞானிகள் நம்புகிறார்கள்.",
+                te: "మార్స్, ఎరుపు గ్రహం. ఈ దుమ్ము నిండిన ప్రపంచం సౌర వ్యవస్థలో అతిపెద్ద అగ్నిపర్వతం, ఒలింపస్ మాన్స్ ని కలిగి ఉంది మరియు ప్రాచీన నీటి ప్రవాహాల సాక్ష్యాలను చూపిస్తుంది. మార్స్ ఒకప్పుడు జీవితానికి మద్దతు ఇచ్చి ఉండవచ్చు అని శాస్త్రవేత్తలు నమ్ముతున్నారు.",
+                bn: "মঙ্গল, লাল গ্রহ। এই ধূলিময় জগতে সৌরজগতের বৃহত্তম আগ্নেয়গিরি, অলিম্পাস মনস রয়েছে এবং প্রাচীন জল প্রবাহের প্রমাণ দেখায়। বিজ্ঞানীরা বিশ্বাস করেন যে মঙ্গল একসময় জীবনকে সমর্থন করেছিল।"
+            },
+            jupiter: {
+                en: "Jupiter, the largest planet in our Solar System. This gas giant has a Great Red Spot, a storm that has raged for over 400 years. Jupiter's powerful gravity protects the inner planets from dangerous asteroids.",
+                hi: "बृहस्पति, हमारे सौर मंडल का सबसे बड़ा ग्रह। इस गैसीय विशालकाय में एक महान लाल धब्बा है, एक तूफान जो 400 से अधिक वर्षों से चल रहा है। बृहस्पति का शक्तिशाली गुरुत्वाकर्षण आंतरिक ग्रहों को खतरनाक क्षुद्रग्रहों से बचाता है।",
+                kn: "ಗುರು, ನಮ್ಮ ಸೌರವ್ಯೂಹದ ಅತ್ಯಂತ ದೊಡ್ಡ ಗ್ರಹ. ಈ ಅನಿಲ ದೈತ್ಯನು 400 ವರ್ಷಗಳಿಗಿಂತ ಹೆಚ್ಚು ಕಾಲ ಸಂಭವಿಸಿದ ಮಹಾನ್ ಕೆಂಪು ಚುಕ್ಕೆಯನ್ನು ಹೊಂದಿದೆ. ಗುರುವಿನ ಶಕ್ತಿಶಾಲಿ ಗುರುತ್ವಾಕರ್ಷಣೆಯು ಒಳಗಿನ ಗ್ರಹಗಳನ್ನು ಅಪಾಯಕಾರಿ ಕ್ಷುದ್ರಗ್ರಹಗಳಿಂದ ರಕ್ಷಿಸುತ್ತದೆ.",
+                ta: "வியாழன், நமது சூரிய குடும்பத்தின் மிகப்பெரிய கோள். இந்த வாயு மாபெரும் கோளில் ஒரு பெரிய சிவப்பு புள்ளி உள்ளது, 400 ஆண்டுகளுக்கும் மேலாக வீசும் புயல். வியாழனின் சக்திவாய்ந்த ஈர்ப்பு விசை உள் கோள்களை ஆபத்தான சிறுகோள்களிலிருந்து பாதுகாக்கிறது.",
+                te: "గురుడు, మన సౌర వ్యవస్థలో అతిపెద్ద గ్రహం. ఈ వాయు మహాగ్రహానికి గొప్ప ఎరుపు మచ్చ ఉంది, ఇది 400 సంవత్సరాలకు పైగా ఉగ్రంగా ఉంది. గురుడు యొక్క శక్తివంతమైన గురుత్వాకర్షణ ఒత్తిడి లోపలి గ్రహాలను ప్రమాదకరమైన గ్రహశకలాల నుండి రక్షిస్తుంది.",
+                bn: "বৃহস্পতি, আমাদের সৌরজগতের বৃহত্তম গ্রহ। এই গ্যাসীয় দৈত্যের একটি মহান লাল দাগ রয়েছে, একটি ঝড় যা 400 বছরেরও বেশি সময় ধরে চলছে। বৃহস্পতির শক্তিশালী মাধ্যাকর্ষণ অভ্যন্তরীণ গ্রহগুলিকে বিপজ্জনক গ্রহাণু থেকে রক্ষা করে।"
+            },
+            saturn: {
+                en: "Saturn, famous for its spectacular ring system. These beautiful rings are made of ice, rock, and dust, orbiting the planet in perfect harmony. Saturn's rings are one of the most stunning sights in our Solar System.",
+                hi: "शनि, अपने शानदार वलय प्रणाली के लिए प्रसिद्ध। ये सुंदर वलय बर्फ, पत्थर और धूल से बने हैं, जो ग्रह के चारों ओर पूर्ण सामंजस्य में घूमते हैं। शनि के वलय हमारे सौर मंडल के सबसे आकर्षक दृश्यों में से एक हैं।",
+                kn: "ಶನಿ, ಅದರ ಅದ್ಭುತ ಉಂಗುರ ವ್ಯವಸ್ಥೆಗೆ ಹೆಸರುವಾಸಿ. ಈ ಸುಂದರವಾದ ಉಂಗುರಗಳು ಮಂಜು, ಕಲ್ಲು ಮತ್ತು ಧೂಳಿನಿಂದ ಮಾಡಲ್ಪಟ್ಟಿವೆ, ಗ್ರಹದ ಸುತ್ತಲೂ ಪರಿಪೂರ್ಣ ಸಾಮರಸ್ಯದಲ್ಲಿ ಸುತ್ತುತ್ತಿವೆ. ಶನಿಯ ಉಂಗುರಗಳು ನಮ್ಮ ಸೌರವ್ಯೂಹದ ಅತ್ಯಂತ ಆಕರ್ಷಕ ದೃಶ್ಯಗಳಲ್ಲಿ ಒಂದಾಗಿವೆ.",
+                ta: "சனி, அதன் கண்கொள்ளும் வளைய அமைப்புக்கு பிரபலமானது. இந்த அழகான வளையங்கள் பனி, பாறை மற்றும் தூசியால் ஆனவை, கோளைச் சுற்றி சரியான ஒத்திசைவில் சுழல்கின்றன. சனியின் வளையங்கள் நமது சூரிய குடும்பத்தின் மிகவும் கவர்ச்சிகரமான காட்சிகளில் ஒன்று.",
+                te: "శని, దాని అద్భుతమైన ఉంగరాల వ్యవస్థకు ప్రసిద్ధి చెందింది. ఈ అందమైన ఉంగరాలు మంచు, రాతి మరియు దుమ్ముతో తయారు చేయబడ్డాయి, గ్రహం చుట్టూ పరిపూర్ణ సామరస్యంతో సుత్తున్నాయి. శని ఉంగరాలు మన సౌర వ్యవస్థలో అత్యంత ఆకర్షణీయమైన దృశ్యాలలో ఒకటి.",
+                bn: "শনি, তার চমৎকার বলয় ব্যবস্থার জন্য বিখ্যাত। এই সুন্দর বলয়গুলি বরফ, পাথর এবং ধূলো দিয়ে তৈরি, যা গ্রহের চারপাশে নিখুঁত সাদৃশ্যের সাথে ঘুরছে। শনির বলয়গুলি আমাদের সৌরজগতের সবচেয়ে চমৎকার দৃশ্যগুলির মধ্যে একটি।"
+            },
+            uranus: {
+                en: "Uranus, the ice giant with a unique sideways rotation. This planet rotates on its side, making it appear to roll through space like a giant blue marble. Uranus has faint rings and 27 known moons.",
+                hi: "अरुण, एक अनूठे पार्श्व घूर्णन के साथ बर्फीला विशालकाय। यह ग्रह अपनी तरफ घूमता है, जिससे यह अंतरिक्ष में एक विशाल नीले संगमरमर की तरह लुढ़कता हुआ दिखाई देता है। अरुण के पास हल्के वलय और 27 ज्ञात चंद्रमा हैं।",
+                kn: "ಅರಣ, ವಿಶಿಷ್ಟವಾದ ಪಾರ್ಶ್ವ ಭ್ರಮಣೆಯೊಂದಿಗೆ ಹಿಮ ದೈತ್ಯ. ಈ ಗ್ರಹವು ಅದರ ಬದಿಯಲ್ಲಿ ತಿರುಗುತ್ತದೆ, ಇದು ಬಾಹ್ಯಾಕಾಶದಲ್ಲಿ ಒಂದು ದೈತ್ಯ ನೀಲಿ ಗುಂಡುಗಳಂತೆ ಉರುಳುತ್ತಿರುವಂತೆ ಕಾಣಿಸುತ್ತದೆ. ಅರಣನಿಗೆ ಮಸುಕಾದ ಉಂಗುರಗಳು ಮತ್ತು 27 ತಿಳಿದಿರುವ ಚಂದ್ರರಿಗಳಿವೆ.",
+                ta: "யுரேனஸ், தனித்துவமான பக்கவாட்டு சுழற்சியுடன் கூடிய பனி மாபெரும் கோள். இந்த கோள் அதன் பக்கவாட்டில் சுழல்கிறது, இது ஒரு பெரிய நீல பளிங்கு போல விண்வெளியில் உருளுவதைப் போல தோன்றுகிறது. யுரேனஸுக்கு மங்கலான வளையங்கள் மற்றும் 27 அறியப்பட்ட நிலாக்கள் உள்ளன.",
+                te: "యురేనస్, ఒక ప్రత్యేకమైన పార్శ్వ భ్రమణంతో హిమ దైత్యుడు. ఈ గ్రహం దాని వైపు తిరుగుతుంది, ఇది ఒక పెద్ద నీలం గోళిక వలె అంతరిక్షంలో రోల్ అవుతున్నట్లు కనిపిస్తుంది. యురేనస్కు మసక మసకగా ఉంగరాలు మరియు 27 తెలిసిన చంద్రులు ఉన్నారు.",
+                bn: "ইউরেনাস, একটি অনন্য পার্শ্বীয় ঘূর্ণন সহ বরফের দৈত্য। এই গ্রহটি তার পাশে ঘোরে, যা এটিকে একটি বিশাল নীল মার্বেলের মতো মহাকাশে গড়িয়ে যেতে দেখা যায়। ইউরেনাসের অস্পষ্ট বলয় এবং 27টি পরিচিত চাঁদ রয়েছে।"
+            },
+            neptune: {
+                en: "Neptune, the farthest planet from the Sun. This deep blue ice giant has the strongest winds in the Solar System, reaching speeds of over 2,000 kilometers per hour. Neptune's mysterious dark spots are massive storms.",
+                hi: "नेपच्यून, सूर्य से सबसे दूर का ग्रह। इस गहरे नीले बर्फीले विशालकाय में सौर मंडल की सबसे तेज हवाएं हैं, जो प्रति घंटे 2,000 किलोमीटर से अधिक की गति तक पहुंचती हैं। नेपच्यून के रहस्यमय काले धब्बे बड़े तूफान हैं।",
+                kn: "ನೆಪ್ಚೂನ್, ಸೂರ್ಯನಿಂದ ಅತ್ಯಂತ ದೂರದ ಗ್ರಹ. ಈ ಆಳವಾದ ನೀಲಿ ಹಿಮ ದೈತ್ಯನು ಸೌರವ್ಯೂಹದ ಅತ್ಯಂತ ಬಲವಾದ ಗಾಳಿಗಳನ್ನು ಹೊಂದಿದೆ, ಇದು ಗಂಟೆಗೆ 2,000 ಕಿಲೋಮೀಟರ್‌ಗಿಂತ ಹೆಚ್ಚು ವೇಗವನ್ನು ತಲುಪುತ್ತದೆ. ನೆಪ್ಚೂನ್‌ನ ರಹಸ್ಯಮಯ ಕಪ್ಪು ಚುಕ್ಕೆಗಳು ಬೃಹತ್ ಚಂಡಮಾರುತಗಳಾಗಿವೆ.",
+                ta: "நெப்டியூன், சூரியனிலிருந்து மிக தொலைவில் உள்ள கோள். இந்த ஆழமான நீல பனி மாபெரும் கோளில் சூரிய குடும்பத்தின் மிகவும் வலுவான காற்றுகள் உள்ளன, இது மணிக்கு 2,000 கிலோமீட்டர் வேகத்தை எட்டுகிறது. நெப்டியூனின் மர்மமான கருப்பு புள்ளிகள் பெரிய புயல்கள்.",
+                te: "నెప్ట్యూన్, సూర్యుని నుండి అత్యంత దూరంలో ఉన్న గ్రహం. ఈ లోతైన నీలం హిమ దైత్యుడికి సౌర వ్యవస్థలో అత్యంత బలమైన గాలులు ఉన్నాయి, ఇవి గంటకు 2,000 కిలోమీటర్ల వేగాన్ని చేరుకుంటాయి. నెప్ట్యూన్ యొక్క మర్మమైన చీకటి మచ్చలు భారీ తుఫాన్లు.",
+                bn: "নেপচুন, সূর্য থেকে সবচেয়ে দূরে গ্রহ। এই গভীর নীল বরফের দৈত্যের সৌরজগতের সবচেয়ে শক্তিশালী বাতাস রয়েছে, যা প্রতি ঘণ্টায় 2,000 কিলোমিটারেরও বেশি গতিতে পৌঁছায়। নেপচুনের রহস্যময় কালো দাগগুলি বিশাল ঝড়।"
+            },
+            pluto: {
+                en: "Pluto, once considered the ninth planet, is now classified as a dwarf planet. This distant world is covered in frozen nitrogen and has a heart-shaped region on its surface. Pluto's orbit is highly elliptical, taking it far beyond Neptune.",
+                hi: "प्लूटो, जिसे कभी नौवां ग्रह माना जाता था, अब एक बौना ग्रह के रूप में वर्गीकृत किया गया है। यह दूर का संसार जमे हुए नाइट्रोजन से ढका है और इसकी सतह पर एक दिल के आकार का क्षेत्र है। प्लूटो की कक्षा अत्यधिक अंडाकार है, जो इसे नेपच्यून से बहुत दूर ले जाती है।",
+                kn: "ಪ್ಲೂಟೋ, ಒಮ್ಮೆ ಒಂಬತ್ತನೇ ಗ್ರಹವೆಂದು ಪರಿಗಣಿಸಲ್ಪಟ್ಟಿದ್ದು, ಈಗ ಕುಬ್ಜ ಗ್ರಹವೆಂದು ವರ್ಗೀಕರಿಸಲ್ಪಟ್ಟಿದೆ. ಈ ದೂರದ ಜಗತ್ತು ಹೆಪ್ಪುಗಟ್ಟಿದ ಸಾರಜನಕದಿಂದ ಆವೃತವಾಗಿದೆ ಮತ್ತು ಅದರ ಮೇಲ್ಮೈಯಲ್ಲಿ ಹೃದಯದ ಆಕಾರದ ಪ್ರದೇಶವನ್ನು ಹೊಂದಿದೆ. ಪ್ಲೂಟೋದ ಕಕ್ಷೆಯು ಅತ್ಯಂತ ದೀರ್ಘವೃತ್ತಾಕಾರದ್ದಾಗಿದೆ, ಇದು ಅದನ್ನು ನೆಪ್ಚೂನ್‌ನಿಂದ ಬಹಳ ದೂರಕ್ಕೆ ಕೊಂಡೊಯ್ಯುತ್ತದೆ.",
+                ta: "புளூட்டோ, ஒரு காலத்தில் ஒன்பதாவது கோளாகக் கருதப்பட்டது, இப்போது ஒரு குள்ள கோளாக வகைப்படுத்தப்பட்டுள்ளது. இந்த தொலைதூர உலகம் உறைந்த நைட்ரஜனால் மூடப்பட்டுள்ளது மற்றும் அதன் மேற்பரப்பில் இதய வடிவ பிராந்தியத்தைக் கொண்டுள்ளது. புளூட்டோவின் சுற்றுப்பாதை மிகவும் நீள்வட்ட வடிவமானது, இது அதை நெப்டியூனிலிருந்து மிகவும் தொலைவில் கொண்டு செல்கிறது.",
+                te: "ప్లూటో, ఒకప్పుడు తొమ్మిదవ గ్రహంగా పరిగణించబడింది, ఇప్పుడు ఒక మరుగుజ్జు గ్రహంగా వర్గీకరించబడింది. ఈ దూరపు ప్రపంచం గడ్డకట్టిన నైట్రోజన్‌తో కప్పబడి ఉంది మరియు దాని ఉపరితలంపై హృదయ ఆకారంలో ఉన్న ప్రాంతాన్ని కలిగి ఉంది. ప్లూటో యొక్క కక్ష్య చాలా దీర్ఘవృత్తాకారంగా ఉంది, ఇది దానిని నెప్ట్యూన్ నుండి చాలా దూరంగా తీసుకువెళుతుంది.",
+                bn: "প্লুটো, একসময় নবম গ্রহ হিসেবে বিবেচিত, এখন একটি বামন গ্রহ হিসেবে শ্রেণীবদ্ধ। এই দূরবর্তী জগতটি হিমায়িত নাইট্রোজেন দিয়ে আবৃত এবং এর পৃষ্ঠে একটি হৃদয় আকৃতির অঞ্চল রয়েছে। প্লুটোর কক্ষপথ অত্যন্ত উপবৃত্তাকার, যা এটিকে নেপচুন থেকে অনেক দূরে নিয়ে যায়।"
+            },
+            conclusion: {
+                en: "This concludes our guided tour of the Solar System. You've witnessed the Sun's power, explored all the planets from Mercury to Pluto, and discovered the incredible diversity of worlds in our cosmic neighborhood. Now you can freely explore and interact with all the planets using your VR controllers.",
+                hi: "यह हमारे सौर मंडल के निर्देशित दौरे का समापन करता है। आपने सूर्य की शक्ति देखी है, बुध से प्लूटो तक सभी ग्रहों की खोज की है, और हमारे ब्रह्मांडीय पड़ोस में दुनियाओं की अविश्वसनीय विविधता की खोज की है। अब आप अपने VR कंट्रोलर का उपयोग करके सभी ग्रहों के साथ स्वतंत्र रूप से खोज और बातचीत कर सकते हैं।",
+                kn: "ಇದು ನಮ್ಮ ಸೌರವ್ಯೂಹದ ಮಾರ್ಗದರ್ಶಿತ ಪ್ರವಾಸವನ್ನು ಮುಕ್ತಾಯಗೊಳಿಸುತ್ತದೆ. ನೀವು ಸೂರ್ಯನ ಶಕ್ತಿಯನ್ನು ನೋಡಿದ್ದೀರಿ, ಬುಧದಿಂದ ಪ್ಲೂಟೋ ವರೆಗೆ ಎಲ್ಲಾ ಗ್ರಹಗಳನ್ನು ಅನ್ವೇಷಿಸಿದ್ದೀರಿ, ಮತ್ತು ನಮ್ಮ ಬ್ರಹ್ಮಾಂಡದ ನೆರೆಹೊರೆಯಲ್ಲಿ ಜಗತ್ತುಗಳ ಅನನ್ಯ ವೈವಿಧ್ಯತೆಯನ್ನು ಕಂಡುಕೊಂಡಿದ್ದೀರಿ. ಈಗ ನೀವು ನಿಮ್ಮ VR ಕಂಟ್ರೋಲರ್‌ಗಳನ್ನು ಬಳಸಿಕೊಂಡು ಎಲ್ಲಾ ಗ್ರಹಗಳೊಂದಿಗೆ ಸ್ವತಂತ್ರವಾಗಿ ಅನ್ವೇಷಿಸಬಹುದು ಮತ್ತು ಸಂವಹನ ನಡೆಸಬಹುದು.",
+                ta: "இது நமது சூரிய குடும்பத்தின் வழிகாட்டப்பட்ட சுற்றுப்பயணத்தை முடிக்கிறது. நீங்கள் சூரியனின் சக்தியைக் கண்டீர்கள், புதனிலிருந்து புளூட்டோ வரை அனைத்து கோள்களையும் ஆராய்ந்தீர்கள், மற்றும் நமது அண்டப் புறத்தில் உலகங்களின் நம்பமுடியாத பன்முகத்தன்மையைக் கண்டுபிடித்தீர்கள். இப்போது நீங்கள் உங்கள் VR கட்டுப்பாட்டாளர்களைப் பயன்படுத்தி அனைத்து கோள்களுடனும் சுதந்திரமாக ஆராய்ந்து தொடர்பு கொள்ளலாம்.",
+                te: "ఇది మన సౌర వ్యవస్థ యొక్క మార్గదర్శక పర్యటనను ముగిస్తుంది. మీరు సూర్యుని శక్తిని చూసారు, బుధుడు నుండి ప్లూటో వరకు అన్ని గ్రహాలను అన్వేషించారు, మరియు మన విశ్వ పొరుగు ప్రాంతంలో ప్రపంచాల యొక్క నమ్మశక్యం కాని వైవిధ్యాన్ని కనుగొన్నారు. ఇప్పుడు మీరు మీ VR కంట్రోలర్లను ఉపయోగించి అన్ని గ್ರహాలతో స్వేచ్ఛగా అన్వೇಷించవచ్చు మరియు సంకర్షణ చేయవచ్చు.",
+                bn: "এটি আমাদের সৌরজগতের নির্দেশিত ভ্রমণের সমাপ্তি ঘটায়। আপনি সূর্যের শক্তি প্রত্যক্ষ করেছেন, বুধ থেকে প্লুটো পর্যন্ত সমস্ত গ্রহ অন্বেষণ করেছেন, এবং আমাদের মহাজাগতিক প্রতিবেশে বিশ্বের অবিশ্বাস্য বৈচিত্র্য আবিষ্কার করেছেন। এখন আপনি আপনার VR কন্ট্রোলার ব্যবহার করে সমস্ত গ্রহের সাথে স্বাধীনভাবে অন্বেষণ এবং যোগাযোগ করতে পারেন।"
+            }
+        };
+
+        // Tour state management
+        // Tour state
+        let isTourActive = false;
+        let tourPaused = false;
+        let currentTourLanguage = 'en';
+        let currentTourStep = 0;
+        window.tourRunning = false; // Initialize to false for VR movement
+        
+        // Global flags for TTS spam prevention (MUST be initialized early)
+        window.modelsFullyLoaded = false; // Set true when all GLTFs done loading
+        window.tourActive = false;        // True while guided tour is running
+        window.selectionDisabled = false; // Lock during tour/loading
+        window.ttsBusy = false;           // Prevents overlapping TTS calls
+        window._lastSelectedPlanet = null; // Track last selection for debouncing
+        window._lastSelectedPlanetId = null; // Track by ID for guardedSelectPlanet
+        window._lastSelectionTs = 0;      // Timestamp for debouncing
+        window._selectionDebounce = null;  // Debounce timer
+        window._initialSelectionDone = false; // Prevent repeated initial selection
+        window._modelsLoadedOnce = false; // Ensure model completion runs once
+        window.audioUnlocked = false;     // Track audio unlock status
+        let tourSteps = [];
+        let pausedAtStep = 0;
+        
+        // Simple wait function
+        function waitWithPause(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+        
+        // Helper function to wait with pause support
+        async function waitWithPauseCheck(duration) {
+            const startTime = Date.now();
+            while (Date.now() - startTime < duration) {
+                if (tourPaused) {
+                    // Wait until tour is resumed
+                    while (tourPaused) {
+                        await waitWithPause(100);
+                    }
+                }
+                await waitWithPause(100);
+            }
+        }
+        
+        // Pause and Resume Tour Functions
+        function pauseTour() {
+            console.log('⏸️ Pausing tour...');
+            console.log('⏸️ Current tour step:', currentTourStep);
+            console.log('⏸️ Tour active:', isTourActive);
+            tourPaused = true;
+            pausedAtStep = currentTourStep;
+            
+            // Stop all TTS audio immediately using new TourController
+            if (window.TourController) {
+                window.TourController.pause();
+            } else if (window.ttsManager && window.ttsManager.stopAudio) {
+                window.ttsManager.stopAudio();
+            }
+            
+            // Stop all animations
+            const rig = document.querySelector('#rig');
+            if (rig) {
+                rig.removeAttribute('animation__move');
+            }
+            
+            // Update button states
+            document.getElementById('pauseBtn').style.display = 'none';
+            document.getElementById('resumeBtn').style.display = 'inline-block';
+            document.getElementById('resumeBtn').disabled = false;
+            
+            showTourStatus('Tour Paused');
+        }
+        
+        function resumeTour() {
+            console.log('▶️ Resuming tour...');
+            console.log('▶️ Current tour step:', currentTourStep);
+            console.log('▶️ Tour active:', isTourActive);
+            tourPaused = false;
+            
+            // Resume audio using new TourController
+            if (window.TourController) {
+                window.TourController.resume();
+            }
+            
+            // Update button states
+            document.getElementById('pauseBtn').style.display = 'inline-block';
+            document.getElementById('resumeBtn').style.display = 'none';
+            document.getElementById('resumeBtn').disabled = true;
+            
+            showTourStatus('Tour Resumed');
+            
+            // Don't restart tour - just unpause and let it continue
+            // The tour loop checks tourPaused flag and will continue automatically
+        }
+        
+        // Resume tour from a specific step (DEPRECATED - tour auto-resumes via while loop)
+        async function resumeTourFromStep(step) {
+            console.log(`⚠️ resumeTourFromStep called but not needed - tour auto-resumes`);
+            // Don't call runTourSequence again - the original tour is still running
+            // and will automatically continue when tourPaused becomes false
+        }
+        
+        // Make functions available to voice commands
+        window.pauseTour = pauseTour;
+        window.resumeTour = resumeTour;
+        
+        // Add tour status indicator
+        function showTourStatus(message) {
+            // Create or update tour status element
+            let tourStatus = document.getElementById('tourStatus');
+            if (!tourStatus) {
+                tourStatus = document.createElement('div');
+                tourStatus.id = 'tourStatus';
+                tourStatus.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    background: rgba(0, 0, 0, 0.8);
+                    color: white;
+                    padding: 15px 25px;
+                    border-radius: 25px;
+                    font-size: 18px;
+                    font-weight: bold;
+                    z-index: 10000;
+                    text-align: center;
+                    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+                `;
+                document.body.appendChild(tourStatus);
+            }
+            tourStatus.textContent = message;
+            tourStatus.style.display = 'block';
+        }
+        
+        function hideTourStatus() {
+            const tourStatus = document.getElementById('tourStatus');
+            if (tourStatus) {
+                tourStatus.style.display = 'none';
+            }
+        }
+
+        // Start the guided tour
+        async function startGuidedTour() {
+            // Prevent multiple tour instances
+            if (window.tourRunning) {
+                console.warn('⚠️ Tour already running, ignoring duplicate start');
+                return;
+            }
+            
+            console.log('🎬 Starting guided tour...');
+            window.tourRunning = true;
+            isTourActive = true;
+            window.tourActive = true; // Global flag to prevent planet narration overlap
+            window.selectionDisabled = true; // Lock manual selection during tour
+            currentTourLanguage = localStorage.getItem('selectedLanguage') || 'en';
+            
+            console.log(`🎬 Tour language: ${currentTourLanguage}`);
+            console.log(`🎬 Available languages:`, Object.keys(tourData.overview));
+            
+            // Hide language menu and show VR scene
+            document.getElementById('languageMenu').style.display = 'none';
+            document.querySelector('a-scene').style.display = 'block';
+            
+            // Show tour controls
+            document.getElementById('tourControls').style.display = 'block';
+            document.getElementById('pauseBtn').style.display = 'inline-block';
+            
+            // Enable planet selection for user interaction
+            allowPlanetSelection = true;
+            userHasInteracted = true;
+            
+            // Start tour sequence
+            await runTourSequence(currentTourLanguage);
+        }
+
+        // Run the complete tour sequence with step tracking
+        async function runTourSequence(language) {
+            console.log(`🎬 Running tour in ${language} from step ${currentTourStep}`);
+            
+            // Define tour steps
+            const steps = [
+                { name: 'Overview', action: () => showOverview(language) },
+                { name: 'Sun', action: () => visitPlanet('sun', language) },
+                { name: 'Mercury', action: () => visitPlanet('mercury', language) },
+                { name: 'Venus', action: () => visitPlanet('venus', language) },
+                { name: 'Earth', action: () => visitPlanet('earth', language) },
+                { name: 'Mars', action: () => visitPlanet('mars', language) },
+                { name: 'Jupiter', action: () => visitPlanet('jupiter', language) },
+                { name: 'Saturn', action: () => visitPlanet('saturn', language) },
+                { name: 'Uranus', action: () => visitPlanet('uranus', language) },
+                { name: 'Neptune', action: () => visitPlanet('neptune', language) },
+                { name: 'Pluto', action: () => visitPlanet('pluto', language) },
+                { name: 'Conclusion', action: () => showConclusion(language) }
+            ];
+            
+            try {
+                // Start from current step
+                for (let i = currentTourStep; i < steps.length; i++) {
+                    // Wait if tour is paused
+                    while (tourPaused) {
+                        console.log(`⏸️ Tour paused at step ${i}, waiting...`);
+                        console.log(`⏸️ tourPaused: ${tourPaused}, isTourActive: ${isTourActive}`);
+                        await waitWithPause(500);
+                    }
+                    
+                    currentTourStep = i;
+                    const step = steps[i];
+                    console.log(`🎬 Tour Stage ${i + 1}/${steps.length}: ${step.name}`);
+                    
+                    await step.action();
+                }
+                
+                // Tour complete
+                console.log('🎬 Tour Complete! Enabling interactive mode...');
+                window.tourRunning = false;
+                enableInteractiveMode();
+                
+            } catch (error) {
+                console.error('❌ Tour error:', error);
+                console.log('🎬 Tour failed, enabling interactive mode...');
+                window.tourRunning = false;
+                enableInteractiveMode();
+            }
+        }
+
+        // Show overview scene with cinematic introduction
+        async function showOverview(language) {
+            console.log('🌍 Showing overview...');
+            showTourStatus('🌍 Overview - Welcome to the Solar System');
+            
+            const rig = document.querySelector('#rig');
+            
+            // Move to overview position (far back to see all planets)
+            await moveToPosition(rig, { x: 0, y: 10, z: 15 });
+            
+            // Play overview narration
+            window.currentPlanet = { id: 'overview' };
+            await speakText(tourData.overview[language] || tourData.overview.en, language, { planetKey: 'overview' });
+            
+            // Brief pause
+            await wait(500);
+        }
+
+        // Show conclusion scene with dramatic finale
+        async function showConclusion(language) {
+            console.log('🎬 Showing conclusion...');
+            showTourStatus('🎬 Tour Conclusion - Thank you for exploring with us!');
+            
+            const rig = document.querySelector('#rig');
+            
+            // Move to overview position for conclusion
+            await moveToPosition(rig, { x: 0, y: 10, z: 15 });
+            
+            // Play conclusion narration
+            window.currentPlanet = { id: 'conclusion' };
+            await speakText(tourData.conclusion[language] || tourData.conclusion.en, language, { planetKey: 'conclusion' });
+            
+            // Brief pause
+            await wait(1000);
+        }
+
+        // Visit a specific planet with cinematic approach
+        async function visitPlanet(planetId, language) {
+            console.log(`🌍 Visiting ${planetId}...`, { planetId, language });
+            
+            const planetEl = document.querySelector(`[data-planet-id="${planetId}"]`);
+            if (!planetEl) {
+                console.warn(`Planet ${planetId} not found`);
+                return;
+            }
+            
+            const planetName = planetEl.getAttribute('data-planet-name') || planetId;
+            showTourStatus(`🌍 Visiting ${planetName}`);
+            
+            const rig = document.querySelector('#rig');
+            
+            // Get world position (not local) since planets are now in orbit-parents
+            const worldPos = new THREE.Vector3();
+            planetEl.object3D.getWorldPosition(worldPos);
+            const planetPos = { x: worldPos.x, y: worldPos.y, z: worldPos.z };
+            
+            // Calculate appropriate camera distance based on planet type
+            let viewOffset;
+            
+            if (planetId === 'sun') {
+                // Sun needs much more distance
+                viewOffset = { x: 0, y: 3, z: 20 };
+            } else if (planetId === 'jupiter' || planetId === 'saturn') {
+                // Gas giants need more distance
+                viewOffset = { x: 0, y: 2, z: 8 };
+            } else if (planetId === 'pluto') {
+                // Pluto - moderate distance
+                viewOffset = { x: 0, y: 1.5, z: 5 };
+            } else {
+                // Rocky planets - closer view
+                viewOffset = { x: 0, y: 1.5, z: 5 };
+            }
+            
+            // Highlight the planet being visited
+            highlightPlanet(planetEl);
+            
+            // Move camera to viewing position (single movement, less motion)
+            await moveToPosition(rig, { 
+                x: planetPos.x + viewOffset.x, 
+                y: planetPos.y + viewOffset.y, 
+                z: planetPos.z + viewOffset.z 
+            });
+            
+            // Start narration AFTER camera arrives
+            window.currentPlanet = { id: planetId };
+            await speakText(tourData[planetId]?.[language] || tourData[planetId]?.en || `Visiting ${planetId}`, language, { planetKey: planetId });
+            
+            // Brief pause after narration
+            await wait(1000);
+            
+            // Remove highlight
+            removePlanetHighlight(planetEl);
+            
+            // Brief pause before moving to next planet
+            await wait(1000);
+        }
+
+        // Move camera to specific position smoothly with cinematic effects
+        async function moveToPosition(rig, position) {
+            return new Promise(async (resolve) => {
+                const currentPos = rig.getAttribute('position');
+                const distance = Math.sqrt(
+                    Math.pow(position.x - currentPos.x, 2) + 
+                    Math.pow(position.y - currentPos.y, 2) + 
+                    Math.pow(position.z - currentPos.z, 2)
+                );
+                
+                // Adjust duration based on distance for more natural movement
+                const duration = Math.max(2000, Math.min(5000, distance * 200));
+                
+                console.log(`🎬 Moving camera to ${position.x}, ${position.y}, ${position.z} over ${duration}ms`);
+                
+                rig.setAttribute('animation__move', {
+                    property: 'position',
+                    to: `${position.x} ${position.y} ${position.z}`,
+                    dur: duration,
+                    easing: 'easeInOutCubic'
+                });
+                
+                // Use pause-aware wait instead of setTimeout
+                await wait(duration);
+                        resolve();
+            });
+        }
+        
+        // Move camera closer to a planet when it's focused
+        async function focusOnPlanet(planetId) {
+            const planetEl = document.querySelector(`[data-planet-id="${planetId}"]`);
+            if (!planetEl) return;
+            
+            const rig = document.querySelector('#rig');
+            if (!rig) return;
+            
+            // Get world position since planets are now in orbit-parents
+            const worldPos = new THREE.Vector3();
+            planetEl.object3D.getWorldPosition(worldPos);
+            const planetPos = { x: worldPos.x, y: worldPos.y, z: worldPos.z };
+            const currentPos = rig.getAttribute('position');
+            
+            // Calculate position closer to the planet
+            const distance = Math.sqrt(
+                Math.pow(planetPos.x - currentPos.x, 2) + 
+                Math.pow(planetPos.y - currentPos.y, 2) + 
+                Math.pow(planetPos.z - currentPos.z, 2)
+            );
+            
+            // Move closer but not too close (maintain good viewing distance)
+            const targetDistance = Math.min(distance * 0.7, 15); // 70% closer, max 15 units
+            const direction = {
+                x: (planetPos.x - currentPos.x) / distance,
+                y: (planetPos.y - currentPos.y) / distance,
+                z: (planetPos.z - currentPos.z) / distance
+            };
+            
+            const targetPos = {
+                x: planetPos.x - direction.x * targetDistance,
+                y: Math.max(1.6, planetPos.y - direction.y * targetDistance), // Keep camera above ground
+                z: planetPos.z - direction.z * targetDistance
+            };
+            
+            console.log(`🎯 Focusing on ${planetId} - moving camera closer`);
+            await moveToPosition(rig, targetPos);
+        }
+
+        // Enhanced text-to-speech using only Sarvam TTS with timeout
+        async function speakText(text, language) {
+            // DEBUG: Trace who is calling speakText
+            if (text && text.includes('star at the center')) {
+                console.trace('🔍 TRACE: Who is calling speakText for Sun?');
+            }
+            
+            // Prevent overlapping TTS requests
+            if (window.ttsBusy) {
+                console.warn('🛑 TTS busy — ignoring overlapping request');
+                return Promise.resolve();
+            }
+            
+            window.ttsBusy = true;
+            console.log(`🗣️ Speaking in ${language}: ${text.substring(0, 50)}...`);
+            
+            // Wait for pause to be cleared before speaking
+            while (tourPaused && isTourActive) {
+                await waitWithPause(100);
+            }
+            
+            try {
+                // Use robust TTS with proper promise handling
+                console.log(`🎯 Using robust TTS for ${language}`);
+                
+                await speakAndWait(text, language, 'sarvam');
+                
+                console.log(`✅ Robust TTS completed for ${language}`);
+                return;
+                
+            } catch (error) {
+                console.warn('❌ Robust TTS error:', error);
+                console.log('⏰ TTS failed - continuing to next step');
+                // Continue tour even if TTS fails
+            } finally {
+                // Always release the TTS busy flag
+                window.ttsBusy = false;
+            }
+        }
+
+        // Utility function to wait (with pause support during tours)
+        function wait(ms) {
+            if (isTourActive) {
+                return waitWithPauseCheck(ms);
+            } else {
+                return waitWithPause(ms);
+            }
+        }
+
+        // Highlight a planet during tour with cinematic effects
+        function highlightPlanet(planetEl) {
+            console.log(`✨ Highlighting planet: ${planetEl.getAttribute('data-planet-name')}`);
+            
+            // Store original scale for restoration
+            const gltfModel = planetEl.querySelector('[gltf-model]');
+            if (gltfModel) {
+                const currentScale = gltfModel.getAttribute('scale');
+                // Convert Vector3 to string for storage
+                const scaleString = `${currentScale.x} ${currentScale.y} ${currentScale.z}`;
+                planetEl.setAttribute('data-original-scale', scaleString);
+                
+                // Scale up with smooth animation
+                const newScale = `${currentScale.x * 1.3} ${currentScale.y * 1.3} ${currentScale.z * 1.3}`;
+                
+                gltfModel.setAttribute('animation__highlight', {
+                    property: 'scale',
+                    to: newScale,
+                    dur: 1500,
+                    easing: 'easeOutElastic'
+                });
+                
+                // Add pulsing glow effect
+                const pulseScale = `${currentScale.x * 1.4} ${currentScale.y * 1.4} ${currentScale.z * 1.4}`;
+                gltfModel.setAttribute('animation__pulse', {
+                    property: 'scale',
+                    to: pulseScale,
+                    dur: 2000,
+                    dir: 'alternate',
+                    loop: 'indefinite',
+                    easing: 'easeInOutSine'
+                });
+                
+                // Add rotation animation for more dynamic effect
+                gltfModel.setAttribute('animation__rotate', {
+                    property: 'rotation',
+                    to: '0 360 0',
+                    dur: 8000,
+                    loop: 'indefinite',
+                    easing: 'linear'
+                });
+            }
+            
+            // Add ambient light around the planet for dramatic effect
+            const planetPos = planetEl.getAttribute('position');
+            const highlightLight = document.createElement('a-light');
+            highlightLight.setAttribute('type', 'point');
+            highlightLight.setAttribute('color', '#FFD700');
+            highlightLight.setAttribute('intensity', '2');
+            highlightLight.setAttribute('distance', '10');
+            highlightLight.setAttribute('position', planetPos);
+            highlightLight.setAttribute('id', 'planetHighlightLight');
+            
+            planetEl.appendChild(highlightLight);
+        }
+
+        // Remove planet highlight and clean up effects
+        function removePlanetHighlight(planetEl) {
+            console.log(`✨ Removing highlight from planet: ${planetEl.getAttribute('data-planet-name')}`);
+            
+            const gltfModel = planetEl.querySelector('[gltf-model]');
+            if (gltfModel) {
+                // Remove all animations
+                gltfModel.removeAttribute('animation__highlight');
+                gltfModel.removeAttribute('animation__pulse');
+                gltfModel.removeAttribute('animation__rotate');
+                
+                // Restore original scale with smooth animation
+                const originalScale = planetEl.getAttribute('data-original-scale') || '0.0001 0.0001 0.0001';
+                gltfModel.setAttribute('animation__restore', {
+                    property: 'scale',
+                    to: originalScale,
+                    dur: 1000,
+                    easing: 'easeInOutCubic'
+                });
+                
+                // Clean up after animation
+                setTimeout(() => {
+                    gltfModel.removeAttribute('animation__restore');
+                }, 1000);
+            }
+            
+            // Remove highlight light
+            const highlightLight = planetEl.querySelector('#planetHighlightLight');
+            if (highlightLight) {
+                highlightLight.remove();
+            }
+        }
+
+        // Enable interactive mode after tour
+        async function enableInteractiveMode() {
+            console.log('🎮 Enabling interactive mode...');
+            
+            // Stop any TTS and clear busy flag
+            if (window.SarvamTTS) {
+                window.SarvamTTS.stop();
+            }
+            window.ttsBusy = false;
+            
+            // Wait a moment before enabling selection to avoid immediate spam
+            await waitWithPause(2000);
+            
+            isTourActive = false;
+            window.tourActive = false; // Clear global tour flag to allow planet interactions
+            window.selectionDisabled = false; // Unlock manual selection
+            
+            // Hide tour status
+            hideTourStatus();
+            
+            // Show control panel
+            document.querySelector('.control-panel').style.display = 'block';
+            
+            // Enable planet selection
+            document.querySelectorAll('.planet').forEach(planet => {
+                planet.style.pointerEvents = 'auto';
+            });
+            
+            console.log('✅ Interactive mode enabled');
+        }
+
+        // Test TTS in selected language using only Sarvam TTS
+        async function testTTSInSelectedLanguage() {
+            const selectedLang = localStorage.getItem('selectedLanguage') || 'en';
+            console.log(`🧪 Testing Sarvam TTS in ${selectedLang}`);
+            
+            // Get test text in selected language
+            const testText = tourData.overview[selectedLang] || tourData.overview.en;
+            console.log(`🧪 Test text: ${testText.substring(0, 100)}...`);
+            
+            try {
+                // Always use Sarvam TTS via ttsManager
+                if (window.ttsManager && window.ttsManager.fetchServerTTS) {
+                    console.log(`🎯 Using Sarvam TTS for test in ${selectedLang}`);
+                    await window.ttsManager.fetchServerTTS(testText, selectedLang);
+                    console.log('✅ Sarvam TTS test completed successfully');
+                } else {
+                    throw new Error('TTS Manager not available');
+                }
+            } catch (error) {
+                console.error('❌ Sarvam TTS test failed:', error);
+                alert(`Sarvam TTS test failed: ${error.message}`);
+            }
+        }
+
+        // AI Q&A Functions
+        let speechRecognition = null;
+        
+        function startVoiceQuestion() {
+            console.log('🎤 Starting voice question...');
+            
+            // Check if speech recognition is supported
+            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                console.warn('⚠️ Speech recognition not supported');
+                showVRDebugDialog('🎤 Voice not supported on VR headset - use text input below', '#ff6b6b', 6000);
+                
+                // Show the text input prominently
+                const questionInput = document.getElementById('questionInput');
+                const askQuestionTextBtn = document.getElementById('askQuestionTextBtn');
+                if (questionInput && askQuestionTextBtn) {
+                    questionInput.style.border = '2px solid #ff6b6b';
+                    questionInput.style.backgroundColor = '#ffe6e6';
+                    questionInput.placeholder = 'Type your question here (voice not supported on VR headset)';
+                    askQuestionTextBtn.style.backgroundColor = '#ff6b6b';
+                    askQuestionTextBtn.style.color = 'white';
+                    askQuestionTextBtn.textContent = '📝 Ask (VR Mode)';
+                }
+                return;
+            }
+            
+            // Initialize speech recognition
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            speechRecognition = new SpeechRecognition();
+            
+            // Configure recognition
+            const selectedLang = localStorage.getItem('selectedLanguage') || 'en';
+            speechRecognition.lang = getSpeechRecognitionLang(selectedLang);
+            speechRecognition.continuous = false;
+            speechRecognition.interimResults = false;
+            
+            console.log(`🎤 Speech recognition language set to: ${speechRecognition.lang}`);
+            
+            // Set up event handlers
+            setupSpeechRecognition();
+            
+            // Start recognition
+            speechRecognition.start();
+            console.log('🎤 Listening for question...');
+            
+            // Show listening indicator
+            showVRDebugDialog('🎤 Listening for your question...', '#00ff88', 5000);
+        }
+        
+        function getSpeechRecognitionLang(lang) {
+            const langMap = {
+                'en': 'en-US',
+                'hi': 'hi-IN',
+                'kn': 'kn-IN',
+                'ta': 'ta-IN',
+                'te': 'te-IN',
+                'mr': 'mr-IN',
+                'bn': 'bn-IN'
+            };
+            return langMap[lang] || 'en-US';
+        }
+        
+        // Set up speech recognition event handlers
+        function setupSpeechRecognition() {
+            if (!speechRecognition) return;
+            
+            speechRecognition.onresult = async (event) => {
+                const question = event.results[0][0].transcript;
+                console.log('🎤 User asked:', question);
+                
+                showVRDebugDialog(`🎤 Question: ${question}`, '#00ff88', 3000);
+                
+                try {
+                    const answer = await getAIAnswer(question);
+                    console.log('🤖 AI Answer:', answer);
+                    
+                    // Show answer in VR
+                    showVRDebugDialog(`🤖 ${answer}`, '#ffffff', 10000);
+                    
+                    // Speak the answer using TTS
+                    await speakAIAnswer(answer);
+                    
+                } catch (error) {
+                    console.error('❌ AI Q&A failed:', error);
+                    const errorMsg = 'Sorry, I couldn\'t get an answer right now.';
+                    showVRDebugDialog(`❌ ${errorMsg}`, '#ff6b6b', 5000);
+                    await speakAIAnswer(errorMsg);
+                }
+            };
+            
+            speechRecognition.onerror = (event) => {
+                console.error('❌ Speech recognition error:', event.error);
+                showVRDebugDialog(`❌ Speech error: ${event.error}`, '#ff6b6b', 5000);
+            };
+            
+            speechRecognition.onend = () => {
+                console.log('🎤 Speech recognition ended');
+            };
+        }
+        
+        // Translation helper function
+        async function translateText(text, fromLang, toLang) {
+            try {
+                const res = await fetch('https://localhost:8040/api/translate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        text: text, 
+                        sourceLang: fromLang, 
+                        targetLang: toLang 
+                    })
+                });
+                const data = await res.json();
+                return data.translatedText || text;
+            } catch (err) {
+                console.warn('Translation fallback:', err);
+                return text; // fallback to original
+            }
+        }
+
+        // Clean answer function to remove intro/outro fluff
+        function cleanAnswer(text) {
+            return text
+                .replace(/^Sure.*?:\s*/i, "")   // remove "Sure, here's..."
+                .replace(/Hope this helps.*$/i, "") // remove "Hope this helps"
+                .replace(/Here is.*?:\s*/i, "")
+                .replace(/^Of course.*?:\s*/i, "")
+                .replace(/^Certainly.*?:\s*/i, "")
+                .replace(/^Great question.*?:\s*/i, "")
+                .replace(/^I'd be happy.*?:\s*/i, "")
+                .replace(/^Let me.*?:\s*/i, "")
+                .replace(/^Absolutely.*?:\s*/i, "")
+                .replace(/^Yes.*?:\s*/i, "")
+                .replace(/^No problem.*?:\s*/i, "")
+                .replace(/^Here's.*?:\s*/i, "")
+                .replace(/^That's.*?:\s*/i, "")
+                .replace(/^Well.*?:\s*/i, "")
+                .replace(/^So.*?:\s*/i, "")
+                .replace(/^Now.*?:\s*/i, "")
+                .replace(/^First.*?:\s*/i, "")
+                .replace(/^To answer.*?:\s*/i, "")
+                .replace(/^In response.*?:\s*/i, "")
+                .replace(/^Regarding.*?:\s*/i, "")
+                .replace(/^About.*?:\s*/i, "")
+                .replace(/^Concerning.*?:\s*/i, "")
+                .replace(/^As for.*?:\s*/i, "")
+                .replace(/^When it comes to.*?:\s*/i, "")
+                .replace(/^Speaking of.*?:\s*/i, "")
+                .replace(/^In terms of.*?:\s*/i, "")
+                .replace(/^With regard to.*?:\s*/i, "")
+                .replace(/^In relation to.*?:\s*/i, "")
+                .replace(/^In connection with.*?:\s*/i, "")
+                .replace(/^In the context of.*?:\s*/i, "")
+                .replace(/^In the case of.*?:\s*/i, "")
+                .replace(/^In the matter of.*?:\s*/i, "")
+                .replace(/^In the subject of.*?:\s*/i, "")
+                .replace(/^In the topic of.*?:\s*/i, "")
+                .replace(/^In the field of.*?:\s*/i, "")
+                .replace(/^In the area of.*?:\s*/i, "")
+                .replace(/^In the realm of.*?:\s*/i, "")
+                .replace(/^In the world of.*?:\s*/i, "")
+                .replace(/^In the universe of.*?:\s*/i, "")
+                .replace(/^In the cosmos of.*?:\s*/i, "")
+                .replace(/^In the space of.*?:\s*/i, "")
+                .replace(/^In the galaxy of.*?:\s*/i, "")
+                .replace(/^In the solar system of.*?:\s*/i, "")
+                .replace(/^In the planetary system of.*?:\s*/i, "")
+                .replace(/^In the celestial system of.*?:\s*/i, "")
+                .replace(/^In the astronomical system of.*?:\s*/i, "")
+                .replace(/^In the cosmic system of.*?:\s*/i, "")
+                .replace(/^In the stellar system of.*?:\s*/i, "")
+                .trim();
+        }
+
+        async function getAIAnswer(question, lang) {
+            try {
+                const currentLanguage = lang || localStorage.getItem('selectedLanguage') || 'en';
+                console.log(`🤖 AI Q&A pipeline: "${question}" in ${currentLanguage}`);
+
+                // Use the new AI proxy endpoint
+                console.log(`🤖 Sending to AI proxy: "${question}"`);
+                const response = await fetch('/api/ai-ask', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        question: question,
+                        lang: currentLanguage 
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`AI API error: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (!data.ok) {
+                    throw new Error(data.error || 'Unknown error');
+                }
+                
+                const answer = data.answer || "Sorry, I don't have an answer.";
+                console.log(`🤖 AI response (${data.source}): "${answer}"`);
+
+                return answer;
+
+            } catch (err) {
+                console.error('❌ AI Q&A failed:', err);
+                return 'Sorry, I couldn\'t get an answer right now.';
+            }
+        }
+        
+        async function speakAIAnswer(answer) {
+            const selectedLang = localStorage.getItem('selectedLanguage') || 'en';
+            console.log(`🗣️ Speaking AI answer in ${selectedLang}: ${answer.substring(0, 50)}...`);
+            
+            try {
+                // For regional languages, use Sarvam TTS
+                const regionalLangs = ['hi', 'kn', 'ta', 'te', 'bn', 'mr'];
+                if (regionalLangs.includes(selectedLang)) {
+                    console.log('✅ Using Sarvam TTS for', selectedLang);
+                    try {
+                        const response = await fetch('/api/tts', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                text: answer,
+                                language: selectedLang,
+                                speakerId: 'saarika'
+                            })
+                        });
+                        
+                        if (response.ok) {
+                            const audioBlob = await response.blob();
+                            const audioUrl = URL.createObjectURL(audioBlob);
+                            const audio = new Audio(audioUrl);
+                            
+                            audio.onended = () => {
+                                URL.revokeObjectURL(audioUrl);
+                                console.log('✅ Sarvam TTS completed');
+                            };
+                            
+                            audio.onerror = (e) => {
+                                URL.revokeObjectURL(audioUrl);
+                                console.error('❌ Sarvam TTS playback error:', e);
+                            };
+                            
+                            await audio.play();
+                            return;
+                        } else {
+                            console.warn('⚠️ Sarvam TTS failed, falling back to browser TTS');
+                        }
+                    } catch (err) {
+                        console.warn('⚠️ Sarvam TTS error:', err);
+                    }
+                }
+                
+                // Fallback: use browser TTS (for English or if Sarvam fails)
+                console.log('✅ Using browser TTS for AI answer');
+                speechSynthesis.cancel();
+                
+                const utterance = new SpeechSynthesisUtterance(answer);
+                const targetLang = selectedLang === 'en' ? 'en-US' : 
+                                   selectedLang === 'hi' ? 'hi-IN' :
+                                   selectedLang === 'kn' ? 'kn-IN' :
+                                   selectedLang === 'ta' ? 'ta-IN' :
+                                   selectedLang === 'te' ? 'te-IN' :
+                                   selectedLang === 'bn' ? 'bn-IN' : 'en-US';
+                utterance.lang = targetLang;
+                utterance.rate = 0.85;
+                utterance.pitch = 1.0;
+                utterance.volume = 1.0;
+                
+                const speakWhenReady = () => {
+                    const voices = speechSynthesis.getVoices();
+                    let voice = voices.find(v => v.lang === targetLang);
+                    if (!voice && targetLang.includes('-')) {
+                        voice = voices.find(v => v.lang.startsWith(targetLang.split('-')[0]));
+                    }
+                    if (voice) utterance.voice = voice;
+                    utterance.onerror = (e) => console.error('❌ Speech error:', e);
+                    utterance.onend = () => console.log('✅ Speech completed');
+                    speechSynthesis.speak(utterance);
+                };
+                
+                if (speechSynthesis.getVoices().length > 0) {
+                    speakWhenReady();
+                } else {
+                    speechSynthesis.addEventListener('voiceschanged', speakWhenReady, { once: true });
+                }
+            } catch (error) {
+                console.error('❌ Failed to speak AI answer:', error);
+            }
+        }
+
+        // Initialize custom VR controls when scene loads
+        document.addEventListener('DOMContentLoaded', () => {
+            // Test tour system
+            console.log('🎬 Tour system test:');
+            console.log('🎬 Tour data available:', tourData ? 'Yes' : 'No');
+            console.log('🎬 Available languages:', tourData ? Object.keys(tourData.overview) : 'None');
+            console.log('🎬 Selected language:', localStorage.getItem('selectedLanguage') || 'en');
+            
+            // Test TTS system
+            console.log('🗣️ TTS system test:');
+            console.log('🗣️ TTS Manager available:', window.ttsManager ? 'Yes' : 'No');
+            if (window.ttsManager) {
+                console.log('🗣️ TTS Manager methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(window.ttsManager)));
+                console.log('🗣️ TTS Manager speak method:', typeof window.ttsManager.speak);
+            }
+            console.log('🗣️ Speech Synthesis available:', window.speechSynthesis ? 'Yes' : 'No');
+            
+            // Test Speech Recognition system
+            console.log('🎤 Speech Recognition test:');
+            console.log('🎤 Speech Recognition available:', ('webkitSpeechRecognition' in window) || ('SpeechRecognition' in window) ? 'Yes' : 'No');
+            
+            // Speech recognition will be initialized when needed
+            
+            // Wait for scene to load, then setup custom controls
+            const scene = document.querySelector('a-scene');
+            if (scene) {
+                scene.addEventListener('loaded', () => {
+                    setTimeout(() => {
+                        setupVRControllerMovement();
+                    }, 2000); // Give controllers time to initialize
+                });
+            }
+        });
+    </script>
+
+    <!-- Orbital Mechanics Components -->
+    <script>
+    /* ===== Orbit parent: rotate this parent to make the child revolve around the center =====
+       Usage: attach to a parent that is positioned at the Sun (usually 0 0 0).
+       Put your planet GLTF as a child and set the child's position to (radius, y, z).
+       Example: <a-entity orbit-parent="speed: 0.5"></a-entity>
+    */
+    AFRAME.registerComponent('orbit-parent', {
+      schema: {
+        speed: { type: 'number', default: 0.4 } // radians per second
+      },
+      init() {
+        this._lastTime = null;
+      },
+      tick(time, delta) {
+        // delta is ms since last tick; convert to seconds
+        if (!delta) return;
+        const dt = delta / 1000;
+        // rotate around Y axis in world-space by incrementing parent's rotation.y
+        // We rotate the object3D directly to avoid setAttribute thrashing.
+        this.el.object3D.rotation.y += this.data.speed * dt;
+      }
+    });
+
+    /* ===== Spin (self-rotation) =====
+       Attach directly to the planet entity (the GLTF child).
+       Example: <a-entity spin-body="speed: 18; axis: y"></a-entity>
+    */
+    AFRAME.registerComponent('spin-body', {
+      schema: {
+        speed: { type: 'number', default: 20 }, // degrees/sec
+        axis: { type: 'string', default: 'y' }, // 'x'|'y'|'z'
+        enabled: { type: 'boolean', default: true }
+      },
+      init() {
+        this._lastTime = null;
+      },
+      tick(time, delta) {
+        if (!this.data.enabled || !delta) return;
+        const dt = delta / 1000;
+        const degToRad = Math.PI / 180;
+        const rot = this.el.object3D.rotation;
+        const deltaRad = this.data.speed * degToRad * dt;
+        if (this.data.axis === 'x') rot.x += deltaRad;
+        else if (this.data.axis === 'z') rot.z += deltaRad;
+        else rot.y += deltaRad;
+      }
+    });
+
+    /* ===== Starfield (lightweight procedurally generated star points) =====
+       Usage: place <a-entity starfield="count:1200; radius:200;"></a-entity> once behind everything.
+    */
+    AFRAME.registerComponent('starfield', {
+      schema: {
+        count: { type: 'int', default: 1200 },
+        radius: { type: 'number', default: 200 },
+        size: { type: 'number', default: 0.6 }
+      },
+      init() {
+        const THREE = AFRAME.THREE;
+        const data = this.data;
+        const geometry = new THREE.BufferGeometry();
+        const positions = new Float32Array(data.count * 3);
+
+        for (let i = 0; i < data.count; i++) {
+          const u = Math.random();
+          const v = Math.random();
+          const theta = 2 * Math.PI * u;
+          const phi = Math.acos(2 * v - 1);
+          const r = data.radius * (0.85 + Math.random() * 0.3);
+          const x = r * Math.sin(phi) * Math.cos(theta);
+          const y = r * Math.sin(phi) * Math.sin(theta);
+          const z = r * Math.cos(phi);
+          positions[3 * i] = x;
+          positions[3 * i + 1] = y;
+          positions[3 * i + 2] = z;
+        }
+
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        const material = new THREE.PointsMaterial({
+          size: data.size,
+          sizeAttenuation: true,
+          transparent: true,
+          opacity: 0.9
+        });
+        const points = new THREE.Points(geometry, material);
+        this.el.setObject3D('starfield', points);
+        this._rotSpeed = 0.0002;
+      },
+      tick(time, delta) {
+        const obj = this.el.getObject3D('starfield');
+        if (obj) obj.rotation.y += this._rotSpeed * (delta || 16);
+      },
+      remove() { this.el.removeObject3D('starfield'); }
+    });
+
+    /* ===== Orbit ring helper (A-Frame mesh) =====
+       Usage: <a-entity orbit-ring="radius: 12; thickness:0.08; color:#7fbfff; opacity:0.55"></a-entity>
+    */
+    AFRAME.registerComponent('orbit-ring', {
+      schema: {
+        radius: { type: 'number', default: 10 },
+        thickness: { type: 'number', default: 0.05 },
+        color: { type: 'color', default: '#888' },
+        opacity: { type: 'number', default: 0.5 }
+      },
+      init() {
+        const THREE = AFRAME.THREE;
+        const r = this.data.radius;
+        const inner = Math.max(0.001, r - this.data.thickness / 2);
+        const outer = r + this.data.thickness / 2;
+        const segments = 128;
+        const geom = new THREE.RingGeometry(inner, outer, segments);
+        const mat = new THREE.MeshBasicMaterial({
+          color: new THREE.Color(this.data.color),
+          transparent: true,
+          opacity: this.data.opacity,
+          side: THREE.DoubleSide,
+          depthWrite: false
+        });
+        const mesh = new THREE.Mesh(geom, mat);
+        mesh.rotation.x = -Math.PI / 2; // lie flat on XZ plane
+        this.el.setObject3D('ring', mesh);
+      },
+      remove() { this.el.removeObject3D('ring'); }
+    });
+    </script>
+
+    <script>
+      // Improved Voice Control System with TTS pause/resume and confidence checking
+      (function(){
+        const vc = document.getElementById('vc') || document.querySelector('[voice-command]');
+        const label = document.getElementById('voice-label');
+        
+        function show(msg, ms=2000){ 
+          label.textContent = msg; 
+          label.style.display='block'; 
+          clearTimeout(label._t); 
+          label._t=setTimeout(()=>label.style.display='none', ms); 
+        }
+        
+        if (!vc) { 
+          console.warn('vc not found'); 
+          return; 
+        }
+
+        // start once after user gesture to allow mic
+        function ensureStarted(){ 
+          try { 
+            vc.components['voice-command'] && vc.components['voice-command'].startHotwordListener(); 
+            show('Voice ready — say "Cutie"', 2500); 
+          } 
+          catch(e){ 
+            console.warn(e); 
+            show('Voice start failed'); 
+          } 
+        }
+        window.addEventListener('click', ensureStarted, { once:true }); 
+        window.addEventListener('touchstart', ensureStarted, { once:true });
+
+        vc.addEventListener('voice-state', (e)=> {
+          const s=(e.detail && e.detail.state);
+          if (s==='hotword-listening') show('Listening for "Cutie"...');
+          if (s==='listening') show('Say your command...');
+          if (s==='command-handled') show('Command received', 1200);
+          if (s==='listening-timeout') show('Command timed out', 1200);
+        });
+
+        vc.addEventListener('voice-cmd', (ev)=> {
+          const d = ev.detail || {};
+          console.log('[voice-wiring] intent:', d);
+          // adapt these to your app function names
+          if (d.cmd === 'start-tour' && window.startTour) window.startTour();
+          else if (d.cmd === 'pause-tour' && window.pauseTour) window.pauseTour();
+          else if (d.cmd === 'resume-tour' && window.resumeTour) window.resumeTour();
+          else if ((d.cmd === 'land' || d.cmd === 'goto') && d.planet && window.landOnPlanet) window.landOnPlanet(d.planet.toLowerCase());
+          else if (d.cmd === 'language' && d.lang && window.setLanguage) window.setLanguage(d.lang);
+          else if (d.cmd === 'next' && window.nextStep) window.nextStep();
+          else if (d.cmd === 'previous' && window.prevStep) window.prevStep();
+          else if (d.cmd === 'info' && window.showInfo) window.showInfo(d.text || 'overview');
+          else if (d.cmd === 'ask-ai' && d.question && window.aiQA) {
+            const lang = window.selectedLang || localStorage.getItem('selectedLang') || 'en';
+            window.aiQA.ask(d.question, lang).catch(err => console.error('[voice-wiring] AI ask failed:', err));
+          }
+          else console.log('Unhandled voice intent', d);
+        });
+      })();
+    </script>
+</body>
+</html>

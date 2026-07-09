@@ -13,7 +13,7 @@ async function createWindow() {
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
-      preload: path.join(__dirname, 'client', 'preload.js')
+      preload: path.join(__dirname, 'solar-system', 'preload.js')
     }
   });
 

@@ -73,7 +73,7 @@ router.post('/ai-ask', async (req, res) => {
         'Authorization': `Bearer ${SARVAM_API_KEY}`
       },
       body: JSON.stringify({
-        model: 'sarvam-m',
+        model: 'sarvam-30b',
         messages: [
           { role: 'system', content: SYSTEM_PROMPTS[lang] || SYSTEM_PROMPTS.en },
           { role: 'user', content: question }

@@ -38,12 +38,12 @@ app.use('/api/ai', require('./src/routes/ai-endpoints'));
 
 // Serve PWA manifest
 app.get('/manifest.json', (req, res) => {
-  res.sendFile(path.join(__dirname, '../client/manifest.json'));
+  res.sendFile(path.join(__dirname, '../solar-system/manifest.json'));
 });
 
 // Serve service worker
 app.get('/service-worker.js', (req, res) => {
-  res.sendFile(path.join(__dirname, '../client/service-worker.js'));
+  res.sendFile(path.join(__dirname, '../solar-system/service-worker.js'));
 });
 
 // Main route - serve index.html as the main experience

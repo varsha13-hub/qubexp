@@ -5,6 +5,7 @@
   "main": "electron-main.js",
   "scripts": {
     "start": "electron .",
+    "prepare-cap": "node scripts/prepare-capacitor.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",

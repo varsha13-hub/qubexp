@@ -1,8 +1,3 @@
-/**
- * Text-to-Speech Manager for Indus Valley VR Experience
- * Handles multilingual TTS using Sarvam AI
- */
-
 class TTSManager {
     constructor() {
         this.isSpeaking = false;
@@ -15,158 +10,76 @@ class TTSManager {
             'te': 'Telugu',
             'bn': 'Bengali'
         };
+        this.onStateChange = null;
     }
 
     async speak(text, language = 'en') {
-        if (!text || this.isSpeaking) {
-            return;
-        }
+        if (!text || this.isSpeaking) return;
 
         try {
-            this.isSpeaking = true;
-            console.log(`🔊 Speaking in ${this.supportedLanguages[language]}:`, text.substring(0, 100) + '...');
+            this.setSpeakingState(true);
+            this.stop(); // Stop any current audio
 
-            // Stop any current audio
-            this.stop();
+            const response = await fetch('/api/tts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text, language })
+            });
 
-            // Split long text into chunks to prevent TTS timeout
-            const chunks = this.splitTextIntoChunks(text, 400);
+            if (!response.ok) throw new Error(`TTS API error: ${response.status}`);
             
-            for (let i = 0; i < chunks.length; i++) {
-                const chunk = chunks[i];
-                console.log(`🔊 Playing chunk ${i + 1}/${chunks.length}`);
-                
-                await this.speakChunk(chunk, language);
-                
-                // Small delay between chunks
-                if (i < chunks.length - 1) {
-                    await this.delay(500);
-                }
-            }
+            const data = await response.json();
+            if (!data.success || !data.audio) throw new Error('TTS service failed');
 
+            await this.playBase64Audio(data.audio, data.format || 'mp3');
         } catch (error) {
             console.error('❌ TTS Error:', error);
+            await this.fallbackTTS(text, language);
         } finally {
-            this.isSpeaking = false;
+            this.setSpeakingState(false);
         }
     }
 
-    async speakChunk(text, language) {
-        try {
-            const response = await fetch('/api/ai/tts', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    text: text,
-                    language: language
-                })
-            });
+    playBase64Audio(base64Data, format) {
+        return new Promise((resolve, reject) => {
+            try {
+                const byteCharacters = atob(base64Data);
+                const byteNumbers = new Array(byteCharacters.length);
+                for (let i = 0; i < byteCharacters.length; i++) {
+                    byteNumbers[i] = byteCharacters.charCodeAt(i);
+                }
+                const byteArray = new Uint8Array(byteNumbers);
+                const blob = new Blob([byteArray], { type: `audio/${format}` });
+                const audioUrl = URL.createObjectURL(blob);
 
-            if (!response.ok) {
-                throw new Error(`TTS API error: ${response.status}`);
-            }
-
-            const audioBlob = await response.blob();
-            const audioUrl = URL.createObjectURL(audioBlob);
-            
-            return new Promise((resolve, reject) => {
                 this.currentAudio = new Audio(audioUrl);
-                
                 this.currentAudio.onended = () => {
                     URL.revokeObjectURL(audioUrl);
                     resolve();
                 };
-                
-                this.currentAudio.onerror = (error) => {
+                this.currentAudio.onerror = (e) => {
                     URL.revokeObjectURL(audioUrl);
-                    reject(error);
+                    reject(e);
                 };
-                
-                this.currentAudio.play().catch(reject);
-            });
-
-        } catch (error) {
-            console.error('❌ TTS chunk error:', error);
-            // Fallback: try to speak the text using browser's built-in TTS
-            return this.fallbackTTS(text, language);
-        }
-    }
-
-    fallbackTTS(text, language) {
-        return new Promise((resolve) => {
-            if ('speechSynthesis' in window) {
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = this.getBrowserLanguageCode(language);
-                utterance.onend = resolve;
-                utterance.onerror = resolve;
-                speechSynthesis.speak(utterance);
-            } else {
-                console.warn('⚠️ No TTS available');
-                resolve();
+                this.currentAudio.play();
+            } catch (err) {
+                reject(err);
             }
         });
     }
 
-    getBrowserLanguageCode(language) {
-        const languageMap = {
-            'en': 'en-US',
-            'hi': 'hi-IN',
-            'kn': 'kn-IN',
-            'ta': 'ta-IN',
-            'te': 'te-IN',
-            'bn': 'bn-IN'
-        };
-        return languageMap[language] || 'en-US';
-    }
-
-    splitTextIntoChunks(text, maxLength) {
-        const chunks = [];
-        const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0);
-        
-        let currentChunk = '';
-        
-        for (const sentence of sentences) {
-            const trimmedSentence = sentence.trim();
-            if (!trimmedSentence) continue;
-            
-            if (currentChunk.length + trimmedSentence.length + 1 <= maxLength) {
-                currentChunk += (currentChunk ? '. ' : '') + trimmedSentence;
-            } else {
-                if (currentChunk) {
-                    chunks.push(currentChunk + '.');
-                    currentChunk = trimmedSentence;
-                } else {
-                    // Single sentence is too long, split by words
-                    const words = trimmedSentence.split(' ');
-                    let wordChunk = '';
-                    
-                    for (const word of words) {
-                        if (wordChunk.length + word.length + 1 <= maxLength) {
-                            wordChunk += (wordChunk ? ' ' : '') + word;
-                        } else {
-                            if (wordChunk) {
-                                chunks.push(wordChunk);
-                                wordChunk = word;
-                            } else {
-                                chunks.push(word);
-                            }
-                        }
-                    }
-                    
-                    if (wordChunk) {
-                        currentChunk = wordChunk;
-                    }
-                }
+    fallbackTTS(text, language) {
+        return new Promise((resolve) => {
+            if (!'speechSynthesis' in window) {
+                resolve();
+                return;
             }
-        }
-        
-        if (currentChunk) {
-            chunks.push(currentChunk + '.');
-        }
-        
-        return chunks.length > 0 ? chunks : [text];
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = language === 'en' ? 'en-US' : language;
+            utterance.onend = resolve;
+            utterance.onerror = resolve;
+            window.speechSynthesis.speak(utterance);
+        });
     }
 
     stop() {
@@ -175,19 +88,16 @@ class TTSManager {
             this.currentAudio.currentTime = 0;
             this.currentAudio = null;
         }
-        
-        if ('speechSynthesis' in window) {
-            speechSynthesis.cancel();
+        if (window.speechSynthesis) {
+            window.speechSynthesis.cancel();
         }
-        
-        this.isSpeaking = false;
+        this.setSpeakingState(false);
     }
 
-    delay(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
-    }
-
-    isCurrentlySpeaking() {
-        return this.isSpeaking;
+    setSpeakingState(state) {
+        this.isSpeaking = state;
+        if (this.onStateChange) this.onStateChange(state);
     }
 }
+
+window.ttsManager = new TTSManager();

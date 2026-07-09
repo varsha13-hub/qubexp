@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Indus Valley Civilization - WebXR Experience</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div id="container">
+        <div id="loading">Loading Indus Valley Civilization...</div>
+        
+        <div id="ui">
+            <h2>🏛️ Indus Valley Civilization</h2>
+            <p>Explore the ancient city of Mohenjo-Daro!</p>
+            <button id="enter-vr" class="button">Enter VR</button>
+            <button id="toggle-info" class="button">Movement Help</button>
+            
+            <h3 style="color: #ffd700; margin-top: 15px; margin-bottom: 10px;">Quick Navigation</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px;">
+                <button id="nav-houses" class="button">🏠 Houses</button>
+                <button id="nav-houses-north" class="button">🏘️ North Houses</button>
+                <button id="nav-houses-east" class="button">🏘️ East Houses</button>
+                <button id="nav-houses-west" class="button">🏘️ West Houses</button>
+                <button id="nav-school" class="button">🏫 School</button>
+                <button id="nav-bath" class="button">🛁 Great Bath</button>
+                <button id="nav-granary" class="button">🌾 Granary</button>
+                <button id="nav-assembly" class="button">🏛️ Assembly Hall</button>
+                <button id="nav-temple" class="button">⛩️ Temple</button>
+                <button id="nav-wall" class="button">🏰 City Wall</button>
+                <button id="nav-canal" class="button">🌊 Canal</button>
+                <button id="nav-open-ground" class="button">🌿 Open Ground</button>
+            </div>
+        </div>
+        
+        <div id="info-panel">
+            <h3 id="info-title">Movement Controls</h3>
+            <p id="info-content">
+                <strong>Movement Controls:</strong><br>
+                • WASD or Arrow Keys: Move around<br>
+                • Mouse: Look around (click to enable)<br>
+                • Space: Jump<br>
+                • Click on golden hotspots for information<br><br>
+                <strong>Explore the ancient city of Mohenjo-Daro!</strong>
+            </p>
+            <button id="close-info" class="button">Close</button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/webxr/VRButton.js"></script>
+    <script src="https://unpkg.com/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script>
+        // Error handling and fallback
+        window.addEventListener('error', function(e) {
+            console.error('Error loading script:', e);
+            document.getElementById('loading').innerHTML = 'Error loading 3D scene. Please check console for details.';
+        });
+        
+        // Check if Three.js and OrbitControls loaded
+        window.addEventListener('load', function() {
+            if (typeof THREE === 'undefined') {
+                document.getElementById('loading').innerHTML = 'Failed to load Three.js. Please check your internet connection.';
+                return;
+            }
+            console.log('Three.js loaded successfully');
+            
+            if (typeof THREE.OrbitControls === 'undefined') {
+                console.warn('OrbitControls not loaded, using fallback controls');
+            }
+            
+            // Check GLTFLoader
+            if (typeof THREE.GLTFLoader === 'undefined') {
+                console.error('GLTFLoader is NOT available!');
+            } else {
+                console.log('GLTFLoader is available!');
+            }
+        });
+    </script>
+    <script src="js/indus-valley-scene.js?v=35"></script>
+</body>
+</html>

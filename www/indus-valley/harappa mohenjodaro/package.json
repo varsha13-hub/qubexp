@@ -1,0 +1,30 @@
+{
+  "name": "indus-valley-webxr",
+  "version": "1.0.0",
+  "description": "3D immersive WebXR experience of the Indus Valley Civilization",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx http-server -p 8080 -c-1",
+    "build": "echo 'Building for production...'",
+    "serve": "npx http-server -p 8080"
+  },
+  "keywords": [
+    "webxr",
+    "vr",
+    "threejs",
+    "indus-valley",
+    "mohenjo-daro",
+    "education",
+    "3d",
+    "archaeology"
+  ],
+  "author": "Indus Valley WebXR Project",
+  "license": "MIT",
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  },
+  "dependencies": {},
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
