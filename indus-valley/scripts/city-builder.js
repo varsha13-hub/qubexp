@@ -1345,75 +1345,20 @@ class CityBuilder {
     }
 
     /**
-     * Scatters trees, public wells and green grass patches across
-     * empty street corners, block courtyards and city periphery.
+     * Scatters green grass patches across empty street corners,
+     * block courtyards and city periphery.
      */
     buildCityVegetation() {
-        console.log('🌿 Planting City Vegetation & Wells...');
-
-        // ── STREET-CORNER TREES ──
-        const streetTrees = [
-            // Workers district — avenue between Column 1 & Column 2
-            { x: -30, z: -1,  type: 'palm'   },
-            { x: -30, z: 21,  type: 'peepal' },
-            { x: -30, z: 41,  type: 'palm'   },
-            { x: -30, z: 61,  type: 'fig'    },
-            { x: -30, z: 81,  type: 'peepal' },
-            // West outer fringe
-            { x: -45, z: 10,  type: 'palm'   },
-            { x: -45, z: 30,  type: 'peepal' },
-            { x: -45, z: 50,  type: 'fig'    },
-            { x: -45, z: 70,  type: 'palm'   },
-            // Grand central avenue (between Workers & Elite districts)
-            { x: -4,  z: -10, type: 'peepal' },
-            { x: -4,  z: 15,  type: 'palm'   },
-            { x: -4,  z: 35,  type: 'fig'    },
-            { x: -4,  z: 55,  type: 'peepal' },
-            { x: -4,  z: 75,  type: 'palm'   },
-            { x:  3,  z: -10, type: 'fig'    },
-            { x:  3,  z: 15,  type: 'palm'   },
-            { x:  3,  z: 35,  type: 'peepal' },
-            { x:  3,  z: 55,  type: 'fig'    },
-            { x:  3,  z: 75,  type: 'peepal' },
-            // Elite enclave cross-streets
-            { x: 20,  z: -5,  type: 'peepal' },
-            { x: 20,  z: 18,  type: 'palm'   },
-            { x: 20,  z: 38,  type: 'fig'    },
-            { x: 20,  z: 58,  type: 'peepal' },
-            { x: 20,  z: 78,  type: 'palm'   },
-            // Far East fringe
-            { x: 46,  z: 10,  type: 'palm'   },
-            { x: 46,  z: 30,  type: 'fig'    },
-            { x: 46,  z: 50,  type: 'peepal' },
-            { x: 46,  z: 70,  type: 'palm'   },
-            // Citadel northern approach
-            { x: -15, z: -28, type: 'peepal' },
-            { x:   5, z: -28, type: 'palm'   },
-            { x:  18, z: -28, type: 'fig'    },
-        ];
-        streetTrees.forEach(t => this.buildTree(t.x, t.z, t.type));
-
-        // ── PUBLIC WELLS ──
-        const wellPositions = [
-            // Workers district street corners
-            { x: -30, z: 9  }, { x: -30, z: 29 }, { x: -30, z: 49 }, { x: -30, z: 69 },
-            // Grand central avenue
-            { x: -0.5, z: 5  }, { x: -0.5, z: 45 }, { x: -0.5, z: 85 },
-            // Elite enclave
-            { x: 20, z: 8  }, { x: 20, z: 28 }, { x: 20, z: 48 }, { x: 20, z: 68 },
-            // Far east
-            { x: 44, z: 20 }, { x: 44, z: 60 },
-        ];
-        wellPositions.forEach(w => this.buildPublicWell(w.x, w.z));
+        console.log('🌿 Planting City Grass Patches...');
 
         // ── GRASS PATCHES ──
         const grassPatches = [
-            // Around wells — Workers district
+            // Workers district
             { x: -30, z: 9,  r: 2.2 }, { x: -30, z: 29, r: 2.2 },
             { x: -30, z: 49, r: 2.2 }, { x: -30, z: 69, r: 2.2 },
             // Grand avenue green strips
             { x: -0.5, z: 5,  r: 2.5 }, { x: -0.5, z: 45, r: 2.5 }, { x: -0.5, z: 85, r: 2.5 },
-            // Street-tree base pads
+            // Street base pads
             { x: -30, z: -1, r: 1.5 }, { x: -30, z: 21, r: 1.5 }, { x: -30, z: 41, r: 1.5 },
             { x: -30, z: 61, r: 1.5 }, { x: -30, z: 81, r: 1.5 },
             { x: -4,  z: 15, r: 1.6 }, { x: -4,  z: 35, r: 1.6 }, { x: -4,  z: 55, r: 1.6 },
