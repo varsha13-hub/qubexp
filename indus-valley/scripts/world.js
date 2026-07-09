@@ -127,6 +127,9 @@ class WorldManager {
             window.ttsManager.speak(`You found the ${quest.name}. ${quest.desc}`, window.dataLoader.currentLang);
         }
 
+        // Spawn actual 3D representation of the artifact
+        this.spawn3DArtifact(quest);
+
         if (this.questsFound === GLOBAL_QUESTS.length) {
             setTimeout(() => {
                 window.appUI.showInfoPanel("City Explorer Complete!", "You have found all the historical artifacts in the city!");
@@ -135,6 +138,162 @@ class WorldManager {
                 }
             }, 3000);
         }
+    }
+
+    spawn3DArtifact(quest) {
+        const scene = document.querySelector('a-scene');
+        if (!scene) return;
+
+        const container = document.createElement('a-entity');
+        container.setAttribute('position', quest.position);
+        container.setAttribute('id', `artifact-${quest.id}`);
+        
+        let artifactEl;
+        
+        // Define distinct 3D representations using A-Frame primitives
+        switch(quest.id) {
+            case 'seal': // Trade Seal: Flat terracotta clay tablet
+                artifactEl = document.createElement('a-box');
+                artifactEl.setAttribute('width', '0.5');
+                artifactEl.setAttribute('height', '0.5');
+                artifactEl.setAttribute('depth', '0.08');
+                artifactEl.setAttribute('material', 'src: #brick-texture; color: #b07050; roughness: 1.0');
+                break;
+                
+            case 'weights': // Standard Weights: Grey stone cubic weights
+                artifactEl = document.createElement('a-box');
+                artifactEl.setAttribute('width', '0.35');
+                artifactEl.setAttribute('height', '0.35');
+                artifactEl.setAttribute('depth', '0.35');
+                artifactEl.setAttribute('material', 'color: #7f8c8d; roughness: 0.9; metalness: 0.1');
+                break;
+                
+            case 'bitumen': // Bitumen: Glossy black tar coating
+                artifactEl = document.createElement('a-sphere');
+                artifactEl.setAttribute('radius', '0.3');
+                artifactEl.setAttribute('material', 'color: #111111; roughness: 0.1; metalness: 0.8');
+                break;
+                
+            case 'drain': // Corbelled Drain: Small brick archway structure
+                artifactEl = document.createElement('a-entity');
+                
+                const leftWall = document.createElement('a-box');
+                leftWall.setAttribute('position', '-0.25 0 0');
+                leftWall.setAttribute('width', '0.12');
+                leftWall.setAttribute('height', '0.4');
+                leftWall.setAttribute('depth', '0.5');
+                leftWall.setAttribute('material', 'src: #brick-texture; color: #8c5a3a');
+                
+                const rightWall = document.createElement('a-box');
+                rightWall.setAttribute('position', '0.25 0 0');
+                rightWall.setAttribute('width', '0.12');
+                rightWall.setAttribute('height', '0.4');
+                rightWall.setAttribute('depth', '0.5');
+                rightWall.setAttribute('material', 'src: #brick-texture; color: #8c5a3a');
+                
+                const capStone = document.createElement('a-box');
+                capStone.setAttribute('position', '0 0.25 0');
+                capStone.setAttribute('width', '0.65');
+                capStone.setAttribute('height', '0.1');
+                capStone.setAttribute('depth', '0.5');
+                capStone.setAttribute('material', 'src: #brick-texture; color: #6b4430');
+                
+                artifactEl.appendChild(leftWall);
+                artifactEl.appendChild(rightWall);
+                artifactEl.appendChild(capStone);
+                break;
+                
+            case 'toy': // Terracotta Cart: Little brick cart with wheels
+                artifactEl = document.createElement('a-entity');
+                
+                const body = document.createElement('a-box');
+                body.setAttribute('width', '0.4');
+                body.setAttribute('height', '0.15');
+                body.setAttribute('depth', '0.6');
+                body.setAttribute('material', 'src: #brick-texture; color: #d2691e');
+                
+                const wheelLeft = document.createElement('a-cylinder');
+                wheelLeft.setAttribute('position', '-0.25 -0.08 0');
+                wheelLeft.setAttribute('rotation', '0 0 90');
+                wheelLeft.setAttribute('radius', '0.18');
+                wheelLeft.setAttribute('height', '0.06');
+                wheelLeft.setAttribute('material', 'src: #brick-texture; color: #a0522d');
+                
+                const wheelRight = document.createElement('a-cylinder');
+                wheelRight.setAttribute('position', '0.25 -0.08 0');
+                wheelRight.setAttribute('rotation', '0 0 90');
+                wheelRight.setAttribute('radius', '0.18');
+                wheelRight.setAttribute('height', '0.06');
+                wheelRight.setAttribute('material', 'src: #brick-texture; color: #a0522d');
+                
+                artifactEl.appendChild(body);
+                artifactEl.appendChild(wheelLeft);
+                artifactEl.appendChild(wheelRight);
+                break;
+                
+            case 'well': // Private Well: Cylinder well
+                artifactEl = document.createElement('a-cylinder');
+                artifactEl.setAttribute('radius', '0.35');
+                artifactEl.setAttribute('height', '0.7');
+                artifactEl.setAttribute('open-ended', 'true');
+                artifactEl.setAttribute('material', 'src: #brick-texture; color: #8c5a3a; side: double');
+                break;
+                
+            case 'granary_seal': // Grain Toll Seal: Flat clay seal disk
+                artifactEl = document.createElement('a-cylinder');
+                artifactEl.setAttribute('radius', '0.22');
+                artifactEl.setAttribute('height', '0.05');
+                artifactEl.setAttribute('rotation', '90 0 0');
+                artifactEl.setAttribute('material', 'src: #brick-texture; color: #c08060; roughness: 1.0');
+                break;
+                
+            case 'drain_cap': // Silt Filter Grate: Grated plate
+                artifactEl = document.createElement('a-box');
+                artifactEl.setAttribute('width', '0.45');
+                artifactEl.setAttribute('height', '0.05');
+                artifactEl.setAttribute('depth', '0.45');
+                artifactEl.setAttribute('material', 'color: #5d4037; roughness: 1.0');
+                break;
+                
+            case 'brick_measure': // Standardized Brick: 1:2:4 ratio brick
+                artifactEl = document.createElement('a-box');
+                artifactEl.setAttribute('width', '0.25');
+                artifactEl.setAttribute('height', '0.12');
+                artifactEl.setAttribute('depth', '0.5');
+                artifactEl.setAttribute('material', 'src: #brick-texture; color: #8c5a3a; roughness: 1.0');
+                break;
+                
+            case 'drain_clog': // Clogged Drain Silt: Mud mound
+                artifactEl = document.createElement('a-sphere');
+                artifactEl.setAttribute('radius', '0.32');
+                artifactEl.setAttribute('scale', '1 0.5 1');
+                artifactEl.setAttribute('material', 'color: #5c4033; roughness: 1.0');
+                break;
+                
+            default:
+                artifactEl = document.createElement('a-sphere');
+                artifactEl.setAttribute('radius', '0.25');
+                artifactEl.setAttribute('material', 'color: #f4a460');
+        }
+        
+        container.appendChild(artifactEl);
+        container.setAttribute('animation__rotate', 'property: rotation; to: 0 360 0; loop: true; dur: 8000; easing: linear');
+        
+        // Add 3D text label above the spawned artifact
+        const label = document.createElement('a-text');
+        label.setAttribute('value', quest.name);
+        label.setAttribute('position', '0 0.7 0');
+        label.setAttribute('align', 'center');
+        label.setAttribute('color', '#f4a460');
+        label.setAttribute('scale', '0.6 0.6 0.6');
+        label.setAttribute('width', '4');
+        container.appendChild(label);
+        
+        // Scale-in spawn animation
+        container.setAttribute('scale', '0.01 0.01 0.01');
+        container.setAttribute('animation__scale', 'property: scale; to: 1 1 1; dur: 800; easing: easeOutBack');
+        
+        scene.appendChild(container);
     }
 
     trackPlayer() {
