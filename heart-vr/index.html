@@ -461,25 +461,14 @@
 
     async function playIntroSequence() {
       const tts = getTTSManager();
-      const synth = tts ? tts.synthesis || window.speechSynthesis : window.speechSynthesis;
-
-      let voices = [];
-      if (tts && tts.voices && tts.voices.length > 0) {
-        voices = tts.voices;
-      } else if (synth && synth.getVoices) {
-        voices = synth.getVoices();
-      }
-
-      const hasSpeech = synth && synth.speak && voices.length > 0;
-
-      if (!hasSpeech) {
-        console.warn("speechSynthesis is unavailable or has no voices. Skipping to silent fallback.");
+      if (!tts) {
+        console.warn("TTSManager is unavailable. Skipping to silent fallback.");
         playSilentFallback();
         return;
       }
 
-      // Stop any current synthesis
-      synth.cancel();
+      // Stop any current audio
+      tts.stopAudio();
 
       for (let i = 0; i < HEART_INTRO_SENTENCES.length; i++) {
         if (introFinished && !introPlaying) break;
@@ -489,24 +478,28 @@
         updateTourTarget(i);
         await showCaption(sentence);
 
-        await new Promise((resolve) => {
-          const utterance = new SpeechSynthesisUtterance(sentence);
-          utterance.rate = 0.95;
-          utterance.pitch = 1.0;
+        // Wait 1.5s but check if paused
+        let waitTime = 1500;
+        while (waitTime > 0) {
+          if (!isNarrationPaused) {
+            waitTime -= 100;
+          }
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
 
-          const voicesList = synth.getVoices();
-          let voice = voicesList.find(v => v.lang.startsWith("en-IN") || v.lang.includes("india"));
-          if (!voice) voice = voicesList.find(v => v.lang.startsWith("en"));
-          if (voice) utterance.voice = voice;
-
-          utterance.onend = () => resolve();
-          utterance.onerror = (err) => {
-            console.error("Utterance error:", err);
-            resolve();
-          };
-
-          synth.speak(utterance);
-        });
+        // Wait for TTS audio to finish playing (compatible with VR headsets!)
+        try {
+          await tts.speak(sentence, 'en');
+        } catch (err) {
+          console.error("TTS speak failed, falling back to simple delay", err);
+          let delay = 6500;
+          while (delay > 0) {
+            if (!isNarrationPaused) {
+              delay -= 100;
+            }
+            await new Promise(resolve => setTimeout(resolve, 100));
+          }
+        }
       }
 
       endIntro();
@@ -910,20 +903,19 @@
     if (pauseBtn) {
       pauseBtn.addEventListener("click", () => {
         const tts = getTTSManager();
-        const synth = tts ? tts.synthesis || window.speechSynthesis : window.speechSynthesis;
         
         if (!isNarrationPaused) {
           isNarrationPaused = true;
-          if (synth && synth.speaking) {
-            synth.pause();
+          if (tts) {
+            tts.pauseAudio();
           }
           pauseBtn.textContent = "▶️ Resume Narration";
           pauseBtn.style.background = "#ffb300";
           debugLog("⏸️ Narration paused");
         } else {
           isNarrationPaused = false;
-          if (synth && synth.paused) {
-            synth.resume();
+          if (tts) {
+            tts.resumeAudio();
           }
           pauseBtn.textContent = "⏸️ Pause Narration";
           pauseBtn.style.background = "#00ff88";
@@ -971,19 +963,10 @@
           // Display answer in the captions box
           showCaption(answer);
           
-          // Speak the answer using window speechSynthesis
+          // Speak the answer using the robust server-side/VR-compatible TTSManager
           const tts = getTTSManager();
-          const synth = tts ? tts.synthesis || window.speechSynthesis : window.speechSynthesis;
-          if (synth) {
-            synth.cancel();
-            const utterance = new SpeechSynthesisUtterance(answer);
-            utterance.rate = 0.95;
-            utterance.pitch = 1.0;
-            const voicesList = synth.getVoices();
-            let voice = voicesList.find(v => v.lang.startsWith("en-IN") || v.lang.includes("india"));
-            if (!voice) voice = voicesList.find(v => v.lang.startsWith("en"));
-            if (voice) utterance.voice = voice;
-            synth.speak(utterance);
+          if (tts) {
+            tts.speak(answer, selectedLang);
           }
 
           questionInput.value = '';
