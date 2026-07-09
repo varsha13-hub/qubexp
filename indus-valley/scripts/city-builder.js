@@ -197,8 +197,89 @@ class CityBuilder {
         ramp.setAttribute('rotation', '0 0 -20');
         ramp.setAttribute('material', 'src: #wood-texture; repeat: 1 3');
         granaryGroup.appendChild(ramp);
-        
+
+        // ── GRANARY DRAINAGE SYSTEM ─────────────────────────────────────────────
+        // The sleeper-wall design not only ventilated grain stores but also allowed
+        // rainwater to drain away. Channels between the walls fed a collector gutter
+        // along the South edge, which emptied via a sloped outlet chute down
+        // the citadel mound to the main street sewer at the base.
+
+        // 1. Water channels between each pair of sleeper walls (8 gaps)
+        const gapCenter = wallWidth + wallGap; // 1.8m per slot
+        for (let i = -4; i < 4; i++) {
+            const chanX = (i + 0.5) * gapCenter; // center of each gap
+
+            // Dark water bed
+            const chanWater = document.createElement('a-plane');
+            chanWater.setAttribute('position', `${chanX} 0.04 0`);
+            chanWater.setAttribute('rotation', '-90 0 0');
+            chanWater.setAttribute('width', wallGap - 0.08); // 0.72m wide
+            chanWater.setAttribute('height', wallLength);
+            chanWater.setAttribute('material', 'color: #2e2018; roughness: 0.1; transparent: true; opacity: 0.88');
+            granaryGroup.appendChild(chanWater);
+
+            // Narrow brick lips on the sides of each channel (visual depth)
+            [-1, 1].forEach(side => {
+                const lip = document.createElement('a-box');
+                lip.setAttribute('position', `${chanX + side * (wallGap / 2 - 0.02)} 0.06 0`);
+                lip.setAttribute('width', 0.06);
+                lip.setAttribute('height', 0.12);
+                lip.setAttribute('depth', wallLength);
+                lip.setAttribute('material', 'src: #brick-texture; color: #6b4430; repeat: 1 8; roughness: 1.0');
+                granaryGroup.appendChild(lip);
+            });
+        }
+
+        // 2. South collector gutter — runs E-W along the South edge of the granary,
+        //    collecting all channel outflows before routing to the outlet chute
+        const collectorZ = wallLength / 2 + 0.5; // just South of the granary
+
+        const collGutter = document.createElement('a-plane');
+        collGutter.setAttribute('position', `0 0.04 ${collectorZ}`);
+        collGutter.setAttribute('rotation', '-90 0 0');
+        collGutter.setAttribute('width', 18);
+        collGutter.setAttribute('height', 0.9);
+        collGutter.setAttribute('material', 'color: #2e2018; roughness: 0.1; transparent: true; opacity: 0.9');
+        granaryGroup.appendChild(collGutter);
+
+        // Collector gutter brick walls (N and S)
+        ['N', 'S'].forEach((side, idx) => {
+            const gwZ = collectorZ + (idx === 0 ? -0.5 : 0.5);
+            const gw = document.createElement('a-box');
+            gw.setAttribute('position', `0 0.07 ${gwZ}`);
+            gw.setAttribute('width', 18);
+            gw.setAttribute('height', 0.15);
+            gw.setAttribute('depth', 0.1);
+            gw.setAttribute('material', 'src: #brick-texture; color: #6b4430; repeat: 12 1; roughness: 1.0');
+            granaryGroup.appendChild(gw);
+        });
+
+        // 3. Main outlet chute — sloped brick box descending from collector gutter
+        //    down the South face of the citadel mound (-7.01 Y relative, ~15m run)
+        const chute = document.createElement('a-box');
+        chute.setAttribute('position', `0 ${-wallHeight - 3.0} ${collectorZ + 9}`);
+        chute.setAttribute('width', 0.8);
+        chute.setAttribute('height', 0.15);
+        chute.setAttribute('depth', 18);
+        chute.setAttribute('rotation', '22 0 0'); // sloped downward
+        chute.setAttribute('material', 'src: #brick-texture; color: #5a3c28; repeat: 1 8; roughness: 1.0');
+        chute.setAttribute('class', 'clickable');
+        chute.setAttribute('data-info', 'Granary Drainage Channel: Rainwater was directed through channels between sleeper walls, collected in a gutter, and drained via this sloped chute down the citadel mound into the main street sewer.');
+        granaryGroup.appendChild(chute);
+
+        // Chute water surface
+        const chuteWater = document.createElement('a-box');
+        chuteWater.setAttribute('position', `0 ${-wallHeight - 2.93} ${collectorZ + 9}`);
+        chuteWater.setAttribute('width', 0.55);
+        chuteWater.setAttribute('height', 0.04);
+        chuteWater.setAttribute('depth', 18);
+        chuteWater.setAttribute('rotation', '22 0 0');
+        chuteWater.setAttribute('material', 'color: #2e2018; roughness: 0.05; metalness: 0.2; transparent: true; opacity: 0.85');
+        granaryGroup.appendChild(chuteWater);
+        // ── END GRANARY DRAINAGE SYSTEM ─────────────────────────────────────────
+
         this.container.appendChild(granaryGroup);
+
     }
 
     buildAssemblyHall(x, z) {
@@ -790,34 +871,50 @@ class CityBuilder {
 
     buildSingleLaneDrain(x, startZ, depth, parentEl) {
         const drainGroup = document.createElement('a-entity');
-        drainGroup.setAttribute('position', `${x} 0.01 ${startZ + depth / 2}`);
+        drainGroup.setAttribute('position', `${x} 0.02 ${startZ + depth / 2}`);
 
-        // Dark sewage water bed
+        // Dark muddy sewage water bed — wide & clearly visible from above
         const waterBed = document.createElement('a-plane');
-        waterBed.setAttribute('position', '0 0.01 0');
+        waterBed.setAttribute('position', '0 0.02 0');
         waterBed.setAttribute('rotation', '-90 0 0');
-        waterBed.setAttribute('width', 0.5);
+        waterBed.setAttribute('width', 0.8);
         waterBed.setAttribute('height', depth);
-        waterBed.setAttribute('material', 'color: #2e2018; roughness: 0.15; metalness: 0.2; transparent: true; opacity: 0.9');
+        waterBed.setAttribute('material', 'color: #1e1510; roughness: 0.05; metalness: 0.3; transparent: true; opacity: 0.96');
         drainGroup.appendChild(waterBed);
 
-        // Left brick lining
+        // Left brick lining — tall enough to see from ground level
         const leftLining = document.createElement('a-box');
-        leftLining.setAttribute('position', `-0.3 0.07 0`);
-        leftLining.setAttribute('width', 0.12);
-        leftLining.setAttribute('height', 0.18);
+        leftLining.setAttribute('position', '-0.45 0.2 0');
+        leftLining.setAttribute('width', 0.14);
+        leftLining.setAttribute('height', 0.4);
         leftLining.setAttribute('depth', depth);
-        leftLining.setAttribute('material', 'src: #brick-texture; color: #8c6353; repeat: 1 10; roughness: 1.0');
+        leftLining.setAttribute('material', 'src: #brick-texture; color: #7a4d33; repeat: 1 10; roughness: 1.0');
         drainGroup.appendChild(leftLining);
 
         // Right brick lining
         const rightLining = document.createElement('a-box');
-        rightLining.setAttribute('position', `0.3 0.07 0`);
-        rightLining.setAttribute('width', 0.12);
-        rightLining.setAttribute('height', 0.18);
+        rightLining.setAttribute('position', '0.45 0.2 0');
+        rightLining.setAttribute('width', 0.14);
+        rightLining.setAttribute('height', 0.4);
         rightLining.setAttribute('depth', depth);
-        rightLining.setAttribute('material', 'src: #brick-texture; color: #8c6353; repeat: 1 10; roughness: 1.0');
+        rightLining.setAttribute('material', 'src: #brick-texture; color: #7a4d33; repeat: 1 10; roughness: 1.0');
         drainGroup.appendChild(rightLining);
+
+        // Stone cover slabs over the channel with regular open gaps (every 3rd slab is open)
+        const slabLen = 1.5;
+        const slabCount = Math.floor(depth / slabLen);
+        for (let i = 0; i < slabCount; i++) {
+            if (i % 3 === 0) continue; // open gap so water is visible
+            const slab = document.createElement('a-box');
+            const zOff = -depth / 2 + i * slabLen + slabLen / 2;
+            slab.setAttribute('position', `0 0.38 ${zOff}`);
+            slab.setAttribute('width', 0.82);
+            slab.setAttribute('height', 0.09);
+            slab.setAttribute('depth', slabLen - 0.08);
+            const c = (i % 2 === 0) ? '#8a7a6e' : '#6e5d52';
+            slab.setAttribute('material', `src: #brick-texture; color: ${c}; repeat: 1 1; roughness: 1.0`);
+            drainGroup.appendChild(slab);
+        }
 
         parentEl.appendChild(drainGroup);
     }
@@ -842,15 +939,15 @@ class CityBuilder {
         // Muddy waste water plane inside the trench
         const waterPlane = document.createElement('a-plane');
         waterPlane.setAttribute('rotation', '-90 0 0');
-        waterPlane.setAttribute('position', '0 0.01 0');
-        waterPlane.setAttribute('width',  isNS ? 0.75 : length);
-        waterPlane.setAttribute('height', isNS ? length : 0.75);
-        waterPlane.setAttribute('material', 'color: #2e2018; roughness: 0.1; metalness: 0.25; transparent: true; opacity: 0.92');
+        waterPlane.setAttribute('position', '0 0.02 0');
+        waterPlane.setAttribute('width',  isNS ? 1.0 : length);
+        waterPlane.setAttribute('height', isNS ? length : 1.0);
+        waterPlane.setAttribute('material', 'color: #1e1510; roughness: 0.05; metalness: 0.3; transparent: true; opacity: 0.96');
         sewerGroup.appendChild(waterPlane);
 
-        // Brick side borders
-        const borderThick = 0.12;
-        const borderH     = 0.22;
+        // Brick side borders — taller for better visibility
+        const borderThick = 0.15;
+        const borderH     = 0.32;
 
         if (isNS) {
             [-0.45, 0.45].forEach(offset => {
