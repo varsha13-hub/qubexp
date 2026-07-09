@@ -9,6 +9,231 @@
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <script src="https://unpkg.com/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
     
+    <!-- Custom Navigation Controls Component -->
+    <script>
+        AFRAME.registerComponent('custom-controls', {
+            schema: {
+                speed: { type: 'number', default: 0.3 },
+                fly: { type: 'boolean', default: false }
+            },
+            init: function () {
+                this.keys = {
+                    KeyW: false, ArrowUp: false,
+                    KeyS: false, ArrowDown: false,
+                    KeyA: false,
+                    KeyD: false,
+                    ArrowLeft: false,
+                    ArrowRight: false,
+                    KeyE: false, Space: false,
+                    KeyQ: false, ShiftLeft: false
+                };
+                
+                this.onKeyDown = this.onKeyDown.bind(this);
+                this.onKeyUp = this.onKeyUp.bind(this);
+                window.addEventListener('keydown', this.onKeyDown);
+                window.addEventListener('keyup', this.onKeyUp);
+                
+                this.el.sceneEl.addEventListener('click', () => {
+                    window.focus();
+                });
+                
+                this.cameraEl = this.el.querySelector('[camera]') || this.el.querySelector('a-camera');
+            },
+            remove: function () {
+                window.removeEventListener('keydown', this.onKeyDown);
+                window.removeEventListener('keyup', this.onKeyUp);
+            },
+            onKeyDown: function (e) {
+                let code = e.code;
+                if (e.key === 'e' || e.key === 'E') code = 'KeyE';
+                if (e.key === 'q' || e.key === 'Q') code = 'KeyQ';
+                if (e.key === 'w' || e.key === 'W') code = 'KeyW';
+                if (e.key === 's' || e.key === 'S') code = 'KeyS';
+                if (e.key === 'a' || e.key === 'A') code = 'KeyA';
+                if (e.key === 'd' || e.key === 'D') code = 'KeyD';
+                if (e.key === ' ') code = 'Space';
+                
+                if (code in this.keys) {
+                    this.keys[code] = true;
+                }
+            },
+            onKeyUp: function (e) {
+                let code = e.code;
+                if (e.key === 'e' || e.key === 'E') code = 'KeyE';
+                if (e.key === 'q' || e.key === 'Q') code = 'KeyQ';
+                if (e.key === 'w' || e.key === 'W') code = 'KeyW';
+                if (e.key === 's' || e.key === 'S') code = 'KeyS';
+                if (e.key === 'a' || e.key === 'A') code = 'KeyA';
+                if (e.key === 'd' || e.key === 'D') code = 'KeyD';
+                if (e.key === ' ') code = 'Space';
+                
+                if (code in this.keys) {
+                    this.keys[code] = false;
+                }
+            },
+            tick: function (time, timeDelta) {
+                const speed = this.data.speed * (timeDelta / 1000) * 60; 
+                const rotSpeed = 2.0 * (timeDelta / 1000) * 60; // rotation speed (degrees per frame)
+                
+                const pos = this.el.getAttribute('position');
+                const rot = this.el.getAttribute('rotation') || { x: 0, y: 0, z: 0 };
+                if (!pos) return;
+                
+                // Keyboard camera turning (Y-axis rotation)
+                if (this.keys.ArrowLeft) {
+                    rot.y += rotSpeed;
+                }
+                if (this.keys.ArrowRight) {
+                    rot.y -= rotSpeed;
+                }
+                this.el.setAttribute('rotation', rot);
+                
+                if (!this.cameraEl) return;
+                
+                // Calculate directional vectors from camera
+                let forward = new THREE.Vector3();
+                this.cameraEl.object3D.getWorldDirection(forward);
+                forward.negate(); // Vector points towards camera facing direction
+                
+                if (!this.data.fly) {
+                    forward.y = 0; // lock movement to horizontal plane
+                }
+                forward.normalize();
+                
+                let right = new THREE.Vector3();
+                right.crossVectors(forward, new THREE.Vector3(0, 1, 0));
+                right.normalize();
+                
+                let moveVector = new THREE.Vector3();
+                if (this.keys.KeyW || this.keys.ArrowUp) {
+                    moveVector.add(forward);
+                }
+                if (this.keys.KeyS || this.keys.ArrowDown) {
+                    moveVector.sub(forward);
+                }
+                if (this.keys.KeyA) {
+                    moveVector.sub(right); // strafe left
+                }
+                if (this.keys.KeyD) {
+                    moveVector.add(right); // strafe right
+                }
+                
+                moveVector.normalize();
+                moveVector.multiplyScalar(speed);
+                
+                pos.x += moveVector.x;
+                pos.z += moveVector.z;
+                
+                if (this.data.fly) {
+                    pos.y += moveVector.y;
+                }
+                
+                // Explicit elevation controls
+                if (this.keys.KeyE || this.keys.Space) pos.y += speed * 0.7;
+                if (this.keys.KeyQ || this.keys.ShiftLeft) pos.y = Math.max(0.2, pos.y - speed * 0.7);
+                
+                this.el.setAttribute('position', pos);
+            }
+        });
+
+        // =============================================
+        // Flowing Water Component for the Great Bath
+        // =============================================
+        AFRAME.registerComponent('flowing-water', {
+            schema: {
+                speed:     { type: 'number', default: 0.4 },
+                waveAmp:   { type: 'number', default: 0.04 },
+                waveFreq:  { type: 'number', default: 1.8 },
+                color1:    { type: 'color',  default: '#1a6e8a' },
+                color2:    { type: 'color',  default: '#0d4f6e' }
+            },
+            init: function () {
+                this.t = 0;
+                this.baseY = this.el.object3D.position.y;
+                // UV offset object for scrolling
+                this.uvOffset = new THREE.Vector2(0, 0);
+                this.color1 = new THREE.Color(this.data.color1);
+                this.color2 = new THREE.Color(this.data.color2);
+                this.lerpColor = new THREE.Color();
+            },
+            tick: function (time, delta) {
+                this.t += delta * 0.001;
+                const t = this.t;
+
+                // 1. Sine-wave height bob
+                const waveY = this.baseY + Math.sin(t * this.data.waveFreq) * this.data.waveAmp;
+                this.el.object3D.position.y = waveY;
+
+                // 2. UV scroll (flowing effect)
+                const mesh = this.el.getObject3D('mesh');
+                if (mesh) {
+                    mesh.traverse(child => {
+                        if (child.isMesh && child.material && child.material.map) {
+                            child.material.map.offset.x = (t * this.data.speed * 0.1) % 1;
+                            child.material.map.offset.y = (t * this.data.speed * 0.06) % 1;
+                            child.material.map.needsUpdate = true;
+                        }
+                    });
+                }
+
+                // 3. Colour pulse between deep teal and dark blue
+                const lerpT = (Math.sin(t * 0.8) + 1) / 2;
+                this.lerpColor.lerpColors(this.color1, this.color2, lerpT);
+                const mat = this.el.getObject3D('mesh');
+                if (mat) {
+                    mat.traverse(child => {
+                        if (child.isMesh && child.material) {
+                            child.material.color.copy(this.lerpColor);
+                        }
+                    });
+                }
+            }
+        });
+
+        // =============================================
+        // Brick Material Override for Great Bath GLTF
+        // =============================================
+        AFRAME.registerComponent('brick-material-override', {
+            schema: {
+                color:      { type: 'color',  default: '#9e6244' },
+                roughness:  { type: 'number', default: 0.95 },
+                metalness:  { type: 'number', default: 0.0 },
+                repeatX:    { type: 'number', default: 6 },
+                repeatY:    { type: 'number', default: 6 }
+            },
+            init: function () {
+                this.el.addEventListener('model-loaded', () => {
+                    const textureEl = document.querySelector('#brick-texture');
+                    if (!textureEl) return;
+
+                    // Get the THREE texture from the A-Frame image asset
+                    const loader = new THREE.TextureLoader();
+                    loader.load(textureEl.src, (tex) => {
+                        tex.wrapS = THREE.RepeatWrapping;
+                        tex.wrapT = THREE.RepeatWrapping;
+                        tex.repeat.set(this.data.repeatX, this.data.repeatY);
+
+                        const brickColor = new THREE.Color(this.data.color);
+
+                        this.el.object3D.traverse(child => {
+                            if (!child.isMesh) return;
+                            // Preserve transparency on parts that should stay open (pool water gap)
+                            const newMat = new THREE.MeshStandardMaterial({
+                                map: tex,
+                                color: brickColor,
+                                roughness: this.data.roughness,
+                                metalness: this.data.metalness,
+                                side: THREE.DoubleSide
+                            });
+                            child.material = newMat;
+                            child.material.needsUpdate = true;
+                        });
+                    });
+                });
+            }
+        });
+    </script>
+    
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -60,6 +285,19 @@
             </div>
         </div>
 
+        <!-- Controls Legend Panel -->
+        <div class="glass-panel" style="pointer-events: auto; padding: 15px 20px; position: absolute; bottom: 20px; left: 20px; width: 230px; border: 1px solid rgba(244, 164, 96, 0.3); text-align: left; z-index: 150;">
+            <h4 style="font-family: 'Outfit', sans-serif; color: #f4a460; margin-bottom: 8px; font-weight: 600; font-size: 1rem; text-shadow: 0 1px 5px rgba(244, 164, 96, 0.2);">Controls</h4>
+            <div style="font-size: 0.82rem; color: #eee; line-height: 1.6;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span>Move Forward/Back:</span><span style="color: #f4a460; font-weight: bold;">W / S</span></div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span>Strafe Left/Right:</span><span style="color: #f4a460; font-weight: bold;">A / D</span></div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span>Turn Left/Right:</span><span style="color: #3498db; font-weight: bold;">◀ ▶ Arrows</span></div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span>Look:</span><span style="color: #f4a460; font-weight: bold;">Mouse Drag</span></div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span>Fly Up:</span><span style="color: #2ecc71; font-weight: bold;">E Key ⬆</span></div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span>Fly Down:</span><span style="color: #e74c3c; font-weight: bold;">Q Key ⬇</span></div>
+            </div>
+        </div>
+
         <div style="pointer-events: auto; text-align: center; margin-bottom: 20px;">
             <a href="../index.html" class="btn" style="display: inline-block;">🏠 Back to Hub</a>
         </div>
@@ -71,7 +309,7 @@
     <a-scene 
         loading-screen="enabled: false;"
         renderer="colorManagement: true; physicallyCorrectLights: true;"
-        fog="type: exponential; color: #dcb394; density: 0.03">
+        fog="type: exponential; color: #dcb394; density: 0.015">
         
         <!-- Assets -->
         <a-assets timeout="30000">
@@ -98,77 +336,281 @@
         <!-- City Entrance (Start Point: Z = 30) -->
         <a-entity id="entrance-model" gltf-model="#entrance" position="0 0 30" scale="1.5 1.5 1.5"></a-entity>
         
-        <!-- The Citadel (West: X = -30, Z = 0) -->
-        <a-entity id="citadel" position="-30 0 0">
-            <!-- Massive Mud-Brick Platform (Mound) -->
-            <a-box position="0 2 0" width="40" height="4" depth="40" material="src: #brick-texture; repeat: 40 4; roughness: 1.0"></a-box>
-            <!-- Ramp leading up to Citadel -->
-            <a-plane position="20 2 0" rotation="-90 -90 0" width="10" height="15" material="src: #earth-texture; repeat: 2 3"></a-plane>
-            <a-box position="25 1 0" rotation="0 0 15" width="12" height="2" depth="10" material="src: #brick-texture; repeat: 12 2"></a-box>
+        <!-- The Citadel (North: X = 0, Z = -55) — RESTORED CLEAN PLATFORM -->
+        <a-entity id="citadel" position="0 0 -55">
+            <!-- Citadel West Platform (Granary area: X = -20) -->
+            <a-box position="-20 2 0" width="30" height="4" depth="40" material="src: #brick-texture; repeat: 30 10; roughness: 1.0"></a-box>
+            
+            <!-- Citadel East Platform (Assembly Hall area: X = 22) -->
+            <a-box position="22 2 0" width="30" height="4" depth="40" material="src: #brick-texture; repeat: 30 10; roughness: 1.0"></a-box>
 
-            <!-- The Great Bath (Elevated on top of the mound) -->
-            <a-entity id="greatbath-model" gltf-model="#greatbath" position="0 2.5 0" scale="2 2 2" rotation="0 45 0"></a-entity>
+            <!-- Raised Mound for the Great Granary (X = -20) -->
+            <a-box position="-20 5.5 0" width="22" height="3" depth="22" material="src: #brick-texture; repeat: 10 3; roughness: 1.0"></a-box>
+
+            <!-- Brick Stairs leading up to the Granary Mound -->
+            <a-box position="-20 4.15 15" width="6" height="0.3" depth="1" material="src: #brick-texture; repeat: 6 1; roughness: 1.0"></a-box>
+            <a-box position="-20 4.75 14" width="6" height="0.3" depth="1" material="src: #brick-texture; repeat: 6 1; roughness: 1.0"></a-box>
+            <a-box position="-20 5.35 13" width="6" height="0.3" depth="1" material="src: #brick-texture; repeat: 6 1; roughness: 1.0"></a-box>
+            <a-box position="-20 5.95 12" width="6" height="0.3" depth="1" material="src: #brick-texture; repeat: 6 1; roughness: 1.0"></a-box>
+            <a-box position="-20 6.55 11" width="6" height="0.3" depth="1" material="src: #brick-texture; repeat: 6 1; roughness: 1.0"></a-box>
+
+            <a-box position="0 2 25" rotation="15 0 0" width="10" height="2" depth="15" material="src: #brick-texture; repeat: 10 3"></a-box>
         </a-entity>
-        
-        <!-- Custom Residential Quarter (Lower Town: X = 25, Z = 0) -->
-        <a-entity id="houses-model" position="25 0 0">
-            <!-- Ground Plane -->
-            <a-plane position="0 0 0" rotation="-90 0 0" width="30" height="30" material="src: #earth-texture; repeat: 10 10; roughness: 0.9"></a-plane>
+
+        <!-- The Great Bath (pool model only, no base/rooms/gate) -->
+        <a-entity id="great-bath-complex" position="60 0 -29">
+            <!-- GLTF model lowered by 1.5m so its deck is flush with the ground and the base is buried -->
+            <a-entity id="greatbath-model"
+                gltf-model="#greatbath"
+                position="0 -1.5 0"
+                scale="1.4 1.4 1.4"
+                rotation="0 90 0"
+                brick-material-override="color: #8c5a3a; roughness: 0.96; metalness: 0.0; repeatX: 8; repeatY: 8">
+            </a-entity>
+
+            <!--
+                WATER — Three stacked a-box volumes.
+                The GLTF deck sits at Y≈0 (local). The pool opening is at Y≈0.
+                Raise water top to Y=0.35 so it sits visibly inside the pool,
+                fully covers the cavity, and is never occluded by the ground plane.
+            -->
+
+            <!-- DEEP water body — completely fills the pool from floor to surface -->
+            <a-box
+                id="bath-water-volume"
+                position="0 -0.45 0"
+                width="11.5"
+                height="1.5"
+                depth="19.5"
+                material="color: #0b4a60; opacity: 1.0; roughness: 0.0; metalness: 0.1">
+                <a-animation attribute="material.color"
+                    from="#0b4a60" to="#0d5f7a"
+                    dur="3000" repeat="indefinite" direction="alternate" easing="linear">
+                </a-animation>
+            </a-box>
+
+            <!-- SURFACE teal layer — sits ON TOP of the deep volume, animated colour -->
+            <a-box
+                id="bath-water-surface"
+                position="0 0.3 0"
+                width="11.5"
+                height="0.08"
+                depth="19.5"
+                material="color: #1a8faa; opacity: 0.88; transparent: true; roughness: 0.0; metalness: 0.4; side: double">
+                <a-animation attribute="material.color"
+                    from="#1a8faa" to="#2ab8d4"
+                    dur="2500" repeat="indefinite" direction="alternate" easing="linear">
+                </a-animation>
+                <a-animation attribute="position"
+                    from="0 0.30 0" to="0 0.33 0"
+                    dur="1800" repeat="indefinite" direction="alternate" easing="easeInOutSine">
+                </a-animation>
+            </a-box>
+
+            <!-- SHIMMER highlight — thin specular flash on the very top -->
+            <a-box
+                id="bath-water-shimmer"
+                position="0 0.35 0"
+                width="11.5"
+                height="0.025"
+                depth="19.5"
+                material="color: #7ef0ff; opacity: 0.18; transparent: true; roughness: 0.0; metalness: 0.9; side: double">
+                <a-animation attribute="material.opacity"
+                    from="0.10" to="0.28"
+                    dur="1500" repeat="indefinite" direction="alternate" easing="easeInOutSine">
+                </a-animation>
+            </a-box>
+
+
+
+            <!-- =============================================
+                 GREAT BATH CORBELLED DRAINAGE CHANNEL
+                 Historically: a corbelled brick drain ran Westward from
+                 the pool outlet, passing under the deck and exiting
+                 through the citadel wall to the main street sewer.
+                 Local coords: pool edge ~X=-5, runs to X=-16.5 along Z=6.
+                 ============================================= -->
+            <a-entity id="great-bath-drain">
+                <!-- Muddy waste water flowing inside the channel trench -->
+                <a-plane position="-11 -0.68 6" rotation="-90 0 0" width="11" height="0.65"
+                         material="color: #2e2018; roughness: 0.1; metalness: 0.2; transparent: true; opacity: 0.88"
+                         flowing-water="speed: 0.9; waveAmp: 0.015; waveFreq: 5; color1: #2e2018; color2: #1a1208">
+                </a-plane>
+                <!-- Channel Side Walls -->
+                <a-box position="-11 -0.2 5.55" width="11" height="1.0" depth="0.15" material="src: #brick-texture; color: #8c5a3a; repeat: 8 1; roughness: 1.0"></a-box>
+                <a-box position="-11 -0.2 6.45" width="11" height="1.0" depth="0.15" material="src: #brick-texture; color: #8c5a3a; repeat: 8 1; roughness: 1.0"></a-box>
+                <!-- Corbelled Roof — step-in bricks forming the cover -->
+                <a-box position="-11 0.38 5.7"  width="11" height="0.14" depth="0.28" material="src: #brick-texture; color: #7a4d33; repeat: 8 1; roughness: 1.0"></a-box>
+                <a-box position="-11 0.38 6.3"  width="11" height="0.14" depth="0.28" material="src: #brick-texture; color: #7a4d33; repeat: 8 1; roughness: 1.0"></a-box>
+                <a-box position="-11 0.48 6.0"  width="11" height="0.14" depth="0.52" material="src: #brick-texture; color: #6b4430; repeat: 8 1; roughness: 1.0"></a-box>
+                <!-- Open Inspection Shaft near the pool edge (X=-6.5) with interactive grating -->
+                <a-box position="-6.5 0.56 6" width="1.1" height="0.08" depth="1.1"
+                       material="color: #2b1e14; roughness: 1.0"
+                       class="clickable"
+                       data-info="Great Bath Corbelled Drain: This brick-lined channel discharged waste water from the pool into the main street sewer. An open inspection shaft allowed workers to clear silt blockages. One of the world's earliest planned sewage outlets.">
+                </a-box>
+            </a-entity>
+
+            <!-- =============================================
+                 CIRCULAR PILLARS ENCLOSING THE GREAT BATH (OUTWARD)
+                 ============================================= -->
+            <!-- Corners -->
+            <a-cylinder position="-13 2.75 -18.5" radius="0.4" height="5.5" material="src: #brick-texture; color: #8c5a3a; repeat: 2 8; roughness: 1.0"></a-cylinder>
+            <a-cylinder position="13 2.75 -18.5" radius="0.4" height="5.5" material="src: #brick-texture; color: #8c5a3a; repeat: 2 8; roughness: 1.0"></a-cylinder>
+            <a-cylinder position="-13 2.75 18.5" radius="0.4" height="5.5" material="src: #brick-texture; color: #8c5a3a; repeat: 2 8; roughness: 1.0"></a-cylinder>
+            <a-cylinder position="13 2.75 18.5" radius="0.4" height="5.5" material="src: #brick-texture; color: #8c5a3a; repeat: 2 8; roughness: 1.0"></a-cylinder>
+
+            <!-- West Side -->
+            <a-cylinder position="-13 2.75 -12.33" radius="0.4" height="5.5" material="src: #brick-texture; color: #8c5a3a; repeat: 2 8; roughness: 1.0"></a-cylinder>
+            <a-cylinder position="-13 2.75 -6.17" radius="0.4" height="5.5" material="src: #brick-texture; color: #8c5a3a; repeat: 2 8; roughness: 1.0"></a-cylinder>
+            <a-cylinder position="-13 2.75 0" radius="0.4" height="5.5" material="src: #brick-texture; color: #8c5a3a; repeat: 2 8; roughness: 1.0"></a-cylinder>
+            <a-cylinder position="-13 2.75 6.17" radius="0.4" height="5.5" material="src: #brick-texture; color: #8c5a3a; repeat: 2 8; roughness: 1.0"></a-cylinder>
+            <a-cylinder position="-13 2.75 12.33" radius="0.4" height="5.5" material="src: #brick-texture; color: #8c5a3a; repeat: 2 8; roughness: 1.0"></a-cylinder>
+
+            <!-- East Side -->
+            <a-cylinder position="13 2.75 -12.33" radius="0.4" height="5.5" material="src: #brick-texture; color: #8c5a3a; repeat: 2 8; roughness: 1.0"></a-cylinder>
+            <a-cylinder position="13 2.75 -6.17" radius="0.4" height="5.5" material="src: #brick-texture; color: #8c5a3a; repeat: 2 8; roughness: 1.0"></a-cylinder>
+            <a-cylinder position="13 2.75 0" radius="0.4" height="5.5" material="src: #brick-texture; color: #8c5a3a; repeat: 2 8; roughness: 1.0"></a-cylinder>
+            <a-cylinder position="13 2.75 6.17" radius="0.4" height="5.5" material="src: #brick-texture; color: #8c5a3a; repeat: 2 8; roughness: 1.0"></a-cylinder>
+            <a-cylinder position="13 2.75 12.33" radius="0.4" height="5.5" material="src: #brick-texture; color: #8c5a3a; repeat: 2 8; roughness: 1.0"></a-cylinder>
+
+            <!-- North Side -->
+            <a-cylinder position="-6.5 2.75 -18.5" radius="0.4" height="5.5" material="src: #brick-texture; color: #8c5a3a; repeat: 2 8; roughness: 1.0"></a-cylinder>
+            <a-cylinder position="0 2.75 -18.5" radius="0.4" height="5.5" material="src: #brick-texture; color: #8c5a3a; repeat: 2 8; roughness: 1.0"></a-cylinder>
+            <a-cylinder position="6.5 2.75 -18.5" radius="0.4" height="5.5" material="src: #brick-texture; color: #8c5a3a; repeat: 2 8; roughness: 1.0"></a-cylinder>
+
+            <!-- South Side (Front) -->
+            <a-cylinder position="-6.5 2.75 18.5" radius="0.4" height="5.5" material="src: #brick-texture; color: #8c5a3a; repeat: 2 8; roughness: 1.0"></a-cylinder>
+            <a-cylinder position="6.5 2.75 18.5" radius="0.4" height="5.5" material="src: #brick-texture; color: #8c5a3a; repeat: 2 8; roughness: 1.0"></a-cylinder>
+
+            <!-- =============================================
+                 TALL CORBELLED ARCH ENTRANCE AT THE FRONT (Z = 18.5, Y = 0)
+                 ============================================= -->
+            <a-entity id="entrance-archway" position="0 0 18.5">
+                <!-- Columns (height 5.5m, relative Y = 2.75) -->
+                <a-box position="-1.5 2.75 0" width="0.8" height="5.5" depth="0.8" material="src: #brick-texture; color: #8c5a3a; repeat: 1 5; roughness: 1.0"></a-box>
+                <a-box position="1.5 2.75 0" width="0.8" height="5.5" depth="0.8" material="src: #brick-texture; color: #8c5a3a; repeat: 1 5; roughness: 1.0"></a-box>
+                
+                <!-- 4 Stacked Brick Steps inside the archway corridor -->
+                <!-- Step 1 (lowest, furthest south) -->
+                <a-box position="0 0.15 0.9" width="2.2" height="0.3" depth="0.6" material="src: #brick-texture; color: #8c5a3a; repeat: 2 1; roughness: 1.0"></a-box>
+                <!-- Step 2 -->
+                <a-box position="0 0.45 0.3" width="2.2" height="0.3" depth="0.6" material="src: #brick-texture; color: #8c5a3a; repeat: 2 1; roughness: 1.0"></a-box>
+                <!-- Step 3 -->
+                <a-box position="0 0.75 -0.3" width="2.2" height="0.3" depth="0.6" material="src: #brick-texture; color: #8c5a3a; repeat: 2 1; roughness: 1.0"></a-box>
+                <!-- Step 4 (highest, furthest north) -->
+                <a-box position="0 1.05 -0.9" width="2.2" height="0.3" depth="0.6" material="src: #brick-texture; color: #8c5a3a; repeat: 2 1; roughness: 1.0"></a-box>
+
+                <!-- Corbelled Arch steps curving inward -->
+                <a-box position="-1.2 4.8 0" width="0.6" height="0.3" depth="0.8" material="src: #brick-texture; color: #8c5a3a; repeat: 1 1; roughness: 1.0"></a-box>
+                <a-box position="1.2 4.8 0" width="0.6" height="0.3" depth="0.8" material="src: #brick-texture; color: #8c5a3a; repeat: 1 1; roughness: 1.0"></a-box>
+                <a-box position="-0.9 5.1 0" width="0.6" height="0.3" depth="0.8" material="src: #brick-texture; color: #8c5a3a; repeat: 1 1; roughness: 1.0"></a-box>
+                <a-box position="0.9 5.1 0" width="0.6" height="0.3" depth="0.8" material="src: #brick-texture; color: #8c5a3a; repeat: 1 1; roughness: 1.0"></a-box>
+                
+                <!-- Keystone top block -->
+                <a-box position="0 5.4 0" width="2.2" height="0.3" depth="0.8" material="src: #brick-texture; color: #8c5a3a; repeat: 2 1; roughness: 1.0"></a-box>
+            </a-entity>
+
+            <!-- =============================================
+                 3-WALLED ROOM COMPARTMENTS (FACING INWARD)
+                 Elevated directly ON the Great Bath Deck (Y = 0 / Grounded)
+                 ============================================= -->
             
-            <!-- Main Street -->
-            <a-plane position="0 0.01 8" rotation="-90 0 0" width="30" height="4" material="src: #earth-texture; repeat: 10 2; roughness: 1.0; color: #dcb394"></a-plane>
-            
-            <!-- Covered Street Drain -->
-            <a-box position="0 0.1 6.5" width="30" height="0.2" depth="0.5" material="src: #brick-texture; repeat: 30 1; roughness: 0.8"></a-box>
-            <a-box position="0 0.1 9.5" width="30" height="0.2" depth="0.5" material="src: #brick-texture; repeat: 30 1; roughness: 0.8"></a-box>
-            
-            <!-- Central House Structure -->
-            <a-entity position="0 0 0">
-                <!-- Outer Walls (No street facing windows) -->
-                <!-- Front Wall (with door gap) -->
-                <a-box position="-3 1.5 5" width="4" height="3" depth="0.5" material="src: #brick-texture; repeat: 4 3"></a-box>
-                <a-box position="3.5 1.5 5" width="3" height="3" depth="0.5" material="src: #brick-texture; repeat: 3 3"></a-box>
-                <!-- Wooden Door -->
-                <a-box position="0.5 1 5" width="1.5" height="2" depth="0.1" material="src: #wood-texture; repeat: 1 1"></a-box>
-                
-                <!-- Back Wall -->
-                <a-box position="0 1.5 -5" width="10" height="3" depth="0.5" material="src: #brick-texture; repeat: 10 3"></a-box>
-                <!-- Left Wall -->
-                <a-box position="-5 1.5 0" width="0.5" height="3" depth="10" material="src: #brick-texture; repeat: 10 3"></a-box>
-                <!-- Right Wall -->
-                <a-box position="5 1.5 0" width="0.5" height="3" depth="10" material="src: #brick-texture; repeat: 10 3"></a-box>
-                
-                <!-- Inner Courtyard (Open to sky) -->
-                <a-plane position="0 0.05 0" rotation="-90 0 0" width="6" height="6" material="src: #earth-texture; repeat: 2 2"></a-plane>
-                
-                <!-- Internal Walls (creating rooms around courtyard) -->
-                <a-box position="-3 1.5 0" width="0.5" height="3" depth="6" material="src: #brick-texture; repeat: 6 3"></a-box>
-                <a-box position="3 1.5 0" width="0.5" height="3" depth="6" material="src: #brick-texture; repeat: 6 3"></a-box>
-                <a-box position="0 1.5 -3" width="6" height="3" depth="0.5" material="src: #brick-texture; repeat: 6 3"></a-box>
-                
-                <!-- Flat Roofs over the rooms (courtyard is open) -->
-                <a-box position="-4 3 0" width="2" height="0.2" depth="10" material="src: #wood-texture; repeat: 2 10"></a-box>
-                <a-box position="4 3 0" width="2" height="0.2" depth="10" material="src: #wood-texture; repeat: 2 10"></a-box>
-                <a-box position="0 3 -4" width="6" height="0.2" depth="2" material="src: #wood-texture; repeat: 6 2"></a-box>
-                <a-box position="0 3 4" width="6" height="0.2" depth="2" material="src: #wood-texture; repeat: 6 2"></a-box>
-                
-                <!-- Private Well Structure -->
-                <a-cylinder position="-4 0.5 -4" radius="0.8" height="1" open-ended="true" side="double" material="src: #brick-texture; repeat: 4 1"></a-cylinder>
-                <a-cylinder position="-4 0.1 -4" radius="0.75" height="0.2" color="#1a3c5a"></a-cylinder> <!-- Water -->
+            <!-- WEST SIDE ROOMS (Opening faces EAST / Inward) -->
+            <!-- West Room 1 (North-West) -->
+            <a-entity position="-7.5 0 -7">
+                <a-box position="-0.8 1.25 0" width="0.2" height="2.5" depth="2.6" material="src: #brick-texture; color: #8c5a3a; repeat: 1 3; roughness: 1.0"></a-box> <!-- Back Wall -->
+                <a-box position="0 1.25 -1.2" width="1.6" height="2.5" depth="0.2" material="src: #brick-texture; color: #8c5a3a; repeat: 2 3; roughness: 1.0"></a-box> <!-- North Wall -->
+                <a-box position="0 1.25 1.2" width="1.6" height="2.5" depth="0.2" material="src: #brick-texture; color: #8c5a3a; repeat: 2 3; roughness: 1.0"></a-box> <!-- South Wall -->
+                <a-box position="0 2.45 0" width="1.8" height="0.1" depth="2.6" material="src: #wood-texture; repeat: 2 3"></a-box> <!-- Flat Wooden Roof -->
+            </a-entity>
+
+            <!-- West Room 2 (Mid-West) -->
+            <a-entity position="-7.5 0 0">
+                <a-box position="-0.8 1.25 0" width="0.2" height="2.5" depth="2.6" material="src: #brick-texture; color: #8c5a3a; repeat: 1 3; roughness: 1.0"></a-box>
+                <a-box position="0 1.25 -1.2" width="1.6" height="2.5" depth="0.2" material="src: #brick-texture; color: #8c5a3a; repeat: 2 3; roughness: 1.0"></a-box>
+                <a-box position="0 1.25 1.2" width="1.6" height="2.5" depth="0.2" material="src: #brick-texture; color: #8c5a3a; repeat: 2 3; roughness: 1.0"></a-box>
+                <a-box position="0 2.45 0" width="1.8" height="0.1" depth="2.6" material="src: #wood-texture; repeat: 2 3"></a-box>
+            </a-entity>
+
+            <!-- West Room 3 (South-West) -->
+            <a-entity position="-7.5 0 7">
+                <a-box position="-0.8 1.25 0" width="0.2" height="2.5" depth="2.6" material="src: #brick-texture; color: #8c5a3a; repeat: 1 3; roughness: 1.0"></a-box>
+                <a-box position="0 1.25 -1.2" width="1.6" height="2.5" depth="0.2" material="src: #brick-texture; color: #8c5a3a; repeat: 2 3; roughness: 1.0"></a-box>
+                <a-box position="0 1.25 1.2" width="1.6" height="2.5" depth="0.2" material="src: #brick-texture; color: #8c5a3a; repeat: 2 3; roughness: 1.0"></a-box>
+                <a-box position="0 2.45 0" width="1.8" height="0.1" depth="2.6" material="src: #wood-texture; repeat: 2 3"></a-box>
+            </a-entity>
+
+            <!-- EAST SIDE ROOMS (Opening faces WEST / Inward) -->
+            <!-- East Room 1 (North-East) -->
+            <a-entity position="7.5 0 -7">
+                <a-box position="0.8 1.25 0" width="0.2" height="2.5" depth="2.6" material="src: #brick-texture; color: #8c5a3a; repeat: 1 3; roughness: 1.0"></a-box> <!-- Back Wall -->
+                <a-box position="0 1.25 -1.2" width="1.6" height="2.5" depth="0.2" material="src: #brick-texture; color: #8c5a3a; repeat: 2 3; roughness: 1.0"></a-box> <!-- North Wall -->
+                <a-box position="0 1.25 1.2" width="1.6" height="2.5" depth="0.2" material="src: #brick-texture; color: #8c5a3a; repeat: 2 3; roughness: 1.0"></a-box> <!-- South Wall -->
+                <a-box position="0 2.45 0" width="1.8" height="0.1" depth="2.6" material="src: #wood-texture; repeat: 2 3"></a-box> <!-- Flat Wooden Roof -->
+            </a-entity>
+
+            <!-- East Room 2 (Mid-East) -->
+            <a-entity position="7.5 0 0">
+                <a-box position="0.8 1.25 0" width="0.2" height="2.5" depth="2.6" material="src: #brick-texture; color: #8c5a3a; repeat: 1 3; roughness: 1.0"></a-box>
+                <a-box position="0 1.25 -1.2" width="1.6" height="2.5" depth="0.2" material="src: #brick-texture; color: #8c5a3a; repeat: 2 3; roughness: 1.0"></a-box>
+                <a-box position="0 1.25 1.2" width="1.6" height="2.5" depth="0.2" material="src: #brick-texture; color: #8c5a3a; repeat: 2 3; roughness: 1.0"></a-box>
+                <a-box position="0 2.45 0" width="1.8" height="0.1" depth="2.6" material="src: #wood-texture; repeat: 2 3"></a-box>
+            </a-entity>
+
+            <!-- East Room 3 (South-East) -->
+            <a-entity position="7.5 0 7">
+                <a-box position="0.8 1.25 0" width="0.2" height="2.5" depth="2.6" material="src: #brick-texture; color: #8c5a3a; repeat: 1 3; roughness: 1.0"></a-box>
+                <a-box position="0 1.25 -1.2" width="1.6" height="2.5" depth="0.2" material="src: #brick-texture; color: #8c5a3a; repeat: 2 3; roughness: 1.0"></a-box>
+                <a-box position="0 1.25 1.2" width="1.6" height="2.5" depth="0.2" material="src: #brick-texture; color: #8c5a3a; repeat: 2 3; roughness: 1.0"></a-box>
+                <a-box position="0 2.45 0" width="1.8" height="0.1" depth="2.6" material="src: #wood-texture; repeat: 2 3"></a-box>
+            </a-entity>
+
+            <!-- NORTH SIDE ROOMS (Opening faces SOUTH / Inward) -->
+            <!-- North Room 1 (North-West corner) -->
+            <a-entity position="-3.5 0 -11.5">
+                <a-box position="0 1.25 -0.8" width="2.6" height="2.5" depth="0.2" material="src: #brick-texture; color: #8c5a3a; repeat: 3 3; roughness: 1.0"></a-box> <!-- Back Wall -->
+                <a-box position="-1.2 1.25 0" width="0.2" height="2.5" depth="1.6" material="src: #brick-texture; color: #8c5a3a; repeat: 1 3; roughness: 1.0"></a-box> <!-- Left Wall -->
+                <a-box position="1.2 1.25 0" width="0.2" height="2.5" depth="1.6" material="src: #brick-texture; color: #8c5a3a; repeat: 1 3; roughness: 1.0"></a-box> <!-- Right Wall -->
+                <a-box position="0 2.45 0" width="2.6" height="0.1" depth="1.8" material="src: #wood-texture; repeat: 3 2"></a-box> <!-- Flat Wooden Roof -->
+            </a-entity>
+
+            <!-- North Room 2 (North-East corner) -->
+            <a-entity position="3.5 0 -11.5">
+                <a-box position="0 1.25 -0.8" width="2.6" height="2.5" depth="0.2" material="src: #brick-texture; color: #8c5a3a; repeat: 3 3; roughness: 1.0"></a-box>
+                <a-box position="-1.2 1.25 0" width="0.2" height="2.5" depth="1.6" material="src: #brick-texture; color: #8c5a3a; repeat: 1 3; roughness: 1.0"></a-box>
+                <a-box position="1.2 1.25 0" width="0.2" height="2.5" depth="1.6" material="src: #brick-texture; color: #8c5a3a; repeat: 1 3; roughness: 1.0"></a-box>
+                <a-box position="0 2.45 0" width="2.6" height="0.1" depth="1.8" material="src: #wood-texture; repeat: 3 2"></a-box>
             </a-entity>
         </a-entity>
+
+
+
+        <!-- Public Well Complex on the Street Corner (Image 5) -->
+        <a-entity id="public-well" position="12 0 10">
+            <a-cylinder position="0 0.6 0" radius="0.9" height="1.2" open-ended="true" side="double" material="src: #brick-texture; repeat: 6 2; roughness: 1.0"></a-cylinder>
+            <a-cylinder position="0 0.2 0" radius="0.85" height="0.2" color="#1a3c5a" material="roughness: 0.3"></a-cylinder>
+            
+            <!-- Pulley Wooden Posts -->
+            <a-box position="-0.8 1.4 0" width="0.1" height="1.6" depth="0.1" material="src: #wood-texture; color: #8b5a2b"></a-box>
+            <a-box position="0.8 1.4 0" width="0.1" height="1.6" depth="0.1" material="src: #wood-texture; color: #8b5a2b"></a-box>
+            <a-box position="0 2.2 0" width="1.7" height="0.1" depth="0.1" material="src: #wood-texture; color: #8b5a2b"></a-box>
+            
+            <!-- Clay Pots next to the well -->
+            <a-sphere position="1.1 0.3 0.6" radius="0.3" material="src: #brick-texture; color: #d2691e; roughness: 1.0"></a-sphere>
+            <a-sphere position="1.4 0.25 0.2" radius="0.25" material="src: #brick-texture; color: #d2691e; roughness: 1.0"></a-sphere>
+        </a-entity>
         
+
+
         <!-- Sky -->
         <a-sky color="#dcb394"></a-sky>
 
-        <a-entity id="rig" position="0 1.6 30" movement-controls="speed: 0.2">
-            <a-entity camera position="0 0 0" look-controls="pointerLockEnabled: false">
-                <a-entity cursor="fuse: false; rayOrigin: mouse;"
-                          position="0 0 -1"
-                          geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03"
-                          material="color: white; shader: flat; opacity: 0.5"
-                          raycaster="objects: .clickable">
-                </a-entity>
+        <a-entity id="rig" position="0 1.6 30" custom-controls="speed: 0.35; fly: false">
+            <a-entity id="camera" camera position="0 0 0" 
+                      look-controls="pointerLockEnabled: false"
+                      cursor="rayOrigin: mouse"
+                      raycaster="objects: .clickable">
             </a-entity>
         </a-entity>
     </a-scene>
