@@ -28,6 +28,9 @@
                     KeyQ: false, ShiftLeft: false
                 };
                 
+                this.leftThumbstick = { x: 0, y: 0 };
+                this.rightThumbstick = { x: 0, y: 0 };
+                
                 this.onKeyDown = this.onKeyDown.bind(this);
                 this.onKeyUp = this.onKeyUp.bind(this);
                 window.addEventListener('keydown', this.onKeyDown);
@@ -38,10 +41,69 @@
                 });
                 
                 this.cameraEl = this.el.querySelector('[camera]') || this.el.querySelector('a-camera');
+                
+                // Set up controller listeners when scene is loaded or VR is entered
+                this.controllersBound = false;
+                this.setupControllerListeners = this.setupControllerListeners.bind(this);
+                if (this.el.sceneEl.hasLoaded) {
+                    this.setupControllerListeners();
+                } else {
+                    this.el.sceneEl.addEventListener('loaded', this.setupControllerListeners);
+                }
+                this.el.sceneEl.addEventListener('enter-vr', this.setupControllerListeners);
             },
             remove: function () {
                 window.removeEventListener('keydown', this.onKeyDown);
                 window.removeEventListener('keyup', this.onKeyUp);
+                this.el.sceneEl.removeEventListener('loaded', this.setupControllerListeners);
+                this.el.sceneEl.removeEventListener('enter-vr', this.setupControllerListeners);
+            },
+            setupControllerListeners: function () {
+                if (this.controllersBound) return;
+                
+                const leftController = this.el.querySelector('#left-controller');
+                const rightController = this.el.querySelector('#right-controller');
+                
+                if (!leftController && !rightController) return;
+                
+                const registerEvents = (controller, hand) => {
+                    controller.addEventListener('controllerconnected', (e) => {
+                        console.log(`🎮 ${hand} controller connected:`, e.detail.name);
+                    });
+                    controller.addEventListener('controllerdisconnected', () => {
+                        console.log(`❌ ${hand} controller disconnected`);
+                        if (hand === 'left') {
+                            this.leftThumbstick = { x: 0, y: 0 };
+                        } else {
+                            this.rightThumbstick = { x: 0, y: 0 };
+                        }
+                    });
+                    controller.addEventListener('thumbstickmoved', (e) => {
+                        if (hand === 'left') {
+                            this.leftThumbstick.x = e.detail.x;
+                            this.leftThumbstick.y = e.detail.y;
+                        } else {
+                            this.rightThumbstick.x = e.detail.x;
+                            this.rightThumbstick.y = e.detail.y;
+                        }
+                    });
+                    controller.addEventListener('axismove', (e) => {
+                        if (e.detail.axis && e.detail.axis.length >= 2) {
+                            if (hand === 'left') {
+                                this.leftThumbstick.x = e.detail.axis[0];
+                                this.leftThumbstick.y = e.detail.axis[1];
+                            } else {
+                                this.rightThumbstick.x = e.detail.axis[0];
+                                this.rightThumbstick.y = e.detail.axis[1];
+                            }
+                        }
+                    });
+                };
+
+                if (leftController) registerEvents(leftController, 'left');
+                if (rightController) registerEvents(rightController, 'right');
+                
+                this.controllersBound = true;
             },
             onKeyDown: function (e) {
                 let code = e.code;
@@ -86,6 +148,13 @@
                 if (this.keys.ArrowRight) {
                     rot.y -= rotSpeed;
                 }
+                
+                // VR Controller Comfort/Smooth Turning (Right controller thumbstick X-axis)
+                const threshold = 0.15;
+                if (Math.abs(this.rightThumbstick.x) > threshold) {
+                    rot.y -= this.rightThumbstick.x * rotSpeed * 0.8;
+                }
+                
                 this.el.setAttribute('rotation', rot);
                 
                 if (!this.cameraEl) return;
@@ -105,6 +174,8 @@
                 right.normalize();
                 
                 let moveVector = new THREE.Vector3();
+                
+                // Keyboard inputs
                 if (this.keys.KeyW || this.keys.ArrowUp) {
                     moveVector.add(forward);
                 }
@@ -118,14 +189,29 @@
                     moveVector.add(right); // strafe right
                 }
                 
-                moveVector.normalize();
-                moveVector.multiplyScalar(speed);
+                // VR Controller movement: Left thumbstick (standard translation)
+                if (Math.abs(this.leftThumbstick.y) > threshold) {
+                    moveVector.addScaledVector(forward, -this.leftThumbstick.y);
+                }
+                if (Math.abs(this.leftThumbstick.x) > threshold) {
+                    moveVector.addScaledVector(right, this.leftThumbstick.x);
+                }
                 
-                pos.x += moveVector.x;
-                pos.z += moveVector.z;
+                // Fallback: If only the right controller is active, let its thumbstick Y-axis move forward/backward
+                if (Math.abs(this.leftThumbstick.y) <= threshold && Math.abs(this.rightThumbstick.y) > threshold) {
+                    moveVector.addScaledVector(forward, -this.rightThumbstick.y);
+                }
                 
-                if (this.data.fly) {
-                    pos.y += moveVector.y;
+                if (moveVector.lengthSq() > 0) {
+                    moveVector.normalize();
+                    moveVector.multiplyScalar(speed);
+                    
+                    pos.x += moveVector.x;
+                    pos.z += moveVector.z;
+                    
+                    if (this.data.fly) {
+                        pos.y += moveVector.y;
+                    }
                 }
                 
                 // Explicit elevation controls
@@ -611,6 +697,22 @@
                       look-controls="pointerLockEnabled: false"
                       cursor="rayOrigin: mouse"
                       raycaster="objects: .clickable">
+            </a-entity>
+            <!-- Left VR Controller -->
+            <a-entity id="left-controller" 
+                      oculus-touch-controls="hand: left" 
+                      vive-controls="hand: left" 
+                      windows-motion-controls="hand: left"
+                      hand-controls="hand: left">
+            </a-entity>
+            <!-- Right VR Controller with Laser Pointer for selection -->
+            <a-entity id="right-controller" 
+                      oculus-touch-controls="hand: right" 
+                      vive-controls="hand: right" 
+                      windows-motion-controls="hand: right"
+                      hand-controls="hand: right"
+                      raycaster="objects: .clickable; far: 100; near: 0.1"
+                      line="color: #f4a460; opacity: 0.8; visible: true">
             </a-entity>
         </a-entity>
     </a-scene>
