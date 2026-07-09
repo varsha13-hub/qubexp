@@ -688,6 +688,15 @@
                         await registration.unregister();
                     }
                     
+                    // Clear all caches to force reload of upgraded files
+                    if (window.caches) {
+                        const keys = await caches.keys();
+                        for (let key of keys) {
+                            await caches.delete(key);
+                        }
+                        console.log('🧹 Caches cleared for upgrade');
+                    }
+                    
                     // Register the new service worker
                     const registration = await navigator.serviceWorker.register('/solar-system/service-worker.js', {
                         scope: '/solar-system/'

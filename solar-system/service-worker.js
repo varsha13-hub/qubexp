@@ -1,4 +1,4 @@
-const CACHE_NAME = 'solar-vr-v1';
+const CACHE_NAME = 'solar-vr-v3';
 
 // Add all files that need to be cached for offline use
 const CACHE_URLS = [
