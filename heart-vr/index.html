@@ -1004,19 +1004,19 @@
     controller1.add(laserLine1);
     controller2.add(laserLine2);
 
-    scene.add(controller1);
-    scene.add(controller2);
+    cameraGroup.add(controller1);
+    cameraGroup.add(controller2);
 
     // Add controller model factory for realistic 3D touch controller models
     const controllerModelFactory = new XRControllerModelFactory();
     
     const controllerGrip1 = renderer.xr.getControllerGrip(0);
     controllerGrip1.add(controllerModelFactory.createControllerModel(controllerGrip1));
-    scene.add(controllerGrip1);
+    cameraGroup.add(controllerGrip1);
 
     const controllerGrip2 = renderer.xr.getControllerGrip(1);
     controllerGrip2.add(controllerModelFactory.createControllerModel(controllerGrip2));
-    scene.add(controllerGrip2);
+    cameraGroup.add(controllerGrip2);
 
     // Controller button interactions
     let vrChamberIndex = -1; // -1: Overview, 0: RA, 1: RV, 2: LA, 3: LV
@@ -1157,7 +1157,10 @@
           
           const response = await fetch('/api/ai-ask', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+              'Content-Type': 'application/json',
+              'ngrok-skip-browser-warning': 'true'
+            },
             body: JSON.stringify({ question, lang: selectedLang })
           });
 
