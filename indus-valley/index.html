@@ -368,55 +368,58 @@
             </a-entity>
 
             <!--
-                WATER — Full volume fill.
-                The pool GLTF cavity (scaled 1.4×, rotated 90°) is ~12m wide × 20m long.
-                We use an opaque water BOX (depth=1.4m) so the floor is never visible,
-                plus a wide shimmer plane flush at the water surface.
-                Y = -0.22 places the water surface just below deck level.
+                WATER — Three stacked a-box volumes.
+                The GLTF deck sits at Y≈0 (local). The pool opening is at Y≈0.
+                Raise water top to Y=0.35 so it sits visibly inside the pool,
+                fully covers the cavity, and is never occluded by the ground plane.
             -->
 
-            <!-- Solid deep-water volume — completely fills the pool, no ground shows through -->
+            <!-- DEEP water body — completely fills the pool from floor to surface -->
             <a-box
                 id="bath-water-volume"
-                position="0 -0.92 0"
-                width="14.5"
-                height="1.4"
-                depth="21.5"
-                material="color: #0b4a60; opacity: 1.0; roughness: 0.0; metalness: 0.15; side: double">
+                position="0 -0.45 0"
+                width="11.5"
+                height="1.5"
+                depth="19.5"
+                material="color: #0b4a60; opacity: 1.0; roughness: 0.0; metalness: 0.1">
+                <a-animation attribute="material.color"
+                    from="#0b4a60" to="#0d5f7a"
+                    dur="3000" repeat="indefinite" direction="alternate" easing="linear">
+                </a-animation>
             </a-box>
 
-            <!-- Base animated water surface layer (full coverage) -->
-            <a-plane
-                id="bath-water"
-                position="0 -0.2 0"
-                rotation="-90 0 0"
-                width="14.5"
-                height="21.5"
-                material="color: #1a6e8a; opacity: 0.96; transparent: true; roughness: 0.02; metalness: 0.35; side: double"
-                flowing-water="speed: 0.4; waveAmp: 0.04; waveFreq: 1.8; color1: #1a6e8a; color2: #0d4f6e">
-            </a-plane>
+            <!-- SURFACE teal layer — sits ON TOP of the deep volume, animated colour -->
+            <a-box
+                id="bath-water-surface"
+                position="0 0.3 0"
+                width="11.5"
+                height="0.08"
+                depth="19.5"
+                material="color: #1a8faa; opacity: 0.88; transparent: true; roughness: 0.0; metalness: 0.4; side: double">
+                <a-animation attribute="material.color"
+                    from="#1a8faa" to="#2ab8d4"
+                    dur="2500" repeat="indefinite" direction="alternate" easing="linear">
+                </a-animation>
+                <a-animation attribute="position"
+                    from="0 0.30 0" to="0 0.33 0"
+                    dur="1800" repeat="indefinite" direction="alternate" easing="easeInOutSine">
+                </a-animation>
+            </a-box>
 
-            <!-- Mid shimmer overlay -->
-            <a-plane
-                id="bath-water-mid"
-                position="0 -0.18 0"
-                rotation="-90 0 0"
-                width="14.5"
-                height="21.5"
-                material="color: #2a9ab8; opacity: 0.22; transparent: true; roughness: 0.0; metalness: 0.6; side: double"
-                flowing-water="speed: 0.7; waveAmp: 0.03; waveFreq: 2.4; color1: #2a9ab8; color2: #1a6e8a">
-            </a-plane>
-
-            <!-- Surface highlight / specular shimmer -->
-            <a-plane
+            <!-- SHIMMER highlight — thin specular flash on the very top -->
+            <a-box
                 id="bath-water-shimmer"
-                position="0 -0.16 0"
-                rotation="-90 0 0"
-                width="14.5"
-                height="21.5"
-                material="color: #5de0f5; opacity: 0.12; transparent: true; roughness: 0.0; metalness: 0.9; side: double"
-                flowing-water="speed: 1.1; waveAmp: 0.02; waveFreq: 3.2; color1: #5de0f5; color2: #2a9ab8">
-            </a-plane>
+                position="0 0.35 0"
+                width="11.5"
+                height="0.025"
+                depth="19.5"
+                material="color: #7ef0ff; opacity: 0.18; transparent: true; roughness: 0.0; metalness: 0.9; side: double">
+                <a-animation attribute="material.opacity"
+                    from="0.10" to="0.28"
+                    dur="1500" repeat="indefinite" direction="alternate" easing="easeInOutSine">
+                </a-animation>
+            </a-box>
+
 
 
             <!-- =============================================
