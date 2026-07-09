@@ -118,6 +118,9 @@ class CityBuilder {
 
         // 5. Build the city-wide covered street sewer grid
         this.buildCitySewerGrid();
+
+        // 6. Scatter trees, public wells and green grass patches in open areas
+        this.buildCityVegetation();
     }
 
     // ==========================================
@@ -1187,7 +1190,249 @@ class CityBuilder {
             addPillar(x, maxZ);
         }
     }
+
+    // ==========================================
+    // VEGETATION & WELLS
+    // ==========================================
+
+    /** Builds a stylised Indus Valley tree. type: 'palm' | 'peepal' | 'fig' */
+    buildTree(x, z, type = 'palm') {
+        const group = document.createElement('a-entity');
+        group.setAttribute('position', `${x} 0 ${z}`);
+
+        if (type === 'palm') {
+            const trunk = document.createElement('a-cylinder');
+            trunk.setAttribute('position', '0 2.5 0');
+            trunk.setAttribute('radius-bottom', '0.22');
+            trunk.setAttribute('radius-top', '0.12');
+            trunk.setAttribute('height', '5.0');
+            trunk.setAttribute('material', 'color: #7a5230; roughness: 1.0');
+            group.appendChild(trunk);
+            [0, 51, 103, 154, 205, 257, 308].forEach(angle => {
+                const frond = document.createElement('a-plane');
+                const rad = angle * Math.PI / 180;
+                frond.setAttribute('position', `${Math.cos(rad)*1.8} 5.3 ${Math.sin(rad)*1.8}`);
+                frond.setAttribute('rotation', `${-35 + (angle % 30)} ${angle} 0`);
+                frond.setAttribute('width', '2.4');
+                frond.setAttribute('height', '0.55');
+                frond.setAttribute('material', 'color: #2d7a2e; roughness: 0.9; side: double; transparent: true; opacity: 0.92');
+                group.appendChild(frond);
+            });
+        } else if (type === 'peepal') {
+            const trunk = document.createElement('a-cylinder');
+            trunk.setAttribute('position', '0 1.8 0');
+            trunk.setAttribute('radius-bottom', '0.35');
+            trunk.setAttribute('radius-top', '0.25');
+            trunk.setAttribute('height', '3.6');
+            trunk.setAttribute('material', 'color: #5c3d1e; roughness: 1.0');
+            group.appendChild(trunk);
+            [[0,4.5,0,2.5],[-1.2,3.8,0.8,1.8],[1.2,3.8,-0.8,1.8],[0,5.8,0.4,1.6]].forEach(([cx,cy,cz,r]) => {
+                const canopy = document.createElement('a-sphere');
+                canopy.setAttribute('position', `${cx} ${cy} ${cz}`);
+                canopy.setAttribute('radius', `${r}`);
+                canopy.setAttribute('material', 'color: #1a5c1e; roughness: 0.85; transparent: true; opacity: 0.94');
+                group.appendChild(canopy);
+            });
+        } else { // fig
+            const trunk = document.createElement('a-cylinder');
+            trunk.setAttribute('position', '0 2.0 0');
+            trunk.setAttribute('radius-bottom', '0.28');
+            trunk.setAttribute('radius-top', '0.18');
+            trunk.setAttribute('height', '4.0');
+            trunk.setAttribute('material', 'color: #6b4826; roughness: 1.0');
+            group.appendChild(trunk);
+            [[0,4.8,0,2.2],[-1.0,4.2,1.0,1.5],[1.0,4.2,-1.0,1.5]].forEach(([cx,cy,cz,r]) => {
+                const canopy = document.createElement('a-sphere');
+                canopy.setAttribute('position', `${cx} ${cy} ${cz}`);
+                canopy.setAttribute('radius', `${r}`);
+                canopy.setAttribute('material', 'color: #2a6b22; roughness: 0.85; transparent: true; opacity: 0.93');
+                group.appendChild(canopy);
+            });
+        }
+        this.container.appendChild(group);
+    }
+
+    /** Builds a Harappan public well — brick ring, wooden crossbeam, rope and bucket. */
+    buildPublicWell(x, z) {
+        const group = document.createElement('a-entity');
+        group.setAttribute('position', `${x} 0 ${z}`);
+
+        // Brick ring surround
+        const ring = document.createElement('a-torus');
+        ring.setAttribute('position', '0 0.45 0');
+        ring.setAttribute('radius', '0.7');
+        ring.setAttribute('radius-tubular', '0.22');
+        ring.setAttribute('segments-radial', '16');
+        ring.setAttribute('segments-tubular', '12');
+        ring.setAttribute('material', 'src: #brick-texture; color: #a06040; repeat: 6 2; roughness: 1.0');
+        ring.setAttribute('class', 'clickable');
+        ring.setAttribute('data-info', 'Public Well: Shared wells served the wider street quarter. Brick-lined shafts prevented collapse \u2014 some at Mohenjo-Daro survive to 15m deep.');
+        group.appendChild(ring);
+
+        // Dark water surface
+        const water = document.createElement('a-cylinder');
+        water.setAttribute('position', '0 0.12 0');
+        water.setAttribute('radius', '0.48');
+        water.setAttribute('height', '0.05');
+        water.setAttribute('material', 'color: #0d3050; roughness: 0.05; metalness: 0.4; transparent: true; opacity: 0.9');
+        group.appendChild(water);
+
+        // Wooden crossbeam
+        const beam = document.createElement('a-box');
+        beam.setAttribute('position', '0 1.6 0');
+        beam.setAttribute('width', '1.7');
+        beam.setAttribute('height', '0.14');
+        beam.setAttribute('depth', '0.14');
+        beam.setAttribute('material', 'src: #wood-texture; color: #7a4a1e; repeat: 3 1');
+        group.appendChild(beam);
+
+        // Left post
+        const post1 = document.createElement('a-cylinder');
+        post1.setAttribute('position', '-0.75 0.9 0');
+        post1.setAttribute('radius', '0.07');
+        post1.setAttribute('height', '1.8');
+        post1.setAttribute('material', 'color: #6b3d18; roughness: 1.0');
+        group.appendChild(post1);
+
+        // Right post
+        const post2 = document.createElement('a-cylinder');
+        post2.setAttribute('position', '0.75 0.9 0');
+        post2.setAttribute('radius', '0.07');
+        post2.setAttribute('height', '1.8');
+        post2.setAttribute('material', 'color: #6b3d18; roughness: 1.0');
+        group.appendChild(post2);
+
+        // Rope
+        const rope = document.createElement('a-cylinder');
+        rope.setAttribute('position', '0.05 1.0 0');
+        rope.setAttribute('radius', '0.025');
+        rope.setAttribute('height', '1.0');
+        rope.setAttribute('material', 'color: #c8a050; roughness: 1.0');
+        group.appendChild(rope);
+
+        // Bucket
+        const bucket = document.createElement('a-box');
+        bucket.setAttribute('position', '0.05 0.4 0');
+        bucket.setAttribute('width', '0.22');
+        bucket.setAttribute('height', '0.22');
+        bucket.setAttribute('depth', '0.22');
+        bucket.setAttribute('material', 'color: #8b5a2b; roughness: 1.0');
+        group.appendChild(bucket);
+
+        this.container.appendChild(group);
+    }
+
+    /** Builds a circular patch of green grass at (x, z). */
+    buildGrassPatch(x, z, radius = 2.5) {
+        const patch = document.createElement('a-cylinder');
+        patch.setAttribute('position', `${x} 0.01 ${z}`);
+        patch.setAttribute('radius', `${radius}`);
+        patch.setAttribute('height', '0.04');
+        patch.setAttribute('material', 'color: #3d7a2e; roughness: 0.95');
+        this.container.appendChild(patch);
+
+        const tuftCount = Math.floor(radius * 3);
+        for (let i = 0; i < tuftCount; i++) {
+            const angle = (i / tuftCount) * Math.PI * 2 + i * 0.7;
+            const dist  = radius * (0.3 + (i % 3) * 0.22);
+            const tuft = document.createElement('a-cylinder');
+            tuft.setAttribute('position', `${x + Math.cos(angle)*dist} 0.03 ${z + Math.sin(angle)*dist}`);
+            tuft.setAttribute('radius', `${0.18 + (i % 3) * 0.08}`);
+            tuft.setAttribute('height', '0.06');
+            tuft.setAttribute('material', `color: ${(i % 2 === 0) ? '#2d6622' : '#4a8c35'}; roughness: 1.0`);
+            this.container.appendChild(tuft);
+        }
+    }
+
+    /**
+     * Scatters trees, public wells and green grass patches across
+     * empty street corners, block courtyards and city periphery.
+     */
+    buildCityVegetation() {
+        console.log('🌿 Planting City Vegetation & Wells...');
+
+        // ── STREET-CORNER TREES ──
+        const streetTrees = [
+            // Workers district — avenue between Column 1 & Column 2
+            { x: -30, z: -1,  type: 'palm'   },
+            { x: -30, z: 21,  type: 'peepal' },
+            { x: -30, z: 41,  type: 'palm'   },
+            { x: -30, z: 61,  type: 'fig'    },
+            { x: -30, z: 81,  type: 'peepal' },
+            // West outer fringe
+            { x: -45, z: 10,  type: 'palm'   },
+            { x: -45, z: 30,  type: 'peepal' },
+            { x: -45, z: 50,  type: 'fig'    },
+            { x: -45, z: 70,  type: 'palm'   },
+            // Grand central avenue (between Workers & Elite districts)
+            { x: -4,  z: -10, type: 'peepal' },
+            { x: -4,  z: 15,  type: 'palm'   },
+            { x: -4,  z: 35,  type: 'fig'    },
+            { x: -4,  z: 55,  type: 'peepal' },
+            { x: -4,  z: 75,  type: 'palm'   },
+            { x:  3,  z: -10, type: 'fig'    },
+            { x:  3,  z: 15,  type: 'palm'   },
+            { x:  3,  z: 35,  type: 'peepal' },
+            { x:  3,  z: 55,  type: 'fig'    },
+            { x:  3,  z: 75,  type: 'peepal' },
+            // Elite enclave cross-streets
+            { x: 20,  z: -5,  type: 'peepal' },
+            { x: 20,  z: 18,  type: 'palm'   },
+            { x: 20,  z: 38,  type: 'fig'    },
+            { x: 20,  z: 58,  type: 'peepal' },
+            { x: 20,  z: 78,  type: 'palm'   },
+            // Far East fringe
+            { x: 46,  z: 10,  type: 'palm'   },
+            { x: 46,  z: 30,  type: 'fig'    },
+            { x: 46,  z: 50,  type: 'peepal' },
+            { x: 46,  z: 70,  type: 'palm'   },
+            // Citadel northern approach
+            { x: -15, z: -28, type: 'peepal' },
+            { x:   5, z: -28, type: 'palm'   },
+            { x:  18, z: -28, type: 'fig'    },
+        ];
+        streetTrees.forEach(t => this.buildTree(t.x, t.z, t.type));
+
+        // ── PUBLIC WELLS ──
+        const wellPositions = [
+            // Workers district street corners
+            { x: -30, z: 9  }, { x: -30, z: 29 }, { x: -30, z: 49 }, { x: -30, z: 69 },
+            // Grand central avenue
+            { x: -0.5, z: 5  }, { x: -0.5, z: 45 }, { x: -0.5, z: 85 },
+            // Elite enclave
+            { x: 20, z: 8  }, { x: 20, z: 28 }, { x: 20, z: 48 }, { x: 20, z: 68 },
+            // Far east
+            { x: 44, z: 20 }, { x: 44, z: 60 },
+        ];
+        wellPositions.forEach(w => this.buildPublicWell(w.x, w.z));
+
+        // ── GRASS PATCHES ──
+        const grassPatches = [
+            // Around wells — Workers district
+            { x: -30, z: 9,  r: 2.2 }, { x: -30, z: 29, r: 2.2 },
+            { x: -30, z: 49, r: 2.2 }, { x: -30, z: 69, r: 2.2 },
+            // Grand avenue green strips
+            { x: -0.5, z: 5,  r: 2.5 }, { x: -0.5, z: 45, r: 2.5 }, { x: -0.5, z: 85, r: 2.5 },
+            // Street-tree base pads
+            { x: -30, z: -1, r: 1.5 }, { x: -30, z: 21, r: 1.5 }, { x: -30, z: 41, r: 1.5 },
+            { x: -30, z: 61, r: 1.5 }, { x: -30, z: 81, r: 1.5 },
+            { x: -4,  z: 15, r: 1.6 }, { x: -4,  z: 35, r: 1.6 }, { x: -4,  z: 55, r: 1.6 },
+            { x:  3,  z: 35, r: 1.6 }, { x:  3,  z: 75, r: 1.6 },
+            // City south periphery
+            { x: -42, z: 90, r: 3.5 }, { x: -20, z: 92, r: 3.0 }, { x:   5, z: 92, r: 3.5 },
+            { x:  25, z: 92, r: 3.0 }, { x:  44, z: 92, r: 3.5 },
+            // City west fringe
+            { x: -48, z: 20, r: 3.5 }, { x: -48, z: 50, r: 3.5 }, { x: -48, z: 80, r: 3.5 },
+            // Elite enclave internal plazas
+            { x: 20, z: 8,  r: 2.0 }, { x: 20, z: 28, r: 2.0 },
+            { x: 20, z: 48, r: 2.0 }, { x: 20, z: 68, r: 2.0 },
+            // Citadel approach
+            { x: -15, z: -28, r: 1.8 }, { x: 5, z: -28, r: 1.8 }, { x: 18, z: -28, r: 1.8 },
+        ];
+        grassPatches.forEach(g => this.buildGrassPatch(g.x, g.z, g.r));
+    }
 }
+
 
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
