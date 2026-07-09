@@ -368,42 +368,56 @@
             </a-entity>
 
             <!--
-                WATER — lowered by 1.5m to stay inside the sunken pool cavity.
-                Y=-0.2 sits flush at the top of the submerged floor.
+                WATER — Full volume fill.
+                The pool GLTF cavity (scaled 1.4×, rotated 90°) is ~12m wide × 20m long.
+                We use an opaque water BOX (depth=1.4m) so the floor is never visible,
+                plus a wide shimmer plane flush at the water surface.
+                Y = -0.22 places the water surface just below deck level.
             -->
 
-            <!-- Base deep water layer -->
+            <!-- Solid deep-water volume — completely fills the pool, no ground shows through -->
+            <a-box
+                id="bath-water-volume"
+                position="0 -0.92 0"
+                width="14.5"
+                height="1.4"
+                depth="21.5"
+                material="color: #0b4a60; opacity: 1.0; roughness: 0.0; metalness: 0.15; side: double">
+            </a-box>
+
+            <!-- Base animated water surface layer (full coverage) -->
             <a-plane
                 id="bath-water"
                 position="0 -0.2 0"
                 rotation="-90 0 0"
-                width="13"
-                height="22"
-                material="color: #1a6e8a; opacity: 0.92; transparent: true; roughness: 0.04; metalness: 0.3; side: double"
+                width="14.5"
+                height="21.5"
+                material="color: #1a6e8a; opacity: 0.96; transparent: true; roughness: 0.02; metalness: 0.35; side: double"
                 flowing-water="speed: 0.4; waveAmp: 0.04; waveFreq: 1.8; color1: #1a6e8a; color2: #0d4f6e">
             </a-plane>
 
-            <!-- Mid shimmer layer -->
+            <!-- Mid shimmer overlay -->
             <a-plane
                 id="bath-water-mid"
                 position="0 -0.18 0"
                 rotation="-90 0 0"
-                width="13"
-                height="22"
-                material="color: #2a9ab8; opacity: 0.18; transparent: true; roughness: 0.0; metalness: 0.6; side: double"
+                width="14.5"
+                height="21.5"
+                material="color: #2a9ab8; opacity: 0.22; transparent: true; roughness: 0.0; metalness: 0.6; side: double"
                 flowing-water="speed: 0.7; waveAmp: 0.03; waveFreq: 2.4; color1: #2a9ab8; color2: #1a6e8a">
             </a-plane>
 
-            <!-- Surface highlight layer -->
+            <!-- Surface highlight / specular shimmer -->
             <a-plane
                 id="bath-water-shimmer"
                 position="0 -0.16 0"
                 rotation="-90 0 0"
-                width="13"
-                height="22"
-                material="color: #5de0f5; opacity: 0.10; transparent: true; roughness: 0.0; metalness: 0.8; side: double"
+                width="14.5"
+                height="21.5"
+                material="color: #5de0f5; opacity: 0.12; transparent: true; roughness: 0.0; metalness: 0.9; side: double"
                 flowing-water="speed: 1.1; waveAmp: 0.02; waveFreq: 3.2; color1: #5de0f5; color2: #2a9ab8">
             </a-plane>
+
 
             <!-- =============================================
                  GREAT BATH CORBELLED DRAINAGE CHANNEL
