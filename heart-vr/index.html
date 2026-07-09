@@ -472,6 +472,48 @@
       }
     }
 
+    // Robust VR & desktop compatible TTS speak function with client-side SpeechSynthesis fallback
+    async function speakRobust(text, lang = 'en') {
+      const tts = getTTSManager();
+      try {
+        if (!tts) {
+          throw new Error("TTSManager not instantiated");
+        }
+        // Try the server-side/VR-compatible player first
+        await tts.speak(text, lang);
+      } catch (err) {
+        console.warn("Server-side TTS failed or timed out, falling back to client-native SpeechSynthesis:", err);
+        
+        // Browser speechSynthesis fallback
+        const synth = window.speechSynthesis;
+        if (synth) {
+          synth.cancel();
+          await new Promise((resolve) => {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = 0.95;
+            utterance.pitch = 1.0;
+
+            const voicesList = synth.getVoices();
+            let voice = voicesList.find(v => v.lang.startsWith("en-IN") || v.lang.includes("india"));
+            if (!voice) voice = voicesList.find(v => v.lang.startsWith("en"));
+            if (voice) utterance.voice = voice;
+
+            utterance.onend = () => resolve();
+            utterance.onerror = (e) => {
+              console.error("SpeechSynthesis error:", e);
+              resolve();
+            };
+            synth.speak(utterance);
+          });
+        } else {
+          // If no speechSynthesis (like some VR browsers), wait for a silent reading delay
+          console.warn("Client-side SpeechSynthesis is also unsupported in this browser.");
+          const delay = Math.max(3000, text.split(" ").length * 350);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+      }
+    }
+
     async function playIntroSequence() {
       const tts = getTTSManager();
       if (!tts) {
@@ -500,19 +542,8 @@
           await new Promise(resolve => setTimeout(resolve, 100));
         }
 
-        // Wait for TTS audio to finish playing (compatible with VR headsets!)
-        try {
-          await tts.speak(sentence, 'en');
-        } catch (err) {
-          console.error("TTS speak failed, falling back to simple delay", err);
-          let delay = 6500;
-          while (delay > 0) {
-            if (!isNarrationPaused) {
-              delay -= 100;
-            }
-            await new Promise(resolve => setTimeout(resolve, 100));
-          }
-        }
+        // Wait for robust TTS audio/speech playback (compatible with both browser and VR headset!)
+        await speakRobust(sentence, 'en');
       }
 
       endIntro();
@@ -554,9 +585,17 @@
         }, 500);
       }
 
-      // Initialize guided tour camera targets to avoid sudden jumps
-      tourTargetCamPos.copy(camera.position);
-      tourTargetControlsTarget.copy(controls.target);
+      // Initialize camera to starting overview position
+      if (renderer.xr.isPresenting) {
+        cameraGroup.position.copy(startCamPos);
+        camera.position.set(0, 0, 0);
+      } else {
+        camera.position.copy(startCamPos);
+      }
+
+      // Initialize guided tour targets
+      tourTargetCamPos.copy(startCamPos);
+      tourTargetControlsTarget.copy(heartCenter);
 
       // Enable introPlaying so camera animates to targets, and keep controls active for user inputs
       introPlaying = true;
@@ -708,6 +747,50 @@
     function animate() {
       const dt = Math.min(clock.getDelta(), 0.05);
       const elapsed = clock.elapsedTime;
+
+      // Handle VR thumbstick/joystick movement
+      if (renderer.xr.isPresenting) {
+        const session = renderer.xr.getSession();
+        if (session) {
+          const inputSources = session.inputSources;
+          for (let i = 0; i < inputSources.length; i++) {
+            const inputSource = inputSources[i];
+            if (inputSource.gamepad) {
+              const axes = inputSource.gamepad.axes;
+              let stickX = 0;
+              let stickY = 0;
+              if (axes.length >= 4) {
+                stickX = axes[2];
+                stickY = axes[3];
+              } else if (axes.length >= 2) {
+                stickX = axes[0];
+                stickY = axes[1];
+              }
+
+              const threshold = 0.15;
+              if (Math.abs(stickX) > threshold || Math.abs(stickY) > threshold) {
+                // Squeezing the thumbstick lets you manually fly around, stopping active camera animations
+                if (introPlaying) {
+                  introPlaying = false;
+                  debugLog("🕹️ VR: Joystick input detected, switched to free navigation");
+                }
+
+                const moveSpeed = 2.0 * dt; // meters per second
+                const direction = new THREE.Vector3();
+                camera.getWorldDirection(direction);
+                direction.y = 0; // Keep movement horizontal
+                direction.normalize();
+
+                const right = new THREE.Vector3();
+                right.copy(direction).cross(camera.up).normalize();
+
+                cameraGroup.position.addScaledVector(direction, -stickY * moveSpeed);
+                cameraGroup.position.addScaledVector(right, stickX * moveSpeed);
+              }
+            }
+          }
+        }
+      }
 
       if (introPlaying) {
         // Smoothly lerp both the camera position and the controls target to focus on the active chamber
@@ -1043,11 +1126,8 @@
           // Display answer in the captions box
           showCaption(answer);
           
-          // Speak the answer using the robust server-side/VR-compatible TTSManager
-          const tts = getTTSManager();
-          if (tts) {
-            tts.speak(answer, selectedLang);
-          }
+          // Speak the answer using the robust fallback TTS
+          speakRobust(answer, selectedLang);
 
           questionInput.value = '';
         } catch (error) {
