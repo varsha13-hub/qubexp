@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Working SolarLearn VR - India</title>
+    <!-- Cache bust: 2024-08-25-23-15 -->
+    <style>
+        body { margin: 0; padding: 0; }
+        a-scene { width: 100%; height: 100vh; }
+        .loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #1a1a2e;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+        }
+        .control-panel {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 15px;
+            z-index: 1000;
+            font-family: Arial, sans-serif;
+            border-radius: 10px;
+            min-width: 250px;
+        }
+        .control-panel h4 {
+            margin: 0 0 10px 0;
+            color: #00ff88;
+        }
+        .control-panel button {
+            background: #00ff88;
+            color: #1a1a2e;
+            border: none;
+            padding: 8px 12px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .control-panel button:hover {
+            background: #00cc6a;
+        }
+        .control-panel select {
+            background: #333;
+            color: white;
+            border: 1px solid #555;
+            padding: 5px;
+            margin: 5px;
+            border-radius: 3px;
+        }
+        .info-panel {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 15px;
+            z-index: 1000;
+            font-family: Arial, sans-serif;
+            border-radius: 10px;
+            max-width: 300px;
+        }
+        .status {
+            color: #00ff88;
+            font-weight: bold;
+        }
+        
+        /* Ensure panels are visible in VR mode */
+        .control-panel, .info-panel {
+            z-index: 9999 !important;
+        }
+        
+        /* VR-specific styles */
+        .vr-controls {
+            display: none; /* Hidden by default, shown in VR */
+        }
+        
+        /* Show VR controls when in VR mode */
+        .a-enter-vr .vr-controls {
+            display: block;
+        }
+        
+        /* 3D Button styles for VR */
+        .vr-button {
+            background: #00ff88;
+            color: #1a1a2e;
+            border: 2px solid #00cc6a;
+            border-radius: 8px;
+            padding: 10px 15px;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .vr-button:hover {
+            background: #00cc6a;
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+    <div class="loading" id="loading">
+        <div style="font-size: 2rem; margin-bottom: 1rem;">🌌 Loading Solar System...</div>
+        <div style="font-size: 1rem; color: #00ff88;">Enhanced with Indian Language TTS & Translation</div>
+    </div>
+
+    <div class="control-panel">
+        <h4>🎮 VR Controls</h4>
+        <p>Status: <span id="vrStatus" class="status">Loading...</span></p>
+        
+        <h4>🌍 Language</h4>
+        <select id="languageSelect">
+            <option value="en">🇺🇸 English</option>
+            <option value="hi">🇮🇳 हिंदी (Hindi)</option>
+            <option value="kn">🇮🇳 ಕನ್ನಡ (Kannada)</option>
+            <option value="ta">🇮🇳 தமிழ் (Tamil)</option>
+            <option value="te">🇮🇳 తెలుగు (Telugu)</option>
+            <option value="mr">🇮🇳 मराठी (Marathi)</option>
+            <option value="bn">🇮🇳 বাংলা (Bengali)</option>
+        </select>
+        
+        <h4>🎤 Voice Commands</h4>
+        <button id="speakBtn">🔊 Speak Planet Info</button>
+        <button id="translateBtn">🔄 Translate to Selected Language</button>
+        
+        <h4>📊 Current Planet</h4>
+        <p id="currentPlanet">None selected</p>
+    </div>
+
+            <div class="info-panel">
+            <h4>ℹ️ Instructions</h4>
+            <p>• Click on planets to select them</p>
+            <p>• Use "Speak Planet Info" to hear description</p>
+            <p>• Use "Translate" to get description in selected language</p>
+            <p>• Voice commands work in Hindi, Kannada, and other Indian languages</p>
+            <p>• Control panel is visible in VR mode (top right)</p>
+        </div>
+
+    <a-scene>
+        <!-- Stars background -->
+        <a-sky color="#000011"></a-sky>
+        
+        <!-- Sun -->
+        <a-sphere position="0 0 -10" radius="2" color="#FDB813" class="planet" data-planet-id="sun" data-planet-name="Sun" data-planet-desc="">
+            <a-animation attribute="rotation" to="0 360 0" dur="20000" repeat="indefinite"></a-animation>
+        </a-sphere>
+        <a-text value="Sun" position="0 2.5 -10" align="center" color="#ffffff" scale="0.5 0.5 1"></a-text>
+        
+        <!-- Mercury -->
+        <a-sphere position="5 0 -10" radius="0.4" color="#A0522D" class="planet" data-planet-id="mercury" data-planet-name="Mercury" data-planet-desc="Mercury is the smallest and innermost planet in the Solar System. It has no moons and is covered in craters.">
+            <a-animation attribute="rotation" to="0 360 0" dur="15000" repeat="indefinite"></a-animation>
+        </a-sphere>
+        <a-text value="Mercury" position="5 0.6 -10" align="center" color="#ffffff" scale="0.3 0.3 1"></a-text>
+        
+        <!-- Venus -->
+        <a-sphere position="8 0 -10" radius="0.9" color="#E6BE8A" class="planet" data-planet-id="venus" data-planet-name="Venus" data-planet-desc="Venus is the second planet from the Sun and is often called Earth's sister planet due to similar size and mass.">
+            <a-animation attribute="rotation" to="0 360 0" dur="18000" repeat="indefinite"></a-animation>
+        </a-sphere>
+        <a-text value="Venus" position="8 1.2 -10" align="center" color="#ffffff" scale="0.3 0.3 1"></a-text>
+        
+        <!-- Earth -->
+        <a-sphere position="10 0 -10" radius="1" color="#6B93D6" class="planet" data-planet-id="earth" data-planet-name="Earth" data-planet-desc="Earth is our home planet and the only known planet with life. It has one natural satellite, the Moon.">
+            <a-animation attribute="rotation" to="0 360 0" dur="16000" repeat="indefinite"></a-animation>
+        </a-sphere>
+        <a-text value="Earth" position="10 1.3 -10" align="center" color="#ffffff" scale="0.3 0.3 1"></a-text>
+        
+        <!-- Mars -->
+        <a-sphere position="15 0 -10" radius="0.5" color="#CD5C5C" class="planet" data-planet-id="mars" data-planet-name="Mars" data-planet-desc="Mars is the fourth planet from the Sun and is often called the Red Planet due to its reddish appearance.">
+            <a-animation attribute="rotation" to="0 360 0" dur="14000" repeat="indefinite"></a-animation>
+        </a-sphere>
+        <a-text value="Mars" position="15 0.7 -10" align="center" color="#ffffff" scale="0.3 0.3 1"></a-text>
+        
+        <!-- Jupiter -->
+        <a-sphere position="25 0 -10" radius="3" color="#D8CA9D" class="planet" data-planet-id="jupiter" data-planet-name="Jupiter" data-planet-desc="Jupiter is the largest planet in our Solar System and is a gas giant with no solid surface.">
+            <a-animation attribute="rotation" to="0 360 0" dur="22000" repeat="indefinite"></a-animation>
+        </a-sphere>
+        <a-text value="Jupiter" position="25 3.5 -10" align="center" color="#ffffff" scale="0.3 0.3 1"></a-text>
+        
+
+        
+        <!-- Camera -->
+        <a-camera position="0 1.6 0">
+            <a-cursor></a-cursor>
+        </a-camera>
+        
+        <!-- Lighting -->
+        <a-light type="ambient" color="#404040" intensity="0.3"></a-light>
+        <a-light type="point" color="#FDB813" intensity="1" position="0 0 -10" distance="100"></a-light>
+    </a-scene>
+
+    <script src="scripts/tts.js?v=2"></script>
+    <script src="scripts/voice.js?v=2"></script>
+    <script src="scripts/vr-scene.js?v=2"></script>
+
+    <script>
+        console.log('Working VR page loaded');
+        
+        let currentPlanet = null;
+        let currentLanguage = 'en';
+        let languageIndex = 0;
+        const languages = [
+            { code: 'en', name: '🇺🇸 English' },
+            { code: 'hi', name: '🇮🇳 हिंदी' },
+            { code: 'kn', name: '🇮🇳 ಕನ್ನಡ' },
+            { code: 'ta', name: '🇮🇳 தமிழ்' },
+            { code: 'te', name: '🇮🇳 తెలుగు' },
+            { code: 'mr', name: '🇮🇳 मराठी' },
+            { code: 'bn', name: '🇮🇳 বাংলা' }
+        ];
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM loaded');
+            
+            const statusElement = document.getElementById('vrStatus');
+            const scene = document.querySelector('a-scene');
+            
+            if (scene) {
+                console.log('Scene found');
+                statusElement.textContent = 'Scene found';
+                
+                scene.addEventListener('loaded', () => {
+                    console.log('Scene loaded successfully');
+                    statusElement.textContent = 'Ready!';
+                    
+                    // Hide loading screen
+                    setTimeout(() => {
+                        const loadingScreen = document.getElementById('loadingScreen');
+                        if (loadingScreen) {
+                            loadingScreen.style.display = 'none';
+                        }
+                        document.getElementById('loading').style.display = 'none';
+                        console.log('Loading screen hidden');
+                    }, 1000);
+                    
+                    setupPlanetInteractions();
+                    setupVRControls();
+                    setupDesktopControls();
+                });
+                
+                // Timeout check
+                setTimeout(() => {
+                    if (statusElement.textContent === 'Loading...') {
+                        statusElement.textContent = 'Ready (timeout)';
+                        document.getElementById('loading').style.display = 'none';
+                    }
+                }, 3000);
+            } else {
+                console.error('Scene not found');
+                statusElement.textContent = 'Error: Scene not found';
+            }
+        });
+        
+        function setupPlanetInteractions() {
+            const planets = document.querySelectorAll('.planet');
+            planets.forEach(planet => {
+                planet.addEventListener('click', () => {
+                    const planetId = planet.getAttribute('data-planet-id');
+                    const planetName = planet.getAttribute('data-planet-name');
+                    const planetDesc = planet.getAttribute('data-planet-desc');
+                    
+                    currentPlanet = {
+                        id: planetId,
+                        name: planetName,
+                        description: planetDesc
+                    };
+                    
+                    // Update desktop display
+                    document.getElementById('currentPlanet').textContent = planetName;
+                    
+                    console.log('Selected planet:', planetName);
+                    
+                    // Visual feedback
+                    planet.setAttribute('scale', '1.2 1.2 1.2');
+                    setTimeout(() => {
+                        planet.setAttribute('scale', '1 1 1');
+                    }, 200);
+                });
+            });
+        }
+        
+        function setupVRControls() {
+            // VR controls are now handled by the original fixed position panel
+            // The panel should be visible in VR mode with high z-index
+            console.log('VR controls setup - using original fixed position panel');
+        }
+        
+        function setupDesktopControls() {
+            // Language selector
+            document.getElementById('languageSelect').addEventListener('change', (e) => {
+                currentLanguage = e.target.value;
+                languageIndex = languages.findIndex(lang => lang.code === currentLanguage);
+                updateVRLanguageDisplay();
+                console.log('Language changed to:', currentLanguage);
+            });
+            
+            // Speak button
+            document.getElementById('speakBtn').addEventListener('click', () => {
+                if (currentPlanet) {
+                    speakPlanetInfo();
+                } else {
+                    alert('Please select a planet first!');
+                }
+            });
+            
+            // Translate button
+            document.getElementById('translateBtn').addEventListener('click', () => {
+                if (currentPlanet) {
+                    translatePlanetInfo();
+                } else {
+                    alert('Please select a planet first!');
+                }
+            });
+        }
+        
+        function cycleLanguage() {
+            languageIndex = (languageIndex + 1) % languages.length;
+            currentLanguage = languages[languageIndex].code;
+            
+            // Update desktop selector
+            const desktopSelector = document.getElementById('languageSelect');
+            if (desktopSelector) {
+                desktopSelector.value = currentLanguage;
+            }
+            
+            updateVRLanguageDisplay();
+            console.log('Language cycled to:', currentLanguage);
+        }
+        
+        function updateVRLanguageDisplay() {
+            // Language display is handled by the original fixed position panel
+            console.log('Language updated to:', languages[languageIndex].name);
+        }
+        
+        function showVRMessage(message) {
+            // Show message using alert for simplicity
+            alert(message);
+        }
+        
+        async function speakPlanetInfo() {
+            if (!currentPlanet) return;
+            
+            try {
+                // Use the correct AI TTS endpoint
+                const response = await fetch('/api/ai/tts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        text: currentPlanet.description,
+                        lang: currentLanguage
+                    })
+                });
+                
+                if (response.ok) {
+                    const audioBlob = await response.blob();
+                    const audioUrl = URL.createObjectURL(audioBlob);
+                    const audio = new Audio(audioUrl);
+                    
+                    // Ensure audio plays
+                    audio.volume = 1.0;
+                    await audio.play();
+                    
+                    console.log('Playing TTS for:', currentPlanet.name, 'in', currentLanguage);
+                    showVRMessage(`Speaking ${currentPlanet.name} in ${languages[languageIndex].name}`);
+                } else {
+                    throw new Error('TTS service not available');
+                }
+            } catch (error) {
+                console.error('TTS error:', error);
+                
+                // Fallback to browser speech synthesis without showing error dialog
+                try {
+                    const utterance = new SpeechSynthesisUtterance(currentPlanet.description);
+                    utterance.lang = currentLanguage;
+                    utterance.volume = 1.0;
+                    speechSynthesis.speak(utterance);
+                    console.log('Using browser TTS as fallback');
+                } catch (fallbackError) {
+                    console.error('Fallback TTS also failed:', fallbackError);
+                }
+            }
+        }
+        
+        async function translatePlanetInfo() {
+            if (!currentPlanet) return;
+            
+            try {
+                // Use the correct AI translation endpoint
+                const response = await fetch('/api/ai/translate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        text: currentPlanet.description,
+                        sourceLang: 'en',
+                        targetLang: currentLanguage
+                    })
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.translatedText) {
+                        const translatedText = result.translatedText;
+                        console.log('Translation successful:', translatedText);
+                        showVRMessage(`Translated ${currentPlanet.name} to ${languages[languageIndex].name}`);
+                        
+                        // Update the planet description temporarily for TTS
+                        const originalDesc = currentPlanet.description;
+                        currentPlanet.description = translatedText;
+                        
+                        // Speak the translation
+                        await speakPlanetInfo();
+                        
+                        // Restore original description
+                        currentPlanet.description = originalDesc;
+                    } else {
+                        throw new Error('Translation failed');
+                    }
+                } else {
+                    throw new Error('Translation service not available');
+                }
+            } catch (error) {
+                console.error('Translation error:', error);
+                // Don't show error dialog - just log it
+            }
+        }
+    </script>
+</body>
+</html>

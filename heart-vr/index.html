@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Heart VR - WebXR Three.js</title>
+  <style>
+    :root {
+      color-scheme: dark;
+    }
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #080102;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+    #app {
+      width: 100%;
+      height: 100%;
+    }
+    #overlay {
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      z-index: 20;
+      padding: 10px 12px;
+      background: rgba(0, 0, 0, 0.45);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+      color: #e6d8d8;
+      font-size: 12px;
+      line-height: 1.4;
+      max-width: 360px;
+    }
+    #overlay strong {
+      color: #ff9191;
+    }
+    #overlay code {
+      color: #9ec7ff;
+    }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <div id="overlay">
+    <strong>Heart Flow VR</strong><br />
+    Click <code>Enter VR</code> for headset mode.<br />
+    Desktop fallback: drag to orbit, mouse wheel to zoom.
+  </div>
+
+  <script type="module">
+    import * as THREE from "https://unpkg.com/three@0.164.1/build/three.module.js";
+    import { OrbitControls } from "https://unpkg.com/three@0.164.1/examples/jsm/controls/OrbitControls.js?module";
+    import { VRButton } from "https://unpkg.com/three@0.164.1/examples/jsm/webxr/VRButton.js?module";
+
+    // --- Basic scene setup with atmospheric red fog ---
+    const app = document.getElementById("app");
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x1c0607);
+    scene.fog = new THREE.FogExp2(0x6d1b1b, 0.04);
+
+    const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 300);
+    camera.position.set(0, 1.5, 7);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.xr.enabled = true;
+    app.appendChild(renderer.domElement);
+    document.body.appendChild(VRButton.createButton(renderer));
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.target.set(0, 1.8, 0);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.06;
+    controls.maxDistance = 30;
+    controls.minDistance = 2;
+
+    // --- Lighting (brighter but still organic) ---
+    scene.add(new THREE.AmbientLight(0xa33a3a, 1.05));
+    const keyLight = new THREE.PointLight(0xd45b45, 1.05, 85, 2);
+    keyLight.position.set(4, 5, 5);
+    scene.add(keyLight);
+    const fillLight = new THREE.PointLight(0x9c3a2b, 0.8, 80, 2);
+    fillLight.position.set(-4, 3, -4);
+    scene.add(fillLight);
+    const contrastLight = new THREE.PointLight(0xffffff, 0.22, 45, 2);
+    contrastLight.position.set(0, 2, 2);
+    scene.add(contrastLight);
+
+    // Small background particles to provide depth in VR.
+    const bgGeo = new THREE.BufferGeometry();
+    const bgCount = 650;
+    const bgPos = new Float32Array(bgCount * 3);
+    for (let i = 0; i < bgCount; i++) {
+      const r = 45 * Math.cbrt(Math.random());
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos(2 * Math.random() - 1);
+      bgPos[i * 3 + 0] = r * Math.sin(phi) * Math.cos(theta);
+      bgPos[i * 3 + 1] = r * Math.cos(phi);
+      bgPos[i * 3 + 2] = r * Math.sin(phi) * Math.sin(theta);
+    }
+    bgGeo.setAttribute("position", new THREE.BufferAttribute(bgPos, 3));
+    const bgPoints = new THREE.Points(
+      bgGeo,
+      new THREE.PointsMaterial({ color: 0xc25353, size: 0.06, transparent: true, opacity: 0.22 })
+    );
+    scene.add(bgPoints);
+
+    // --- Procedural heart path points ---
+    // Reference anchors for a stylized heart and lungs.
+    const RA = new THREE.Vector3(-1.8, 2.0, 0.3);      // Right Atrium
+    const RV = new THREE.Vector3(-2.1, 0.2, 0.4);      // Right Ventricle
+    const LUNG_R = new THREE.Vector3(-5.2, 3.0, -1.2); // Lung branch right side
+    const LUNG_L = new THREE.Vector3(5.2, 3.0, -1.2);  // Lung branch left side
+    const LA = new THREE.Vector3(1.8, 2.0, 0.3);       // Left Atrium
+    const LV = new THREE.Vector3(2.2, 0.1, 0.5);       // Left Ventricle
+    const AORTA_ARCH = new THREE.Vector3(0.2, 5.0, -0.8);
+    const BODY_DESCENT = new THREE.Vector3(-0.6, -3.8, 1.8);
+    const VENA_CAVA_RETURN = new THREE.Vector3(-2.2, 1.2, 0.9);
+
+    // 1) Right Atrium -> Right Ventricle (deoxygenated, blue)
+    const segment1Points = [
+      RA.clone(),
+      new THREE.Vector3(-2.35, 1.6, 0.7),
+      new THREE.Vector3(-2.5, 1.0, 0.9),
+      RV.clone(),
+    ];
+
+    // 2) Right Ventricle -> Lungs via pulmonary artery (deoxygenated, blue)
+    const segment2Points = [
+      RV.clone(),
+      new THREE.Vector3(-3.2, 1.3, -0.1),
+      new THREE.Vector3(-4.3, 2.4, -0.9),
+      LUNG_R.clone(),
+      new THREE.Vector3(-0.3, 3.6, -2.6),
+      LUNG_L.clone(),
+    ];
+
+    // 3) Lungs -> Left Atrium via pulmonary veins (oxygenated, red)
+    const segment3Points = [
+      LUNG_L.clone(),
+      new THREE.Vector3(4.3, 2.9, -0.9),
+      new THREE.Vector3(3.2, 2.5, -0.2),
+      LA.clone(),
+    ];
+
+    // 4) Left Atrium -> Left Ventricle -> Aorta and systemic return (oxygenated to body, then return)
+    // Return to RA keeps one continuous loop for camera traversal.
+    const segment4Points = [
+      LA.clone(),
+      new THREE.Vector3(2.45, 1.4, 0.8),
+      LV.clone(),
+      new THREE.Vector3(2.4, 1.4, -0.4),
+      AORTA_ARCH.clone(),
+      new THREE.Vector3(-0.2, 4.0, -2.0),
+      BODY_DESCENT.clone(),
+      new THREE.Vector3(-2.7, -1.2, 2.2),
+      VENA_CAVA_RETURN.clone(),
+      RA.clone(),
+    ];
+
+    // Build smooth curves from control points.
+    const curve1 = new THREE.CatmullRomCurve3(segment1Points, false, "centripetal");
+    const curve2 = new THREE.CatmullRomCurve3(segment2Points, false, "centripetal");
+    const curve3 = new THREE.CatmullRomCurve3(segment3Points, false, "centripetal");
+    const curve4 = new THREE.CatmullRomCurve3(segment4Points, false, "centripetal");
+
+    const tubeGroup = new THREE.Group();
+    scene.add(tubeGroup);
+
+    const tubeRadius = 2.4; // Enclosing lumen so the user feels inside tissue
+    const tubeSegments = 320;
+    const radialSegments = 20;
+
+    const deoxygenatedMat = new THREE.MeshStandardMaterial({
+      color: 0x7a0000,
+      emissive: 0x2d0000,
+      emissiveIntensity: 0.28,
+      roughness: 0.8,
+      metalness: 0.06,
+      side: THREE.BackSide,
+      vertexColors: true,
+    });
+    const oxygenatedMat = new THREE.MeshStandardMaterial({
+      color: 0xa00000,
+      emissive: 0x3a0000,
+      emissiveIntensity: 0.32,
+      roughness: 0.74,
+      metalness: 0.08,
+      side: THREE.BackSide,
+      vertexColors: true,
+    });
+
+    function stylizeTubeGeometry(geo, noiseSeed, noiseAmp, radiusWaveAmp) {
+      const posAttr = geo.getAttribute("position");
+      const normalAttr = geo.getAttribute("normal");
+      const uvAttr = geo.getAttribute("uv");
+      const colorAttr = new THREE.BufferAttribute(new Float32Array(posAttr.count * 3), 3);
+      const p = new THREE.Vector3();
+      const n = new THREE.Vector3();
+      const dark = new THREE.Color(0x5a0000);
+      const light = new THREE.Color(0xa00000);
+      const tempColor = new THREE.Color();
+
+      for (let i = 0; i < posAttr.count; i++) {
+        p.fromBufferAttribute(posAttr, i);
+        n.fromBufferAttribute(normalAttr, i).normalize();
+        const u = uvAttr.getX(i);
+        const v = uvAttr.getY(i);
+
+        // Radius variation + subtle wall noise for organic tissue feel.
+        const radiusWave = 1 + Math.sin(v * Math.PI * 8 + noiseSeed) * radiusWaveAmp;
+        const noise = (Math.sin((p.x + noiseSeed) * 2.3) + Math.sin((p.y - noiseSeed) * 2.1) + Math.sin((p.z + noiseSeed) * 2.7)) * 0.333;
+        const push = (radiusWave - 1) * 0.8 + noise * noiseAmp;
+        p.addScaledVector(n, push);
+        posAttr.setXYZ(i, p.x, p.y, p.z);
+
+        // Gradient blend along flow + around wall for depth detail.
+        const mixA = 0.25 + 0.75 * v;
+        const mixB = 0.08 * Math.sin(u * Math.PI * 2.0 + v * Math.PI * 4.0);
+        tempColor.copy(dark).lerp(light, THREE.MathUtils.clamp(mixA + mixB, 0, 1));
+        colorAttr.setXYZ(i, tempColor.r, tempColor.g, tempColor.b);
+      }
+
+      posAttr.needsUpdate = true;
+      geo.setAttribute("color", colorAttr);
+      geo.computeVertexNormals();
+    }
+
+    function makeTube(curve, material, noiseSeed = 0.0, noiseAmp = 0.0, radiusWaveAmp = 0.0) {
+      const geo = new THREE.TubeGeometry(curve, tubeSegments, tubeRadius, radialSegments, false);
+      if (noiseAmp > 0 || radiusWaveAmp > 0) {
+        stylizeTubeGeometry(geo, noiseSeed, noiseAmp, radiusWaveAmp);
+      }
+      const mesh = new THREE.Mesh(geo, material);
+      mesh.castShadow = false;
+      mesh.receiveShadow = false;
+      tubeGroup.add(mesh);
+      return mesh;
+    }
+
+    const tubeMeshes = [
+      makeTube(curve1, deoxygenatedMat, 0.8, 0.08, 0.1),
+      makeTube(curve2, deoxygenatedMat, 1.4, 0.09, 0.11),
+      makeTube(curve3, oxygenatedMat, 2.1, 0.07, 0.1),
+      makeTube(curve4, oxygenatedMat, 2.7, 0.1, 0.12),
+    ];
+
+    // Subtle inner membrane layer for depth without bright, plastic highlights.
+    const membraneMat = new THREE.MeshStandardMaterial({
+      color: 0x5b0000,
+      emissive: 0x1a0000,
+      emissiveIntensity: 0.2,
+      roughness: 0.95,
+      metalness: 0.0,
+      transparent: true,
+      opacity: 0.22,
+      side: THREE.BackSide,
+    });
+    makeTube(curve1, membraneMat).scale.setScalar(0.985);
+    makeTube(curve2, membraneMat).scale.setScalar(0.985);
+    makeTube(curve3, membraneMat).scale.setScalar(0.985);
+    makeTube(curve4, membraneMat).scale.setScalar(0.985);
+
+    // --- One global flow loop for camera and blood-cell animation ---
+    function mergePoints(a, b) {
+      if (a.length === 0) return [...b];
+      const merged = [...a];
+      const last = merged[merged.length - 1];
+      const first = b[0];
+      if (last.distanceTo(first) < 1e-6) {
+        merged.push(...b.slice(1));
+      } else {
+        merged.push(...b);
+      }
+      return merged;
+    }
+
+    let loopPoints = [];
+    loopPoints = mergePoints(loopPoints, segment1Points);
+    loopPoints = mergePoints(loopPoints, segment2Points);
+    loopPoints = mergePoints(loopPoints, segment3Points);
+    loopPoints = mergePoints(loopPoints, segment4Points);
+
+    const fullLoopCurve = new THREE.CatmullRomCurve3(loopPoints, true, "centripetal");
+
+    // Soft point lights distributed through the bloodstream path.
+    const pathLights = [];
+    for (let i = 0; i < 14; i++) {
+      const lt = i / 14;
+      const pos = fullLoopCurve.getPointAt(lt);
+      const warmPalette = [0xd65537, 0xbf3f2e, 0xe06b40];
+      const pathLight = new THREE.PointLight(warmPalette[i % warmPalette.length], 0.27, 26, 2);
+      pathLight.position.copy(pos);
+      scene.add(pathLight);
+      pathLights.push({ light: pathLight, phase: Math.random() * Math.PI * 2, offset: Math.random() });
+    }
+
+    // --- Blood cells: tiny floating spheres moving along flow path ---
+    const bloodCells = [];
+    const bloodCellCount = 110;
+    const bloodGeo = new THREE.SphereGeometry(0.07, 7, 7);
+    for (let i = 0; i < bloodCellCount; i++) {
+      const mat = new THREE.MeshStandardMaterial({
+        color: 0xb53535,
+        emissive: 0x2a0606,
+        emissiveIntensity: 0.18,
+        roughness: 0.65,
+        metalness: 0.0,
+      });
+      const cell = new THREE.Mesh(bloodGeo, mat);
+      scene.add(cell);
+      bloodCells.push({
+        mesh: cell,
+        t: Math.random(),
+        speed: 0.022 + Math.random() * 0.02,
+        lateralPhase: Math.random() * Math.PI * 2,
+        lateralAmp: 0.03 + Math.random() * 0.05,
+      });
+    }
+
+    // Faint glowing streaks moving with the flow to reinforce direction.
+    const flowStreaks = [];
+    const streakGeo = new THREE.SphereGeometry(0.11, 6, 6);
+    for (let i = 0; i < 36; i++) {
+      const streakMat = new THREE.MeshBasicMaterial({
+        color: 0xff8b5e,
+        transparent: true,
+        opacity: 0.18,
+      });
+      const streak = new THREE.Mesh(streakGeo, streakMat);
+      scene.add(streak);
+      flowStreaks.push({
+        mesh: streak,
+        t: Math.random(),
+        speed: 0.045 + Math.random() * 0.03,
+      });
+    }
+
+    // --- Camera movement settings ---
+    // Desktop starts in overview mode; VR still auto-starts flow traversal.
+    let autoMove = false;
+    let flowT = 0.0;
+    const baseFlowSpeed = 0.03;
+    const lookAhead = 0.012;
+    const clock = new THREE.Clock();
+    const smoothedPos = new THREE.Vector3();
+    const smoothedLook = new THREE.Vector3();
+    const flowUp = new THREE.Vector3(0, 1, 0);
+
+    // In VR, movement auto-starts and orbit controls are inactive.
+    renderer.xr.addEventListener("sessionstart", () => {
+      autoMove = true;
+      controls.enabled = false;
+      document.getElementById("overlay").style.opacity = "0.3";
+    });
+    renderer.xr.addEventListener("sessionend", () => {
+      controls.enabled = true;
+      autoMove = false;
+      document.getElementById("overlay").style.opacity = "1.0";
+    });
+
+    // Toggle auto-move on desktop if user wants manual orbit.
+    window.addEventListener("keydown", (event) => {
+      if (event.code === "Space") {
+        autoMove = !autoMove;
+      }
+    });
+
+    // Approximate "ventricle zones" along normalized path where flow is faster.
+    // These values are tuned by sampling the assembled loop visually.
+    const ventricleZones = [
+      [0.06, 0.16], // near right ventricle
+      [0.58, 0.70], // near left ventricle
+    ];
+    function speedMultiplier(t) {
+      for (const [a, b] of ventricleZones) {
+        if (t >= a && t <= b) return 1.55;
+      }
+      return 0.92 + 0.12 * Math.sin(t * Math.PI * 6);
+    }
+
+    function updateCameraAlongFlow(dt) {
+      const speed = baseFlowSpeed * speedMultiplier(flowT);
+      flowT = (flowT + speed * dt) % 1;
+
+      const current = fullLoopCurve.getPointAt(flowT);
+      const next = fullLoopCurve.getPointAt((flowT + lookAhead) % 1);
+      const tangent = fullLoopCurve.getTangentAt(flowT);
+      const desiredLook = next.clone().addScaledVector(tangent, 0.8);
+
+      // Smoothed interpolation avoids mechanical camera movement.
+      smoothedPos.lerp(current, 1 - Math.exp(-dt * 7.5));
+      smoothedLook.lerp(desiredLook, 1 - Math.exp(-dt * 8.2));
+      camera.position.copy(smoothedPos);
+      camera.up.copy(flowUp);
+      camera.lookAt(smoothedLook);
+    }
+
+    function updateHeartbeat(timeSeconds) {
+      // Gentle pulse with layered frequencies for a natural heartbeat feel.
+      const pulse = 1 + Math.sin(timeSeconds * 1.45) * 0.015 + Math.sin(timeSeconds * 2.9) * 0.006;
+      for (const mesh of tubeMeshes) {
+        mesh.scale.setScalar(pulse);
+      }
+    }
+
+    function updateBloodCells(dt, elapsed) {
+      const tangent = new THREE.Vector3();
+      const side = new THREE.Vector3();
+      const up = new THREE.Vector3(0, 1, 0);
+      for (const cell of bloodCells) {
+        cell.t = (cell.t + cell.speed * dt * speedMultiplier(cell.t)) % 1;
+        const p = fullLoopCurve.getPointAt(cell.t);
+        tangent.copy(fullLoopCurve.getTangentAt(cell.t)).normalize();
+        side.crossVectors(tangent, up);
+        if (side.lengthSq() < 0.01) side.set(1, 0, 0);
+        side.normalize();
+        const wobble = Math.sin(elapsed * 3.7 + cell.lateralPhase) * cell.lateralAmp;
+        cell.mesh.position.copy(p).addScaledVector(side, wobble);
+      }
+    }
+
+    function updateFlowStreaks(dt) {
+      for (const s of flowStreaks) {
+        s.t = (s.t + s.speed * dt) % 1;
+        const p = fullLoopCurve.getPointAt(s.t);
+        const tng = fullLoopCurve.getTangentAt(s.t).normalize();
+        s.mesh.position.copy(p);
+        s.mesh.scale.set(1.0, 1.0, 2.2);
+        s.mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), tng);
+      }
+    }
+
+    function updatePathLights(elapsed) {
+      for (const item of pathLights) {
+        const t = (elapsed * 0.015 + item.offset) % 1;
+        item.light.position.copy(fullLoopCurve.getPointAt(t));
+        item.light.intensity = 0.2 + 0.12 * (0.5 + 0.5 * Math.sin(elapsed * 0.9 + item.phase));
+      }
+      const cT = (elapsed * 0.02) % 1;
+      contrastLight.position.copy(fullLoopCurve.getPointAt(cT)).add(new THREE.Vector3(0.4, 0.3, 0.3));
+    }
+
+    function animate() {
+      const dt = Math.min(clock.getDelta(), 0.05);
+      const elapsed = clock.elapsedTime;
+
+      if (autoMove || renderer.xr.isPresenting) {
+        updateCameraAlongFlow(dt);
+      } else if (controls.enabled) {
+        controls.update();
+      }
+
+      updateHeartbeat(elapsed);
+      updateBloodCells(dt, elapsed);
+      updateFlowStreaks(dt);
+      updatePathLights(elapsed);
+      bgPoints.rotation.y += dt * 0.006;
+      bgPoints.rotation.x += dt * 0.002;
+
+      renderer.render(scene, camera);
+    }
+
+    renderer.setAnimationLoop(animate);
+
+    // Initial overview framing: show full 3D model at startup.
+    {
+      const bounds = new THREE.Box3().setFromObject(tubeGroup);
+      const center = bounds.getCenter(new THREE.Vector3());
+      const size = bounds.getSize(new THREE.Vector3());
+      const radius = Math.max(size.x, size.y, size.z) * 0.52;
+      camera.position.copy(center).add(new THREE.Vector3(radius * 1.0, radius * 0.4, radius * 1.3));
+      controls.target.copy(center);
+      camera.lookAt(center);
+      smoothedPos.copy(camera.position);
+      smoothedLook.copy(center);
+      controls.update();
+    }
+
+    window.addEventListener("resize", () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+</body>
+</html>

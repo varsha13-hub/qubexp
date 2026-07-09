@@ -10,7 +10,7 @@ function loadPlanetData() {
   if (planetData) return planetData;
   
   try {
-    const dataPath = path.join(__dirname, '../../../client/data/planets.en.json');
+    const dataPath = path.join(__dirname, '../../../solar-system/data/planets.en.json');
     const rawData = fs.readFileSync(dataPath, 'utf8');
     planetData = JSON.parse(rawData);
     return planetData;

@@ -1,0 +1,12 @@
+<svg width="512" height="512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <pattern id="ground" x="0" y="0" width="50" height="50" patternUnits="userSpaceOnUse">
+      <rect width="50" height="50" fill="#8b4513"/>
+      <rect width="25" height="25" fill="#d2691e"/>
+      <rect x="25" y="25" width="25" height="25" fill="#a0522d"/>
+      <circle cx="12.5" cy="12.5" r="2" fill="#654321"/>
+      <circle cx="37.5" cy="37.5" r="2" fill="#654321"/>
+    </pattern>
+  </defs>
+  <rect width="512" height="512" fill="url(#ground)"/>
+</svg>

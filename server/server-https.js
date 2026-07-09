@@ -3,7 +3,7 @@ const cors = require('cors');
 const path = require('path');
 const https = require('https');
 const fs = require('fs');
-require('dotenv').config();
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 const app = express();
 const PORT = process.env.HTTPS_PORT || 8443;
@@ -32,32 +32,65 @@ app.use((req, res, next) => {
   next();
 });
 
-// Static files (for PWA assets)
-app.use(express.static(path.join(__dirname, '../client')));
+// Static files - serve root directory for new structure
+app.use(express.static(path.join(__dirname, '..')));
 
 // API Routes
 app.use('/api/health', require('./src/routes/health'));
 app.use('/api/planets', require('./src/routes/planets'));
+app.use('/api/indus-valley', require('./src/routes/indus-valley'));
 app.use('/api/translate', require('./src/routes/translate'));
 app.use('/api/tts', require('./src/routes/tts'));
+// AI endpoints
+app.use('/api/ai', require('./src/routes/ai-endpoints'));
+app.use('/api', require('./ai-proxy'));
 
-// Serve PWA manifest
+// Serve PWA manifest (if exists in solar-system)
 app.get('/manifest.json', (req, res) => {
-  res.sendFile(path.join(__dirname, '../client/manifest.json'));
+  const manifestPath = path.join(__dirname, '../solar-system/manifest.json');
+  if (fs.existsSync(manifestPath)) {
+    res.sendFile(manifestPath);
+  } else {
+    res.status(404).send('Manifest not found');
+  }
 });
 
-// Serve service worker
+// Serve service worker (if exists in solar-system)
 app.get('/service-worker.js', (req, res) => {
-  res.sendFile(path.join(__dirname, '../client/service-worker.js'));
+  const swPath = path.join(__dirname, '../solar-system/service-worker.js');
+  if (fs.existsSync(swPath)) {
+    res.sendFile(swPath);
+  } else {
+    res.status(404).send('Service worker not found');
+  }
 });
 
-// Main routes
+// Main routes - serve new selection screen
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '../client/index.html'));
+  res.sendFile(path.join(__dirname, '../index.html'));
 });
 
-app.get('/vr', (req, res) => {
-  res.sendFile(path.join(__dirname, '../client/working-vr.html'));
+// Solar System routes
+app.get('/solar-system', (req, res) => {
+  res.sendFile(path.join(__dirname, '../solar-system/index.html'));
+});
+
+app.get('/solar-system/', (req, res) => {
+  res.sendFile(path.join(__dirname, '../solar-system/index.html'));
+});
+
+// Indus Valley routes
+app.get('/indus-valley', (req, res) => {
+  res.sendFile(path.join(__dirname, '../indus-valley/index.html'));
+});
+
+app.get('/indus-valley/', (req, res) => {
+  res.sendFile(path.join(__dirname, '../indus-valley/index.html'));
+});
+
+// Legacy working-vr route
+app.get('/working-vr', (req, res) => {
+  res.sendFile(path.join(__dirname, '../solar-system/working-vr.html'));
 });
 
 // Error handling middleware

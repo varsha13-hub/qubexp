@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QubeXP - Educational VR Experiences</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 3s infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        .container {
+            text-align: center;
+            z-index: 10;
+            max-width: 1200px;
+            padding: 20px;
+        }
+
+        .logo {
+            font-size: 4rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            background: linear-gradient(45deg, #00ff88, #00cc6a, #00ff88);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from { text-shadow: 0 0 20px #00ff88; }
+            to { text-shadow: 0 0 30px #00ff88, 0 0 40px #00ff88; }
+        }
+
+        .subtitle {
+            font-size: 1.5rem;
+            margin-bottom: 3rem;
+            color: #cccccc;
+        }
+
+        .modules-grid {
+            display: flex;
+            flex-direction: row;
+            gap: 1.5rem;
+            margin-top: 2rem;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+            justify-content: center;
+        }
+
+        .module-card {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(0, 255, 136, 0.3);
+            border-radius: 20px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+            flex: 1;
+            max-width: 450px;
+            min-width: 400px;
+        }
+
+        .module-card:hover {
+            transform: translateY(-10px);
+            border-color: #00ff88;
+            box-shadow: 0 20px 40px rgba(0, 255, 136, 0.3);
+        }
+
+        .module-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.5s;
+        }
+
+        .module-card:hover::before {
+            left: 100%;
+        }
+
+        .module-icon {
+            font-size: 3rem;
+            margin-bottom: 0.8rem;
+            display: block;
+        }
+
+        .module-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 0.8rem;
+            color: #00ff88;
+        }
+
+        .module-description {
+            font-size: 0.9rem;
+            color: #cccccc;
+            line-height: 1.5;
+            margin-bottom: 1rem;
+        }
+
+        .module-features {
+            list-style: none;
+            text-align: left;
+            margin-bottom: 1rem;
+        }
+
+        .module-features li {
+            padding: 0.2rem 0;
+            color: #aaaaaa;
+            font-size: 0.85rem;
+        }
+
+        .module-features li::before {
+            content: '✨ ';
+            color: #00ff88;
+        }
+
+        .enter-btn {
+            background: linear-gradient(45deg, #00ff88, #00cc6a);
+            color: #1a1a2e;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 20px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .enter-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 20px rgba(0, 255, 136, 0.4);
+        }
+
+        .coming-soon {
+            background: linear-gradient(45deg, #666, #444);
+            color: #999;
+            cursor: not-allowed;
+        }
+
+        .coming-soon:hover {
+            transform: none;
+            box-shadow: none;
+        }
+
+        .footer {
+            margin-top: 3rem;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 1200px) {
+            .modules-grid {
+                grid-template-columns: repeat(2, 1fr);
+                max-width: 900px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .logo {
+                font-size: 2.5rem;
+            }
+            
+            .subtitle {
+                font-size: 1.2rem;
+            }
+            
+            .modules-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+                max-width: 400px;
+            }
+            
+            .module-card {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated Starfield Background -->
+    <div class="stars" id="stars"></div>
+
+    <div class="container">
+        <h1 class="logo">QubeXP</h1>
+        <p class="subtitle">Immersive Educational VR Experiences</p>
+
+        <div class="modules-grid">
+            <!-- Solar System Module -->
+            <div class="module-card" onclick="enterModule('solar-system')">
+                <span class="module-icon">🌌</span>
+                <h2 class="module-title">Solar System Explorer</h2>
+                <p class="module-description">
+                    Journey through our cosmic neighborhood with interactive planets, guided tours, and AI-powered Q&A about astronomy.
+                </p>
+                <ul class="module-features">
+                    <li>Interactive 3D planets with realistic models</li>
+                    <li>Guided tour with pause/resume controls</li>
+                    <li>AI Q&A in multiple Indian languages</li>
+                    <li>Multilingual TTS with Sarvam AI</li>
+                    <li>Full VR headset compatibility</li>
+                </ul>
+                <a href="solar-system/" class="enter-btn">🚀 Enter Solar System</a>
+            </div>
+
+            <!-- Indus Valley Civilization Module -->
+            <div class="module-card" onclick="enterModule('indus-valley')">
+                <span class="module-icon">🏛️</span>
+                <h2 class="module-title">Indus Valley Civilization</h2>
+                <p class="module-description">
+                    Journey through ancient cities like Mohenjo-daro and Harappa, exploring the world's earliest urban civilization with AI-powered Q&A.
+                </p>
+                <ul class="module-features">
+                    <li>Interactive 3D archaeological sites</li>
+                    <li>Guided tour of ancient cities</li>
+                    <li>AI Q&A in multiple Indian languages</li>
+                    <li>Historical artifacts and timeline</li>
+                    <li>Learn historical context in VR</li>
+                </ul>
+                <a href="indus-valley/" class="enter-btn">🏛️ Enter Indus Valley</a>
+            </div>
+
+            <!-- Human Anatomy Module -->
+            <div class="module-card" onclick="enterModule('human-anatomy')">
+                <span class="module-icon">🧬</span>
+                <h2 class="module-title">Human Anatomy Explorer</h2>
+                <p class="module-description">
+                    Explore the human body in 3D with interactive organs, systems, and detailed anatomical structures.
+                </p>
+                <ul class="module-features">
+                    <li>Interactive 3D organ models</li>
+                    <li>Body system exploration</li>
+                    <li>Medical terminology guide</li>
+                    <li>Health education content</li>
+                    <li>Interact with skeletal/circulatory systems</li>
+                </ul>
+                <a href="human-anatomy/" class="enter-btn">🧬 Enter Human Anatomy</a>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Powered by WebXR • Built for Education • Made in India 🇮🇳</p>
+        </div>
+    </div>
+
+    <script>
+        // Create animated starfield
+        function createStars() {
+            const starsContainer = document.getElementById('stars');
+            const numStars = 100;
+
+            for (let i = 0; i < numStars; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                
+                // Random position
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                
+                // Random size
+                const size = Math.random() * 3 + 1;
+                star.style.width = size + 'px';
+                star.style.height = size + 'px';
+                
+                // Random animation delay
+                star.style.animationDelay = Math.random() * 3 + 's';
+                
+                starsContainer.appendChild(star);
+            }
+        }
+
+        // Module navigation
+        function enterModule(moduleName) {
+            if (moduleName === 'solar-system') {
+                window.location.href = 'solar-system/';
+            } else if (moduleName === 'indus-valley') {
+                window.location.href = 'indus-valley/';
+            } else if (moduleName === 'human-anatomy') {
+                window.location.href = 'human-anatomy/';
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            createStars();
+            console.log('🌟 QubeXP Selection Screen Loaded');
+        });
+    </script>
+</body>
+</html>

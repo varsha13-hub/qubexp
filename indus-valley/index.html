@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Indus Valley VR - Advanced Multi-Zone</title>
+    
+    <!-- A-Frame -->
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    <script src="https://unpkg.com/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
+    
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <!-- Loading Screen -->
+    <div id="loading-screen">
+        <div class="spinner"></div>
+        <h2>Loading Historical Data & Environments...</h2>
+    </div>
+
+    <!-- Notifications -->
+    <div id="notification-container"></div>
+
+    <!-- 2D Glassmorphic UI Overlay -->
+    <div id="ui-layer">
+        
+        <!-- Header & HUD -->
+        <div class="hud-header">
+            <div class="glass-panel title-card">
+                <h1>Indus Valley</h1>
+                <p id="current-zone-title">Exploring the City...</p>
+            </div>
+            
+            <div class="glass-panel gamification-hud">
+                <h3>Zone Quests</h3>
+                <p style="color: #ccc; margin-bottom: 10px;">Found: <span id="quest-progress">0/0</span></p>
+                <div class="artifact-slots" id="quest-slots">
+                    <!-- dynamically populated -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Info Panel (Hidden by default) -->
+        <div class="info-panel-container">
+            <div class="glass-panel info-panel" id="info-panel">
+                <h2 id="info-title">Title</h2>
+                <p id="info-desc">Description text goes here.</p>
+                <div class="tts-controls">
+                    <button class="btn" id="btn-toggle-tts">🔊 Audio On</button>
+                    <select class="glass-select" id="lang-select">
+                        <option value="en" selected>English</option>
+                        <option value="hi">हिंदी (Hindi)</option>
+                        <option value="kn">ಕನ್ನಡ (Kannada)</option>
+                        <option value="ta">தமிழ் (Tamil)</option>
+                        <option value="te">తెలుగు (Telugu)</option>
+                    </select>
+                    <button class="btn" id="btn-close-info">✖ Close</button>
+                </div>
+            </div>
+        </div>
+
+        <div style="pointer-events: auto; text-align: center; margin-bottom: 20px;">
+            <a href="../index.html" class="btn" style="display: inline-block;">🏠 Back to Hub</a>
+        </div>
+    </div>
+
+    <!-- UI Layer Ends -->
+
+    <!-- 3D Scene -->
+    <a-scene 
+        loading-screen="enabled: false;"
+        renderer="colorManagement: true; physicallyCorrectLights: true;"
+        fog="type: exponential; color: #dcb394; density: 0.03">
+        
+        <!-- Assets -->
+        <a-assets timeout="30000">
+            <a-asset-item id="entrance" src="assets/models/entrance_-_the_city_of_mohenjo_daro.glb"></a-asset-item>
+            <a-asset-item id="greatbath" src="assets/models/the_great_bath.glb"></a-asset-item>
+            <!-- Custom textures for Residential Quarter -->
+            <img id="brick-texture" src="assets/textures/baked_brick.jpg">
+            <img id="earth-texture" src="assets/textures/courtyard_earth.jpg">
+            <img id="wood-texture" src="assets/textures/ancient_wood.jpg">
+        </a-assets>
+
+        <!-- Lighting -->
+        <a-light type="ambient" color="#FFF" intensity="0.6"></a-light>
+        <a-light type="directional" color="#FFF" intensity="0.8" position="-1 1 0" castShadow="true"></a-light>
+
+        <!-- Global City Ground -->
+        <a-plane position="0 -0.1 0" rotation="-90 0 0" width="200" height="200" material="src: #earth-texture; repeat: 100 100; roughness: 0.9"></a-plane>
+
+        <!-- Procedural City Container -->
+        <a-entity id="procedural-city-container"></a-entity>
+
+        <!-- The Open World Map Layout -->
+        
+        <!-- City Entrance (Start Point: Z = 30) -->
+        <a-entity id="entrance-model" gltf-model="#entrance" position="0 0 30" scale="1.5 1.5 1.5"></a-entity>
+        
+        <!-- The Citadel (West: X = -30, Z = 0) -->
+        <a-entity id="citadel" position="-30 0 0">
+            <!-- Massive Mud-Brick Platform (Mound) -->
+            <a-box position="0 2 0" width="40" height="4" depth="40" material="src: #brick-texture; repeat: 40 4; roughness: 1.0"></a-box>
+            <!-- Ramp leading up to Citadel -->
+            <a-plane position="20 2 0" rotation="-90 -90 0" width="10" height="15" material="src: #earth-texture; repeat: 2 3"></a-plane>
+            <a-box position="25 1 0" rotation="0 0 15" width="12" height="2" depth="10" material="src: #brick-texture; repeat: 12 2"></a-box>
+
+            <!-- The Great Bath (Elevated on top of the mound) -->
+            <a-entity id="greatbath-model" gltf-model="#greatbath" position="0 2.5 0" scale="2 2 2" rotation="0 45 0"></a-entity>
+        </a-entity>
+        
+        <!-- Custom Residential Quarter (Lower Town: X = 25, Z = 0) -->
+        <a-entity id="houses-model" position="25 0 0">
+            <!-- Ground Plane -->
+            <a-plane position="0 0 0" rotation="-90 0 0" width="30" height="30" material="src: #earth-texture; repeat: 10 10; roughness: 0.9"></a-plane>
+            
+            <!-- Main Street -->
+            <a-plane position="0 0.01 8" rotation="-90 0 0" width="30" height="4" material="src: #earth-texture; repeat: 10 2; roughness: 1.0; color: #dcb394"></a-plane>
+            
+            <!-- Covered Street Drain -->
+            <a-box position="0 0.1 6.5" width="30" height="0.2" depth="0.5" material="src: #brick-texture; repeat: 30 1; roughness: 0.8"></a-box>
+            <a-box position="0 0.1 9.5" width="30" height="0.2" depth="0.5" material="src: #brick-texture; repeat: 30 1; roughness: 0.8"></a-box>
+            
+            <!-- Central House Structure -->
+            <a-entity position="0 0 0">
+                <!-- Outer Walls (No street facing windows) -->
+                <!-- Front Wall (with door gap) -->
+                <a-box position="-3 1.5 5" width="4" height="3" depth="0.5" material="src: #brick-texture; repeat: 4 3"></a-box>
+                <a-box position="3.5 1.5 5" width="3" height="3" depth="0.5" material="src: #brick-texture; repeat: 3 3"></a-box>
+                <!-- Wooden Door -->
+                <a-box position="0.5 1 5" width="1.5" height="2" depth="0.1" material="src: #wood-texture; repeat: 1 1"></a-box>
+                
+                <!-- Back Wall -->
+                <a-box position="0 1.5 -5" width="10" height="3" depth="0.5" material="src: #brick-texture; repeat: 10 3"></a-box>
+                <!-- Left Wall -->
+                <a-box position="-5 1.5 0" width="0.5" height="3" depth="10" material="src: #brick-texture; repeat: 10 3"></a-box>
+                <!-- Right Wall -->
+                <a-box position="5 1.5 0" width="0.5" height="3" depth="10" material="src: #brick-texture; repeat: 10 3"></a-box>
+                
+                <!-- Inner Courtyard (Open to sky) -->
+                <a-plane position="0 0.05 0" rotation="-90 0 0" width="6" height="6" material="src: #earth-texture; repeat: 2 2"></a-plane>
+                
+                <!-- Internal Walls (creating rooms around courtyard) -->
+                <a-box position="-3 1.5 0" width="0.5" height="3" depth="6" material="src: #brick-texture; repeat: 6 3"></a-box>
+                <a-box position="3 1.5 0" width="0.5" height="3" depth="6" material="src: #brick-texture; repeat: 6 3"></a-box>
+                <a-box position="0 1.5 -3" width="6" height="3" depth="0.5" material="src: #brick-texture; repeat: 6 3"></a-box>
+                
+                <!-- Flat Roofs over the rooms (courtyard is open) -->
+                <a-box position="-4 3 0" width="2" height="0.2" depth="10" material="src: #wood-texture; repeat: 2 10"></a-box>
+                <a-box position="4 3 0" width="2" height="0.2" depth="10" material="src: #wood-texture; repeat: 2 10"></a-box>
+                <a-box position="0 3 -4" width="6" height="0.2" depth="2" material="src: #wood-texture; repeat: 6 2"></a-box>
+                <a-box position="0 3 4" width="6" height="0.2" depth="2" material="src: #wood-texture; repeat: 6 2"></a-box>
+                
+                <!-- Private Well Structure -->
+                <a-cylinder position="-4 0.5 -4" radius="0.8" height="1" open-ended="true" side="double" material="src: #brick-texture; repeat: 4 1"></a-cylinder>
+                <a-cylinder position="-4 0.1 -4" radius="0.75" height="0.2" color="#1a3c5a"></a-cylinder> <!-- Water -->
+            </a-entity>
+        </a-entity>
+        
+        <!-- Sky -->
+        <a-sky color="#dcb394"></a-sky>
+
+        <a-entity id="rig" position="0 1.6 30" movement-controls="speed: 0.2">
+            <a-entity camera position="0 0 0" look-controls="pointerLockEnabled: false">
+                <a-entity cursor="fuse: false; rayOrigin: mouse;"
+                          position="0 0 -1"
+                          geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03"
+                          material="color: white; shader: flat; opacity: 0.5"
+                          raycaster="objects: .clickable">
+                </a-entity>
+            </a-entity>
+        </a-entity>
+    </a-scene>
+
+    <script src="scripts/data-loader.js"></script>
+    <script src="scripts/tts.js"></script>
+    <script src="scripts/world.js"></script>
+    <script src="scripts/city-builder.js"></script>
+    <script src="scripts/app.js"></script>
+</body>
+</html>

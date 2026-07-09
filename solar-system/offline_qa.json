@@ -1,0 +1,17 @@
+[
+  {
+    "question": "what is the sun",
+    "keywords": ["sun", "star", "solar"],
+    "answer": "The Sun is the star at the center of our Solar System. It's a massive ball of hydrogen and helium undergoing constant nuclear fusion, providing light and heat to all the planets."
+  },
+  {
+    "question": "how big is jupiter",
+    "keywords": ["jupiter", "size", "largest"],
+    "answer": "Jupiter is the largest planet in our Solar System. It's so big that about 1,300 Earths could fit inside it! Its Great Red Spot is a giant storm that has been raging for hundreds of years."
+  },
+  {
+    "question": "what are the rings of saturn made of",
+    "keywords": ["saturn", "rings", "composition"],
+    "answer": "Saturn's rings are made mostly of chunks of ice and rock, ranging in size from tiny dust-like particles to pieces as large as houses. The rings are incredibly thin - only about 30 feet thick on average!"
+  }
+]
