@@ -21,6 +21,109 @@
     
     <!-- A-Frame Extras for GLTF loader -->
     <script src="https://unpkg.com/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
+    
+    <!-- Custom Navigation Controls Component -->
+    <script>
+        AFRAME.registerComponent('custom-controls', {
+            schema: {
+                speed: { type: 'number', default: 0.3 },
+                fly: { type: 'boolean', default: false }
+            },
+            init: function () {
+                this.keys = {
+                    KeyW: false, ArrowUp: false,
+                    KeyS: false, ArrowDown: false,
+                    KeyA: false, ArrowLeft: false,
+                    KeyD: false, ArrowRight: false,
+                    KeyE: false, Space: false,
+                    KeyQ: false, ShiftLeft: false
+                };
+                
+                this.onKeyDown = this.onKeyDown.bind(this);
+                this.onKeyUp = this.onKeyUp.bind(this);
+                window.addEventListener('keydown', this.onKeyDown);
+                window.addEventListener('keyup', this.onKeyUp);
+                
+                // Track focus to ensure inputs register smoothly
+                this.el.sceneEl.addEventListener('click', () => {
+                    window.focus();
+                });
+                
+                this.cameraEl = this.el.querySelector('[camera]') || this.el.querySelector('a-camera');
+            },
+            remove: function () {
+                window.removeEventListener('keydown', this.onKeyDown);
+                window.removeEventListener('keyup', this.onKeyUp);
+            },
+            onKeyDown: function (e) {
+                let code = e.code;
+                if (e.key === 'e' || e.key === 'E') code = 'KeyE';
+                if (e.key === 'q' || e.key === 'Q') code = 'KeyQ';
+                if (e.key === 'w' || e.key === 'W') code = 'KeyW';
+                if (e.key === 's' || e.key === 'S') code = 'KeyS';
+                if (e.key === 'a' || e.key === 'A') code = 'KeyA';
+                if (e.key === 'd' || e.key === 'D') code = 'KeyD';
+                if (e.key === ' ') code = 'Space';
+                
+                if (code in this.keys) {
+                    this.keys[code] = true;
+                }
+            },
+            onKeyUp: function (e) {
+                let code = e.code;
+                if (e.key === 'e' || e.key === 'E') code = 'KeyE';
+                if (e.key === 'q' || e.key === 'Q') code = 'KeyQ';
+                if (e.key === 'w' || e.key === 'W') code = 'KeyW';
+                if (e.key === 's' || e.key === 'S') code = 'KeyS';
+                if (e.key === 'a' || e.key === 'A') code = 'KeyA';
+                if (e.key === 'd' || e.key === 'D') code = 'KeyD';
+                if (e.key === ' ') code = 'Space';
+                
+                if (code in this.keys) {
+                    this.keys[code] = false;
+                }
+            },
+            tick: function (time, timeDelta) {
+                const speed = this.data.speed * (timeDelta / 1000) * 60; // normalize speed
+                const pos = this.el.getAttribute('position');
+                if (!pos) return;
+                
+                let direction = new THREE.Vector3();
+                let rotation = new THREE.Euler(0, 0, 0, 'YXZ');
+                
+                if (this.cameraEl) {
+                    rotation.copy(this.cameraEl.object3D.rotation);
+                }
+                
+                if (!this.data.fly) {
+                    rotation.x = 0; // horizontal movement only
+                }
+                
+                let moveVector = new THREE.Vector3();
+                if (this.keys.KeyW || this.keys.ArrowUp) moveVector.z -= 1;
+                if (this.keys.KeyS || this.keys.ArrowDown) moveVector.z += 1;
+                if (this.keys.KeyA || this.keys.ArrowLeft) moveVector.x -= 1;
+                if (this.keys.KeyD || this.keys.ArrowRight) moveVector.x += 1;
+                
+                moveVector.normalize();
+                moveVector.applyEuler(rotation);
+                moveVector.multiplyScalar(speed);
+                
+                pos.x += moveVector.x;
+                pos.z += moveVector.z;
+                
+                if (this.data.fly) {
+                    pos.y += moveVector.y;
+                }
+                
+                if (this.keys.KeyE || this.keys.Space) pos.y += speed * 0.7;
+                if (this.keys.KeyQ || this.keys.ShiftLeft) pos.y = Math.max(0.2, pos.y - speed * 0.7);
+                
+                this.el.setAttribute('position', pos);
+            }
+        });
+    </script>
+    
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     
     <style>
@@ -241,6 +344,19 @@
         </div>
     </div>
 
+    <!-- Controls Legend Panel -->
+    <div style="position: fixed; top: 20px; left: 20px; background: rgba(28, 16, 12, 0.75); padding: 15px 20px; border-radius: 16px; color: white; z-index: 1000; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(244, 164, 96, 0.15); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4); width: 230px;">
+        <h4 style="font-family: 'Outfit', sans-serif; color: #f4a460; margin: 0 0 8px 0; font-weight: 600; font-size: 1rem;">Navigation Controls</h4>
+        <div style="font-size: 0.82rem; color: #eee; line-height: 1.6;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span>Move Forward/Back:</span><span style="color: #f4a460; font-weight: bold;">W / S</span></div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span>Strafe Left/Right:</span><span style="color: #f4a460; font-weight: bold;">A / D</span></div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span>Turn Left/Right:</span><span style="color: #3498db; font-weight: bold;">◀ ▶ Arrows</span></div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span>Look:</span><span style="color: #f4a460; font-weight: bold;">Mouse Drag</span></div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span>Fly Up:</span><span style="color: #2ecc71; font-weight: bold;">E Key ⬆</span></div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span>Fly Down:</span><span style="color: #e74c3c; font-weight: bold;">Q Key ⬇</span></div>
+        </div>
+    </div>
+
     <!-- Control Panel -->
     <div class="control-panel">
         <h3 style="margin: 0 0 10px 0; color: #f4a460;">🏛️ Indus Valley</h3>
@@ -310,11 +426,11 @@
         </a-assets>
 
         <!-- Camera Rig -->
-        <a-entity id="cameraRig" position="0 1.6 0">
+        <a-entity id="cameraRig" position="0 1.6 0" custom-controls="speed: 0.35; fly: false">
             <a-camera 
                 id="camera"
-                look-controls="enabled: true"
-                wasd-controls="enabled: true"
+                look-controls="enabled: true; pointerLockEnabled: false"
+                wasd-controls="enabled: false"
                 cursor="rayOrigin: mouse"
                 raycaster="objects: .clickable">
             </a-camera>

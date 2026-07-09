@@ -14,26 +14,51 @@ const POINTS_OF_INTEREST = {
     'greatbath': {
         name: 'The Great Bath',
         siteKey: 'mohenjo-daro',
-        center: { x: -25, z: 0 },
+        center: { x: 60, z: -29 },
+        radius: 15,
+        visited: false
+    },
+    'granary': {
+        name: 'The Great Granary',
+        siteKey: 'granary',
+        center: { x: -20, z: -55 },
+        radius: 15,
+        visited: false
+    },
+    'assembly': {
+        name: 'Pillared Assembly Hall',
+        siteKey: 'assembly',
+        center: { x: 22, z: -55 },
         radius: 15,
         visited: false
     },
     'residential': {
-        name: 'Residential Quarters',
+        name: 'Elite Residential Quarters',
         siteKey: 'harappa',
-        center: { x: 25, z: 0 },
+        center: { x: 18, z: 25 },
+        radius: 15,
+        visited: false
+    },
+    'craftsmen': {
+        name: 'Craftsmen & Workers District',
+        siteKey: 'craftsmen',
+        center: { x: -22, z: 25 },
         radius: 15,
         visited: false
     }
 };
 
 const GLOBAL_QUESTS = [
-    { id: 'seal', name: 'Trade Seal', position: '-5 1 25', desc: 'A steatite seal used by merchants for trade.' },
-    { id: 'weights', name: 'Standard Weights', position: '8 0.5 28', desc: 'Chert weights used for taxation and trade.' },
-    { id: 'bitumen', name: 'Bitumen', position: '-28 1 -5', desc: 'Tar-like substance used to make the bath waterproof.' },
-    { id: 'drain', name: 'Corbelled Drain', position: '-20 0.5 5', desc: 'Advanced drainage system to empty the bath.' },
-    { id: 'toy', name: 'Terracotta Cart', position: '25 1 0', desc: 'A children\'s toy found in the residential courtyard.' },
-    { id: 'well', name: 'Private Well', position: '21 1.5 -4', desc: 'Most houses had their own water supply.' }
+    { id: 'seal', name: 'Trade Seal', position: '-2 0.5 50', desc: 'A steatite seal used by merchants for trade.' },
+    { id: 'weights', name: 'Standard Weights', position: '12 0.5 35', desc: 'Chert weights used for taxation and trade.' },
+    { id: 'bitumen', name: 'Bitumen', position: '60 1.2 -30', desc: 'Tar-like substance used to make the bath waterproof.' },
+    { id: 'drain', name: 'Corbelled Drain', position: '53.5 0.6 -23', desc: 'Advanced corbelled brick drainage channel that discharged waste water from the Great Bath directly into the main street sewer — one of the world\'s earliest planned sewage outlets.' },
+    { id: 'toy', name: 'Terracotta Cart', position: '-22 0.5 20', desc: 'A children\'s toy found in the residential courtyard.' },
+    { id: 'well', name: 'Private Well', position: '10 1.5 5', desc: 'Most houses had their own water supply.' },
+    { id: 'granary_seal', name: 'Grain Toll Seal', position: '-20 7.5 -55', desc: 'A clay sealing used to verify grain shipments arriving at the Citadel Granary.' },
+    { id: 'drain_cap', name: 'Silt Filter Grate', position: '-11 2.2 -55', desc: 'A terracotta mesh used to filter solid waste at street drainage junctions.' },
+    { id: 'brick_measure', name: 'Standardized Brick', position: '-25 0.5 45', desc: 'A fired clay brick adhering to the strict 1:2:4 ratio used throughout the civilization.' },
+    { id: 'drain_clog', name: 'Clogged Drain Silt', position: '-38.5 0.4 28', desc: 'A thick deposit of silt, ash, and broken pottery sherds blocking a residential lane gutter. Harappan workers regularly cleared these blockages to keep the city sanitary — an early form of municipal maintenance.' }
 ];
 
 class WorldManager {
