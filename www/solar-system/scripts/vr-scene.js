@@ -597,6 +597,11 @@ class VRSceneController {
         }
         
         this.highlightPlanet(planetId);
+
+        // Trigger camera flight and tracking if defined
+        if (typeof window.focusOnPlanet === 'function') {
+            window.focusOnPlanet(planetId);
+        }
     }
 
     async speakPlanetInfo(text) {

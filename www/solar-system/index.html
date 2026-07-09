@@ -449,6 +449,11 @@
         <!-- Starry sky background + procedural starfield -->
         <!-- Sky removed to fix visual glitches - using starfield instead -->
         <a-entity starfield="count: 1000; radius: 220; size: 0.5"></a-entity>
+
+        <!-- Distant Cosmic Nebula Clouds for rich space look -->
+        <a-sphere position="-120 40 -150" radius="60" material="color: #6d1b1b; transparent: true; opacity: 0.15; shader: flat; side: back" data-raycastable="false"></a-sphere>
+        <a-sphere position="120 -30 -160" radius="70" material="color: #1a0f30; transparent: true; opacity: 0.18; shader: flat; side: back" data-raycastable="false"></a-sphere>
+        <a-sphere position="0 80 -180" radius="80" material="color: #002d44; transparent: true; opacity: 0.12; shader: flat; side: back" data-raycastable="false"></a-sphere>
         
         <!-- Enhanced lighting -->
         <a-entity light="type: point; intensity: 1.6; distance: 120; decay: 2" position="0 0 -30"></a-entity>
@@ -459,6 +464,10 @@
         <a-entity position="0 0 -30" class="planet" data-planet-id="sun" data-planet-name="Sun" data-planet-desc="" data-raycastable>
             <!-- Your 3D Sun Model - Proper scale -->
             <a-entity gltf-model="assets/planets/Sun.glb?v=optimized" position="0 0 0" scale="0.6 0.6 0.6"></a-entity>
+            <!-- Glowing Sun Corona (glowing energy layer) -->
+            <a-sphere position="0 0 0" radius="5.0" material="color: #FF8C00; transparent: true; opacity: 0.35; shader: flat; side: double">
+                <a-animation attribute="scale" from="0.95 0.95 0.95" to="1.05 1.05 1.05" dur="3000" direction="alternate" repeat="indefinite" easing="ease-in-out"></a-animation>
+            </a-sphere>
             <!-- Fallback sphere (hidden by default, shown only if 3D model fails) -->
             <a-sphere position="0 0 0" radius="7.5" color="#FFD700" 
                 material="color: #FFD700; transparent: false" visible="false">
@@ -487,6 +496,8 @@
         <!-- Earth -->
         <a-entity id="earth-orbit" orbit-parent="speed: 0.42" position="0 0 -30">
           <a-entity gltf-model="assets/planets/Earth.glb?v=optimized" position="12 0.5 0" scale="0.00048 0.00048 0.00048" spin-body="speed: 18" class="planet" data-planet-id="earth" data-raycastable data-planet-name="Earth" data-planet-desc="Earth is our home planet and the only known planet with life. It has one natural satellite, the Moon.">
+            <!-- Earth atmosphere glow -->
+            <a-sphere position="0 0 0" radius="950" material="color: #00e5ff; transparent: true; opacity: 0.28; shader: flat; side: back"></a-sphere>
             <!-- Fallback sphere in case GLTF fails -->
             <a-sphere position="0 0 0" radius="0.45" color="#6B93D6"></a-sphere>
           </a-entity>
@@ -550,7 +561,65 @@
 
         <a-entity id="rig" position="0 1.6 0">
             <!-- Camera (headset view) -->
-            <a-camera id="camera" wasd-controls-enabled="false" look-controls="enabled: true"></a-camera>
+            <a-camera id="camera" wasd-controls-enabled="false" look-controls="enabled: true">
+                <!-- Cursor inside camera so it moves with head -->
+                <a-entity id="gazeCursor"
+                    cursor="fuse: true; fuseTimeout: 1200" 
+                    position="0 0 -1" 
+                    geometry="primitive: ring; radiusInner: 0.015; radiusOuter: 0.025" 
+                    material="color: #00ff88; shader: flat"
+                    raycaster="objects: [data-raycastable]; far: 100; near: 0.1">
+                    <!-- Loading animation inside cursor for click feedback -->
+                    <a-animation begin="fusing" easing="ease-in" attribute="scale"
+                                 fill="forwards" from="1 1 1" to="0.1 0.1 0.1" dur="1200"></a-animation>
+                    <a-animation begin="click" easing="ease-in" attribute="scale"
+                                 fill="backwards" from="0.1 0.1 0.1" to="1 1 1" dur="150"></a-animation>
+                    <a-animation begin="mouseleave" easing="ease-in" attribute="scale"
+                                 fill="backwards" to="1 1 1" dur="150"></a-animation>
+                </a-entity>
+            </a-camera>
+
+            <!-- 3D VR HUD Info Panel & Interactive Console -->
+            <a-entity id="infoPanel" position="0 0.25 -2" rotation="-15 0 0" visible="false">
+                <!-- Semi-transparent glassmorphic background -->
+                <a-plane width="1.8" height="1.0" material="color: #0d0f26; opacity: 0.88; transparent: true; shader: flat; side: double"></a-plane>
+                <!-- Glowing cyan border lines -->
+                <a-entity line="start: -0.9 0.5 0.005; end: 0.9 0.5 0.005; color: #00e5ff; opacity: 0.9"></a-entity>
+                <a-entity line="start: 0.9 0.5 0.005; end: 0.9 -0.5 0.005; color: #00e5ff; opacity: 0.9"></a-entity>
+                <a-entity line="start: 0.9 -0.5 0.005; end: -0.9 -0.5 0.005; color: #00e5ff; opacity: 0.9"></a-entity>
+                <a-entity line="start: -0.9 -0.5 0.005; end: -0.9 0.5 0.005; color: #00e5ff; opacity: 0.9"></a-entity>
+                
+                <!-- Title text -->
+                <a-text id="planetTitle" value="SELECT A PLANET" align="center" position="0 0.38 0.01" color="#00ff88" width="2" font="exo2bold"></a-text>
+                
+                <!-- Description text -->
+                <a-text id="planetDescription" value="Click on any planet in the solar system to focus, learn facts, and translate them to local Indian languages." align="left" position="-0.8 0.15 0.01" color="#ffffff" width="1.5" wrap-count="36" font="exo2semibold"></a-text>
+                
+                <!-- Controls buttons on HUD -->
+                <!-- Prev Planet -->
+                <a-entity id="hud-prev" class="hud-btn" data-hud-action="previous" position="-0.5 -0.32 0.01" geometry="primitive: plane; width: 0.35; height: 0.12" material="color: #4CAF50; shader: flat" text="value: PREV; color: #ffffff; align: center; width: 1.3; font: exo2bold" data-raycastable>
+                    <a-animation begin="mouseenter" attribute="scale" to="1.1 1.1 1.1" dur="100"></a-animation>
+                    <a-animation begin="mouseleave" attribute="scale" to="1 1 1" dur="100"></a-animation>
+                </a-entity>
+                
+                <!-- Next Planet -->
+                <a-entity id="hud-next" class="hud-btn" data-hud-action="next" position="-0.15 -0.32 0.01" geometry="primitive: plane; width: 0.35; height: 0.12" material="color: #4CAF50; shader: flat" text="value: NEXT; color: #ffffff; align: center; width: 1.3; font: exo2bold" data-raycastable>
+                    <a-animation begin="mouseenter" attribute="scale" to="1.1 1.1 1.1" dur="100"></a-animation>
+                    <a-animation begin="mouseleave" attribute="scale" to="1 1 1" dur="100"></a-animation>
+                </a-entity>
+
+                <!-- Voice / Play Audio -->
+                <a-entity id="hud-speak" class="hud-btn" data-hud-action="speak" position="0.2 -0.32 0.01" geometry="primitive: plane; width: 0.32; height: 0.12" material="color: #ff6b6b; shader: flat" text="value: SPEAK; color: #ffffff; align: center; width: 1.3; font: exo2bold" data-raycastable>
+                    <a-animation begin="mouseenter" attribute="scale" to="1.1 1.1 1.1" dur="100"></a-animation>
+                    <a-animation begin="mouseleave" attribute="scale" to="1 1 1" dur="100"></a-animation>
+                </a-entity>
+
+                <!-- Dismiss/Overview -->
+                <a-entity id="hud-close" class="hud-btn" data-hud-action="overview" position="0.55 -0.32 0.01" geometry="primitive: plane; width: 0.32; height: 0.12" material="color: #ff3333; shader: flat" text="value: CLOSE; color: #ffffff; align: center; width: 1.3; font: exo2bold" data-raycastable>
+                    <a-animation begin="mouseenter" attribute="scale" to="1.1 1.1 1.1" dur="100"></a-animation>
+                    <a-animation begin="mouseleave" attribute="scale" to="1 1 1" dur="100"></a-animation>
+                </a-entity>
+            </a-entity>
 
             <!-- Right-hand controller -->
             <a-entity id="rightController"
@@ -566,14 +635,6 @@
                       oculus-touch-controls="hand: left"
                       vive-controls="hand: left"
                       windows-motion-controls="hand: left"></a-entity>
-        </a-entity>
-        
-        <!-- Fallback VR Cursor for headset-only VR -->
-        <a-entity 
-            cursor="fuse: true; fuseTimeout: 1000" 
-            position="0 0 -1" 
-            geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03" 
-            material="color: cyan; shader: flat">
         </a-entity>
 
         <!-- Debug pointer for VR controllers -->
@@ -2287,6 +2348,7 @@
             showTourStatus('🌍 Overview - Welcome to the Solar System');
             
             const rig = document.querySelector('#rig');
+            if (rig) rig.setAttribute('follow-target', 'active', false);
             
             // Move to overview position (far back to see all planets)
             await moveToPosition(rig, { x: 0, y: 10, z: 15 });
@@ -2305,6 +2367,7 @@
             showTourStatus('🎬 Tour Conclusion - Thank you for exploring with us!');
             
             const rig = document.querySelector('#rig');
+            if (rig) rig.setAttribute('follow-target', 'active', false);
             
             // Move to overview position for conclusion
             await moveToPosition(rig, { x: 0, y: 10, z: 15 });
@@ -2330,39 +2393,14 @@
             const planetName = planetEl.getAttribute('data-planet-name') || planetId;
             showTourStatus(`🌍 Visiting ${planetName}`);
             
-            const rig = document.querySelector('#rig');
-            
-            // Get world position (not local) since planets are now in orbit-parents
-            const worldPos = new THREE.Vector3();
-            planetEl.object3D.getWorldPosition(worldPos);
-            const planetPos = { x: worldPos.x, y: worldPos.y, z: worldPos.z };
-            
-            // Calculate appropriate camera distance based on planet type
-            let viewOffset;
-            
-            if (planetId === 'sun') {
-                // Sun needs much more distance
-                viewOffset = { x: 0, y: 3, z: 20 };
-            } else if (planetId === 'jupiter' || planetId === 'saturn') {
-                // Gas giants need more distance
-                viewOffset = { x: 0, y: 2, z: 8 };
-            } else if (planetId === 'pluto') {
-                // Pluto - moderate distance
-                viewOffset = { x: 0, y: 1.5, z: 5 };
-            } else {
-                // Rocky planets - closer view
-                viewOffset = { x: 0, y: 1.5, z: 5 };
-            }
-            
             // Highlight the planet being visited
             highlightPlanet(planetEl);
             
-            // Move camera to viewing position (single movement, less motion)
-            await moveToPosition(rig, { 
-                x: planetPos.x + viewOffset.x, 
-                y: planetPos.y + viewOffset.y, 
-                z: planetPos.z + viewOffset.z 
-            });
+            // Move camera to viewing position using orbital target tracker
+            await focusOnPlanet(planetId);
+            
+            // Wait for flight transition
+            await wait(2800);
             
             // Start narration AFTER camera arrives
             window.currentPlanet = { id: planetId };
@@ -2406,7 +2444,7 @@
             });
         }
         
-        // Move camera closer to a planet when it's focused
+        // Move camera closer to a planet when it's focused and follow its orbit
         async function focusOnPlanet(planetId) {
             const planetEl = document.querySelector(`[data-planet-id="${planetId}"]`);
             if (!planetEl) return;
@@ -2414,36 +2452,47 @@
             const rig = document.querySelector('#rig');
             if (!rig) return;
             
-            // Get world position since planets are now in orbit-parents
-            const worldPos = new THREE.Vector3();
-            planetEl.object3D.getWorldPosition(worldPos);
-            const planetPos = { x: worldPos.x, y: worldPos.y, z: worldPos.z };
-            const currentPos = rig.getAttribute('position');
+            // Calculate appropriate camera distance based on planet type
+            let viewOffset;
+            if (planetId === 'sun') {
+                viewOffset = { y: 4, z: 22 };
+            } else if (planetId === 'jupiter' || planetId === 'saturn') {
+                viewOffset = { y: 2.5, z: 12 };
+            } else if (planetId === 'pluto') {
+                viewOffset = { y: 1.0, z: 4.5 };
+            } else {
+                viewOffset = { y: 1.2, z: 5.5 };
+            }
             
-            // Calculate position closer to the planet
-            const distance = Math.sqrt(
-                Math.pow(planetPos.x - currentPos.x, 2) + 
-                Math.pow(planetPos.y - currentPos.y, 2) + 
-                Math.pow(planetPos.z - currentPos.z, 2)
-            );
+            console.log(`🎯 Focusing camera on ${planetId} using orbital tracking`);
             
-            // Move closer but not too close (maintain good viewing distance)
-            const targetDistance = Math.min(distance * 0.7, 15); // 70% closer, max 15 units
-            const direction = {
-                x: (planetPos.x - currentPos.x) / distance,
-                y: (planetPos.y - currentPos.y) / distance,
-                z: (planetPos.z - currentPos.z) / distance
-            };
-            
-            const targetPos = {
-                x: planetPos.x - direction.x * targetDistance,
-                y: Math.max(1.6, planetPos.y - direction.y * targetDistance), // Keep camera above ground
-                z: planetPos.z - direction.z * targetDistance
-            };
-            
-            console.log(`🎯 Focusing on ${planetId} - moving camera closer`);
-            await moveToPosition(rig, targetPos);
+            // Update rig to follow the planet target dynamically (handles orbit revolving)
+            rig.setAttribute('follow-target', {
+                target: `[data-planet-id="${planetId}"]`,
+                offsetY: viewOffset.y,
+                offsetZ: viewOffset.z,
+                active: true,
+                speed: 0.05
+            });
+
+            // Make the 3D HUD visible in VR
+            const infoPanel = document.getElementById('infoPanel');
+            if (infoPanel) {
+                infoPanel.setAttribute('visible', 'true');
+            }
         }
+        
+        // Expose focusOnPlanet globally so vr-scene.js can trigger it
+        window.focusOnPlanet = focusOnPlanet;
+
+        async function resetCameraToOverview() {
+            const rig = document.querySelector('#rig');
+            if (rig) {
+                rig.setAttribute('follow-target', 'active', false);
+                await moveToPosition(rig, { x: 0, y: 10, z: 15 });
+            }
+        }
+        window.resetCameraToOverview = resetCameraToOverview;
 
         // Enhanced text-to-speech using only Sarvam TTS with timeout
         async function speakText(text, language) {
@@ -3018,11 +3067,69 @@
                     toggleOrbitsBtn.style.color = orbitsVisible ? '#1a1a2e' : '#fff';
                 });
             }
+
+            // --- Custom 3D HUD Event Listeners ---
+            document.querySelectorAll('.hud-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const action = btn.getAttribute('data-hud-action');
+                    console.log('🎮 3D HUD Clicked:', action);
+                    
+                    if (window.vrSceneController) {
+                        if (action === 'previous') {
+                            window.vrSceneController.navigateToPreviousPlanet();
+                        } else if (action === 'next') {
+                            window.vrSceneController.navigateToNextPlanet();
+                        } else if (action === 'speak') {
+                            const current = window.vrSceneController.getCurrentPlanet();
+                            if (current) {
+                                window.vrSceneController.speakPlanetInfo(current.description);
+                            }
+                        } else if (action === 'overview') {
+                            const infoPanel = document.getElementById('infoPanel');
+                            if (infoPanel) infoPanel.setAttribute('visible', 'false');
+                            resetCameraToOverview();
+                        }
+                    }
+                });
+            });
         });
     </script>
 
     <!-- Orbital Mechanics Components -->
     <script>
+    /* ===== follow-target: tracks dynamic world-space orbits of planets smoothly ===== */
+    AFRAME.registerComponent('follow-target', {
+      schema: {
+        target: { type: 'selector', default: null },
+        offsetY: { type: 'number', default: 1.5 },
+        offsetZ: { type: 'number', default: 5 },
+        active: { type: 'boolean', default: false },
+        speed: { type: 'number', default: 0.05 }
+      },
+      init() {
+        this.targetWorldPos = new THREE.Vector3();
+      },
+      tick(time, delta) {
+        if (!this.data.active || !this.data.target) return;
+        const THREE = AFRAME.THREE;
+        
+        // Get target's current world position
+        this.data.target.object3D.getWorldPosition(this.targetWorldPos);
+        
+        // Calculate radial direction from Sun (0, 0, -30) to target
+        const sunPos = new THREE.Vector3(0, 0, -30);
+        const dir = new THREE.Vector3().subVectors(this.targetWorldPos, sunPos).normalize();
+        
+        // Target position is: planet position + (direction * offsetZ) + (up * offsetY)
+        const targetPos = new THREE.Vector3().copy(this.targetWorldPos);
+        targetPos.addScaledVector(dir, this.data.offsetZ);
+        targetPos.y += this.data.offsetY;
+        
+        // Smoothly interpolate (lerp) rig position
+        this.el.object3D.position.lerp(targetPos, this.data.speed);
+      }
+    });
+
     /* ===== Orbit parent: rotate this parent to make the child revolve around the center =====
        Usage: attach to a parent that is positioned at the Sun (usually 0 0 0).
        Put your planet GLTF as a child and set the child's position to (radius, y, z).
