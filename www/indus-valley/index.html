@@ -161,13 +161,6 @@
                 if (this.keys.ArrowRight) {
                     rot.y -= rotSpeed;
                 }
-                
-                // VR Controller Comfort/Smooth Turning (Right controller thumbstick X-axis)
-                const threshold = 0.15;
-                if (Math.abs(this.rightThumbstick.x) > threshold) {
-                    rot.y -= this.rightThumbstick.x * rotSpeed * 0.8;
-                }
-                
                 this.el.setAttribute('rotation', rot);
                 
                 if (!this.cameraEl) return;
@@ -202,17 +195,20 @@
                     moveVector.add(right); // strafe right
                 }
                 
-                // VR Controller movement: Left thumbstick (standard translation)
+                const threshold = 0.15;
+                
+                // Left thumbstick Y-axis controls elevation (up/down)
                 if (Math.abs(this.leftThumbstick.y) > threshold) {
-                    moveVector.addScaledVector(forward, -this.leftThumbstick.y);
-                }
-                if (Math.abs(this.leftThumbstick.x) > threshold) {
-                    moveVector.addScaledVector(right, this.leftThumbstick.x);
+                    // Pushing forward (negative Y) goes UP, pulling back (positive Y) goes DOWN
+                    pos.y = Math.max(0.2, pos.y - this.leftThumbstick.y * speed * 0.7);
                 }
                 
-                // Fallback: If only the right controller is active, let its thumbstick Y-axis move forward/backward
-                if (Math.abs(this.leftThumbstick.y) <= threshold && Math.abs(this.rightThumbstick.y) > threshold) {
+                // Right thumbstick controls movement (front, back, left, right translation)
+                if (Math.abs(this.rightThumbstick.y) > threshold) {
                     moveVector.addScaledVector(forward, -this.rightThumbstick.y);
+                }
+                if (Math.abs(this.rightThumbstick.x) > threshold) {
+                    moveVector.addScaledVector(right, this.rightThumbstick.x);
                 }
                 
                 if (moveVector.lengthSq() > 0) {
@@ -227,7 +223,7 @@
                     }
                 }
                 
-                // Explicit elevation controls
+                // Explicit elevation controls (Keyboard)
                 if (this.keys.KeyE || this.keys.Space) pos.y += speed * 0.7;
                 if (this.keys.KeyQ || this.keys.ShiftLeft) pos.y = Math.max(0.2, pos.y - speed * 0.7);
                 
