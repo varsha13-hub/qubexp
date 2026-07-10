@@ -202,6 +202,48 @@
                     moveVector.normalize();
                     moveVector.multiplyScalar(speed);
                     
+                    // ── Wall Collision Detection ──
+                    // Build collision mesh list lazily (once)
+                    if (!this._collisionMeshes) {
+                        this._collisionMeshes = [];
+                        this._raycaster = new THREE.Raycaster();
+                        const scene = this.el.sceneEl.object3D;
+                        scene.traverse(function (child) {
+                            if (child.isMesh && child !== this.cameraEl?.object3D) {
+                                this._collisionMeshes.push(child);
+                            }
+                        }.bind(this));
+                    }
+                    
+                    const BUFFER = 0.5; // collision buffer distance in metres
+                    const playerPos = new THREE.Vector3(pos.x, pos.y + 0.5, pos.z);
+                    const rc = this._raycaster;
+                    const meshes = this._collisionMeshes;
+                    
+                    // Test X-axis movement
+                    if (Math.abs(moveVector.x) > 0.001) {
+                        const dirX = new THREE.Vector3(Math.sign(moveVector.x), 0, 0);
+                        rc.set(playerPos, dirX);
+                        rc.far = BUFFER + Math.abs(moveVector.x);
+                        rc.near = 0;
+                        const hitsX = rc.intersectObjects(meshes, false);
+                        if (hitsX.length > 0 && hitsX[0].distance < BUFFER) {
+                            moveVector.x = 0; // block X movement
+                        }
+                    }
+                    
+                    // Test Z-axis movement
+                    if (Math.abs(moveVector.z) > 0.001) {
+                        const dirZ = new THREE.Vector3(0, 0, Math.sign(moveVector.z));
+                        rc.set(playerPos, dirZ);
+                        rc.far = BUFFER + Math.abs(moveVector.z);
+                        rc.near = 0;
+                        const hitsZ = rc.intersectObjects(meshes, false);
+                        if (hitsZ.length > 0 && hitsZ[0].distance < BUFFER) {
+                            moveVector.z = 0; // block Z movement
+                        }
+                    }
+                    
                     pos.x += moveVector.x;
                     pos.z += moveVector.z;
                     

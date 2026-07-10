@@ -2,24 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Indus Valley Civilization VR - QubeXP</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Indus Valley VR - Advanced Multi-Zone</title>
     
-    <!-- A-Frame for VR -->
+    <!-- A-Frame -->
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
-    
-    <!-- THREE.js compatibility shim -->
-    <script>
-        if (typeof THREE !== 'undefined') {
-            if (!THREE.Math && THREE.MathUtils) {
-                THREE.Math = THREE.Math || {}
-                THREE.Math.degToRad = THREE.MathUtils.degToRad;
-                THREE.Math.radToDeg = THREE.MathUtils.radToDeg;
-            }
-        }
-    </script>
-    
-    <!-- A-Frame Extras for GLTF loader -->
     <script src="https://unpkg.com/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
     
     <!-- Custom Navigation Controls Component -->
@@ -215,6 +202,48 @@
                     moveVector.normalize();
                     moveVector.multiplyScalar(speed);
                     
+                    // ── Wall Collision Detection ──
+                    // Build collision mesh list lazily (once)
+                    if (!this._collisionMeshes) {
+                        this._collisionMeshes = [];
+                        this._raycaster = new THREE.Raycaster();
+                        const scene = this.el.sceneEl.object3D;
+                        scene.traverse(function (child) {
+                            if (child.isMesh && child !== this.cameraEl?.object3D) {
+                                this._collisionMeshes.push(child);
+                            }
+                        }.bind(this));
+                    }
+                    
+                    const BUFFER = 0.5; // collision buffer distance in metres
+                    const playerPos = new THREE.Vector3(pos.x, pos.y + 0.5, pos.z);
+                    const rc = this._raycaster;
+                    const meshes = this._collisionMeshes;
+                    
+                    // Test X-axis movement
+                    if (Math.abs(moveVector.x) > 0.001) {
+                        const dirX = new THREE.Vector3(Math.sign(moveVector.x), 0, 0);
+                        rc.set(playerPos, dirX);
+                        rc.far = BUFFER + Math.abs(moveVector.x);
+                        rc.near = 0;
+                        const hitsX = rc.intersectObjects(meshes, false);
+                        if (hitsX.length > 0 && hitsX[0].distance < BUFFER) {
+                            moveVector.x = 0; // block X movement
+                        }
+                    }
+                    
+                    // Test Z-axis movement
+                    if (Math.abs(moveVector.z) > 0.001) {
+                        const dirZ = new THREE.Vector3(0, 0, Math.sign(moveVector.z));
+                        rc.set(playerPos, dirZ);
+                        rc.far = BUFFER + Math.abs(moveVector.z);
+                        rc.near = 0;
+                        const hitsZ = rc.intersectObjects(meshes, false);
+                        if (hitsZ.length > 0 && hitsZ[0].distance < BUFFER) {
+                            moveVector.z = 0; // block Z movement
+                        }
+                    }
+                    
                     pos.x += moveVector.x;
                     pos.z += moveVector.z;
                     
@@ -230,318 +259,483 @@
                 this.el.setAttribute('position', pos);
             }
         });
+
+        // =============================================
+        // Flowing Water Component for the Great Bath
+        // =============================================
+        AFRAME.registerComponent('flowing-water', {
+            schema: {
+                speed:     { type: 'number', default: 0.4 },
+                waveAmp:   { type: 'number', default: 0.04 },
+                waveFreq:  { type: 'number', default: 1.8 },
+                color1:    { type: 'color',  default: '#1a6e8a' },
+                color2:    { type: 'color',  default: '#0d4f6e' }
+            },
+            init: function () {
+                this.t = 0;
+                this.baseY = this.el.object3D.position.y;
+                // UV offset object for scrolling
+                this.uvOffset = new THREE.Vector2(0, 0);
+                this.color1 = new THREE.Color(this.data.color1);
+                this.color2 = new THREE.Color(this.data.color2);
+                this.lerpColor = new THREE.Color();
+            },
+            tick: function (time, delta) {
+                this.t += delta * 0.001;
+                const t = this.t;
+
+                // 1. Sine-wave height bob
+                const waveY = this.baseY + Math.sin(t * this.data.waveFreq) * this.data.waveAmp;
+                this.el.object3D.position.y = waveY;
+
+                // 2. UV scroll (flowing effect)
+                const mesh = this.el.getObject3D('mesh');
+                if (mesh) {
+                    mesh.traverse(child => {
+                        if (child.isMesh && child.material && child.material.map) {
+                            child.material.map.offset.x = (t * this.data.speed * 0.1) % 1;
+                            child.material.map.offset.y = (t * this.data.speed * 0.06) % 1;
+                            child.material.map.needsUpdate = true;
+                        }
+                    });
+                }
+
+                // 3. Colour pulse between deep teal and dark blue
+                const lerpT = (Math.sin(t * 0.8) + 1) / 2;
+                this.lerpColor.lerpColors(this.color1, this.color2, lerpT);
+                const mat = this.el.getObject3D('mesh');
+                if (mat) {
+                    mat.traverse(child => {
+                        if (child.isMesh && child.material) {
+                            child.material.color.copy(this.lerpColor);
+                        }
+                    });
+                }
+            }
+        });
+
+        // =============================================
+        // Brick Material Override for Great Bath GLTF
+        // =============================================
+        AFRAME.registerComponent('brick-material-override', {
+            schema: {
+                color:      { type: 'color',  default: '#9e6244' },
+                roughness:  { type: 'number', default: 0.95 },
+                metalness:  { type: 'number', default: 0.0 },
+                repeatX:    { type: 'number', default: 6 },
+                repeatY:    { type: 'number', default: 6 }
+            },
+            init: function () {
+                this.el.addEventListener('model-loaded', () => {
+                    const textureEl = document.querySelector('#brick-texture');
+                    if (!textureEl) return;
+
+                    // Get the THREE texture from the A-Frame image asset
+                    const loader = new THREE.TextureLoader();
+                    loader.load(textureEl.src, (tex) => {
+                        tex.wrapS = THREE.RepeatWrapping;
+                        tex.wrapT = THREE.RepeatWrapping;
+                        tex.repeat.set(this.data.repeatX, this.data.repeatY);
+
+                        const brickColor = new THREE.Color(this.data.color);
+
+                        this.el.object3D.traverse(child => {
+                            if (!child.isMesh) return;
+                            // Preserve transparency on parts that should stay open (pool water gap)
+                            const newMat = new THREE.MeshStandardMaterial({
+                                map: tex,
+                                color: brickColor,
+                                roughness: this.data.roughness,
+                                metalness: this.data.metalness,
+                                side: THREE.DoubleSide
+                            });
+                            child.material = newMat;
+                            child.material.needsUpdate = true;
+                        });
+                    });
+                });
+            }
+        });
     </script>
     
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-    
-    <style>
-        body { 
-            margin: 0; 
-            padding: 0; 
-            font-family: 'Inter', sans-serif;
-            background: #1a0f0a;
-        }
-        
-        a-scene { 
-            width: 100%; 
-            height: 100vh; 
-        }
-        
-        .loading {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, #1a0f0a 0%, #4a2818 50%, #8b4513 100%);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 10000;
-            color: #ffffff;
-        }
-        
-        .loading h2 {
-            font-family: 'Outfit', sans-serif;
-            font-size: 2.2rem;
-            margin-bottom: 20px;
-            color: #f4a460;
-            text-shadow: 0 4px 12px rgba(0,0,0,0.5);
-        }
-        
-        .control-panel {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: rgba(28, 16, 12, 0.75);
-            padding: 20px;
-            border-radius: 16px;
-            color: white;
-            z-index: 1000;
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(244, 164, 96, 0.15);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
-            width: 300px;
-        }
-        
-        .control-btn {
-            font-family: 'Inter', sans-serif;
-            font-weight: 500;
-            background: rgba(255, 255, 255, 0.06);
-            color: #e2e8f0;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            padding: 8px 14px;
-            margin: 4px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 0.85rem;
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        
-        .control-btn:hover {
-            background: rgba(210, 105, 30, 0.2);
-            border-color: rgba(244, 164, 96, 0.4);
-            color: white;
-            transform: translateY(-1px);
-        }
-        
-        .control-btn.active {
-            background: linear-gradient(135deg, #d2691e 0%, #8b4513 100%);
-            border-color: #f4a460;
-            color: white;
-            box-shadow: 0 4px 12px rgba(210, 105, 30, 0.3);
-        }
-        
-        .language-selector {
-            margin: 15px 0 5px 0;
-        }
-        
-        .language-selector select {
-            width: 100%;
-            background: rgba(10, 5, 3, 0.8);
-            color: white;
-            border: 1px solid rgba(244, 164, 96, 0.25);
-            padding: 8px 12px;
-            border-radius: 8px;
-            font-family: 'Inter', sans-serif;
-            font-size: 0.85rem;
-            outline: none;
-            transition: border-color 0.25s;
-        }
-        
-        .language-selector select:hover, .language-selector select:focus {
-            border-color: #f4a460;
-        }
-        
-        .info-panel {
-            position: fixed;
-            bottom: 25px;
-            left: 25px;
-            right: 25px;
-            background: rgba(18, 10, 8, 0.85);
-            padding: 20px;
-            border-radius: 16px;
-            color: #e2e8f0;
-            z-index: 1000;
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(244, 164, 96, 0.15);
-            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-            max-height: 220px;
-            overflow-y: auto;
-            border-bottom: 4px solid #d2691e;
-        }
-        
-        .info-panel h3 {
-            font-family: 'Outfit', sans-serif;
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: #f4a460;
-            margin: 0 0 10px 0;
-            letter-spacing: -0.01em;
-        }
-        
-        .site-marker {
-            position: absolute;
-            background: rgba(244, 164, 96, 0.8);
-            border: 2px solid #8b4513;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        
-        .site-marker:hover {
-            transform: scale(1.2);
-            background: rgba(244, 164, 96, 1);
-        }
-        
-        .site-marker::after {
-            content: attr(data-site);
-            position: absolute;
-            top: 25px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            padding: 5px 10px;
-            border-radius: 5px;
-            font-size: 12px;
-            white-space: nowrap;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-        
-        .site-marker:hover::after {
-            opacity: 1;
-        }
-        
-        .voice-controls {
-            position: fixed;
-            bottom: 10px;
-            right: 10px;
-            z-index: 1000;
-        }
-        
-        .voice-btn {
-            background: #8b4513;
-            color: white;
-            border: none;
-            padding: 15px;
-            border-radius: 50%;
-            cursor: pointer;
-            font-size: 20px;
-            width: 60px;
-            height: 60px;
-            transition: all 0.3s ease;
-        }
-        
-        .voice-btn:hover {
-            background: #a0522d;
-            transform: scale(1.1);
-        }
-        
-        .voice-btn.listening {
-            background: #ff6b6b;
-            animation: pulse 1s infinite;
-        }
-        
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
-        }
-        
-        .hidden {
-            display: none;
-        }
-    </style>
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+
     <!-- Loading Screen -->
-    <div class="loading" id="loadingScreen">
-        <h2>🏛️ Indus Valley Civilization</h2>
-        <p>Loading ancient wonders...</p>
-        <div style="margin-top: 20px;">
-            <div style="width: 200px; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; overflow: hidden;">
-                <div id="loadingBar" style="width: 0%; height: 100%; background: #f4a460; transition: width 0.3s ease;"></div>
+    <div id="loading-screen">
+        <div class="spinner"></div>
+        <h2>Loading Historical Data & Environments...</h2>
+    </div>
+
+    <!-- Notifications -->
+    <div id="notification-container"></div>
+
+    <!-- 2D Glassmorphic UI Overlay -->
+    <div id="ui-layer">
+        
+        <!-- Header & HUD -->
+        <div class="hud-header">
+            <div class="glass-panel title-card">
+                <h1>Indus Valley</h1>
+                <p id="current-zone-title">Exploring the City...</p>
+            </div>
+            
+            <div class="glass-panel gamification-hud">
+                <h3>Zone Quests</h3>
+                <p style="color: #ccc; margin-bottom: 10px;">Found: <span id="quest-progress">0/0</span></p>
+                <div class="artifact-slots" id="quest-slots">
+                    <!-- dynamically populated -->
+                </div>
             </div>
         </div>
-    </div>
 
-    <!-- Controls Legend Panel -->
-    <div style="position: fixed; top: 20px; left: 20px; background: rgba(28, 16, 12, 0.75); padding: 15px 20px; border-radius: 16px; color: white; z-index: 1000; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(244, 164, 96, 0.15); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4); width: 230px;">
-        <h4 style="font-family: 'Outfit', sans-serif; color: #f4a460; margin: 0 0 8px 0; font-weight: 600; font-size: 1rem;">Navigation Controls</h4>
-        <div style="font-size: 0.82rem; color: #eee; line-height: 1.6;">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span>Move Forward/Back:</span><span style="color: #f4a460; font-weight: bold;">W / S</span></div>
-            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span>Strafe Left/Right:</span><span style="color: #f4a460; font-weight: bold;">A / D</span></div>
-            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span>Turn Left/Right:</span><span style="color: #3498db; font-weight: bold;">◀ ▶ Arrows</span></div>
-            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span>Look:</span><span style="color: #f4a460; font-weight: bold;">Mouse Drag</span></div>
-            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span>Fly Up:</span><span style="color: #2ecc71; font-weight: bold;">E Key ⬆</span></div>
-            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span>Fly Down:</span><span style="color: #e74c3c; font-weight: bold;">Q Key ⬇</span></div>
+        <!-- Info Panel (Hidden by default) -->
+        <div class="info-panel-container">
+            <div class="glass-panel info-panel" id="info-panel">
+                <h2 id="info-title">Title</h2>
+                <p id="info-desc">Description text goes here.</p>
+                <div class="tts-controls">
+                    <button class="btn" id="btn-toggle-tts">🔊 Audio On</button>
+                    <select class="glass-select" id="lang-select">
+                        <option value="en" selected>English</option>
+                        <option value="hi">हिंदी (Hindi)</option>
+                        <option value="kn">ಕನ್ನಡ (Kannada)</option>
+                        <option value="ta">தமிழ் (Tamil)</option>
+                        <option value="te">తెలుగు (Telugu)</option>
+                    </select>
+                    <button class="btn" id="btn-close-info">✖ Close</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls Legend Panel -->
+        <div class="glass-panel" style="pointer-events: auto; padding: 15px 20px; position: absolute; bottom: 20px; left: 20px; width: 230px; border: 1px solid rgba(244, 164, 96, 0.3); text-align: left; z-index: 150;">
+            <h4 style="font-family: 'Outfit', sans-serif; color: #f4a460; margin-bottom: 8px; font-weight: 600; font-size: 1rem; text-shadow: 0 1px 5px rgba(244, 164, 96, 0.2);">Controls</h4>
+            <div style="font-size: 0.82rem; color: #eee; line-height: 1.6;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span>Move Forward/Back:</span><span style="color: #f4a460; font-weight: bold;">W / S</span></div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span>Strafe Left/Right:</span><span style="color: #f4a460; font-weight: bold;">A / D</span></div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span>Turn Left/Right:</span><span style="color: #3498db; font-weight: bold;">◀ ▶ Arrows</span></div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span>Look:</span><span style="color: #f4a460; font-weight: bold;">Mouse Drag</span></div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span>Fly Up:</span><span style="color: #2ecc71; font-weight: bold;">E Key ⬆</span></div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span>Fly Down:</span><span style="color: #e74c3c; font-weight: bold;">Q Key ⬇</span></div>
+            </div>
+        </div>
+
+        <div style="pointer-events: auto; text-align: center; margin-bottom: 20px;">
+            <a href="../index.html" class="btn" style="display: inline-block;">🏠 Back to Hub</a>
         </div>
     </div>
 
-    <!-- Control Panel -->
-    <div class="control-panel">
-        <h3 style="margin: 0 0 10px 0; color: #f4a460;">🏛️ Indus Valley</h3>
-        <button class="control-btn" onclick="startGuidedTour()">🎬 Start Tour</button>
-        <button class="control-btn" onclick="toggleExploration()">🔍 Explore</button>
-        <button class="control-btn" onclick="showOverview()">🌍 Overview</button>
-        
-        <div class="language-selector">
-            <select id="languageSelect" onchange="changeLanguage(this.value)">
-                <option value="en">English</option>
-                <option value="hi">हिन्दी</option>
-                <option value="kn">ಕನ್ನಡ</option>
-                <option value="ta">தமிழ்</option>
-                <option value="te">తెలుగు</option>
-                <option value="bn">বাংলা</option>
-            </select>
-        </div>
-        
-        <button class="control-btn" onclick="toggleVR()">🥽 VR Mode</button>
-    </div>
+    <!-- UI Layer Ends -->
 
-    <!-- Voice Controls -->
-    <div class="voice-controls">
-        <button class="voice-btn" id="voiceBtn" onclick="toggleVoiceRecognition()" title="Ask about Indus Valley">
-            🎤
-        </button>
-    </div>
-
-    <!-- Info Panel -->
-    <div class="info-panel" id="infoPanel">
-        <h3 id="infoTitle">Welcome to Indus Valley Civilization</h3>
-        <p id="infoText">Click on archaeological sites to learn about this ancient civilization that flourished around 2600-1900 BCE.</p>
-    </div>
-
-    <!-- A-Frame Scene -->
+    <!-- 3D Scene -->
     <a-scene 
-        id="indusScene"
-        vr-mode-ui="enabled: true"
-        embedded
-        background="color: #87CEEB"
-        fog="type: linear; color: #87CEEB; near: 10; far: 100"
-        renderer="antialias: true; colorManagement: true"
-        loading-screen="enabled: false">
+        loading-screen="enabled: false;"
+        renderer="colorManagement: true; physicallyCorrectLights: true;"
+        fog="type: exponential; color: #dcb394; density: 0.015">
         
         <!-- Assets -->
-        <a-assets>
-            <!-- 3D Models from Harappa Mohenjo-daro -->
-            <a-asset-item id="ancientHouses" src="harappa mohenjodaro/models/ancient_houses.glb"></a-asset-item>
-            <a-asset-item id="mohenjoDaroEntrance" src="harappa mohenjodaro/models/entrance_-_the_city_of_mohenjo_daro.glb"></a-asset-item>
-            <a-asset-item id="germanRiver" src="harappa mohenjodaro/models/german_river.glb"></a-asset-item>
-            <a-asset-item id="mapleTree" src="harappa mohenjodaro/models/maple_tree.glb"></a-asset-item>
-            <a-asset-item id="marSabaMonastery" src="harappa mohenjodaro/models/mar_saba_monastery__-rawscan.glb"></a-asset-item>
-            <a-asset-item id="ancientRome" src="harappa mohenjodaro/models/massive_scale_model_of_ancient_rome.glb"></a-asset-item>
-            <a-asset-item id="mohenjoDaroModel" src="harappa mohenjodaro/models/mohenjo-daro_indus_valley_civilization.glb"></a-asset-item>
-            <a-asset-item id="oldVillageHouse" src="harappa mohenjodaro/models/old_village_house_-_indian_game_asset.glb"></a-asset-item>
-            <a-asset-item id="nimrudPanels" src="harappa mohenjodaro/models/panels_3__4_nimrud_nw_palace.glb"></a-asset-item>
-            <a-asset-item id="grassSoil" src="harappa mohenjodaro/models/rough_dry_short_grass_soil.glb"></a-asset-item>
-            <a-asset-item id="stoneWall" src="harappa mohenjodaro/models/seamless_texture_-_stone_wall.glb"></a-asset-item>
-            <a-asset-item id="streamingRiver" src="harappa mohenjodaro/models/streaming_river.glb"></a-asset-item>
-            <a-asset-item id="templeRuin" src="harappa mohenjodaro/models/temple_ruin_aquarium_decoration_-_photoscan.glb"></a-asset-item>
-            <a-asset-item id="greatBath" src="harappa mohenjodaro/models/the_great_bath.glb"></a-asset-item>
-            <a-asset-item id="waterAnimation" src="harappa mohenjodaro/models/water_animation.glb"></a-asset-item>
-            
-            <!-- Fallback textures -->
-            <img id="groundTexture" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JvdW5kIiB3aWR0aD0iNTAiIGhlaWdodD0iNTAiIHBhdHRlcm5Vbml0cz0idXNlclNwYWNlT25Vc2UiPjxyZWN0IHdpZHRoPSI1MCIgaGVpZ2h0PSI1MCIgZmlsbD0iIzhiNDUxMyIvPjxyZWN0IHdpZHRoPSIyNSIgaGVpZ2h0PSIyNSIgZmlsbD0iI2QyNjkxZSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNncm91bmQpIi8+PC9zdmc+">
-            <img id="brickTexture" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjU2IiBoZWlnaHQ9IjEyOCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjU2IiBoZWlnaHQ9IjEyOCIgZmlsbD0iI2QyNjkxZSIvPjxyZWN0IHg9IjEyOCIgd2lkdGg9IjEyOCIgaGVpZ2h0PSI2NCIgZmlsbD0iI2EwNTIyZCIvPjxyZWN0IHk9IjY0IiB3aWR0aD0iMTI4IiBoZWlnaHQ9IjY0IiBmaWxsPSIjYTU1MjJkIi8+PC9zdmc+">
+        <a-assets timeout="30000">
+            <a-asset-item id="entrance" src="assets/models/entrance_-_the_city_of_mohenjo_daro.glb"></a-asset-item>
+            <a-asset-item id="greatbath" src="assets/models/the_great_bath.glb"></a-asset-item>
+            <!-- Custom textures for Residential Quarter -->
+            <img id="brick-texture" src="assets/textures/baked_brick.jpg">
+            <img id="earth-texture" src="assets/textures/courtyard_earth.jpg">
+            <img id="wood-texture" src="assets/textures/ancient_wood.jpg">
         </a-assets>
 
-        <!-- Camera Rig -->
-        <a-entity id="cameraRig" position="0 1.6 0" custom-controls="speed: 0.35; fly: false">
-            <a-camera 
-                id="camera"
-                look-controls="enabled: true; pointerLockEnabled: false"
-                wasd-controls="enabled: false"
-                cursor="rayOrigin: mouse"
-                raycaster="objects: .clickable">
-            </a-camera>
+        <!-- Lighting -->
+        <a-light type="ambient" color="#FFF" intensity="0.6"></a-light>
+        <a-light type="directional" color="#FFF" intensity="0.8" position="-1 1 0" castShadow="true"></a-light>
+
+        <!-- Global City Ground -->
+        <a-plane position="0 -0.1 0" rotation="-90 0 0" width="200" height="200" material="src: #earth-texture; repeat: 100 100; roughness: 0.9"></a-plane>
+
+        <!-- Procedural City Container -->
+        <a-entity id="procedural-city-container"></a-entity>
+
+        <!-- The Open World Map Layout -->
+        
+        <!-- City Entrance (Start Point: Z = 30) -->
+        <a-entity id="entrance-model" gltf-model="#entrance" position="0 0 30" scale="1.5 1.5 1.5"></a-entity>
+        
+        <!-- The Citadel (North: X = 0, Z = -55) — RESTORED CLEAN PLATFORM -->
+        <a-entity id="citadel" position="0 0 -55">
+            <!-- Citadel West Platform (Granary area: X = -20) -->
+            <a-box position="-20 2 0" width="30" height="4" depth="40" material="src: #brick-texture; repeat: 30 10; roughness: 1.0"></a-box>
+            
+            <!-- Citadel East Platform (Assembly Hall area: X = 22) -->
+            <a-box position="22 2 0" width="30" height="4" depth="40" material="src: #brick-texture; repeat: 30 10; roughness: 1.0"></a-box>
+
+            <!-- Raised Mound for the Great Granary (X = -20) -->
+            <a-box position="-20 5.5 0" width="22" height="3" depth="22" material="src: #brick-texture; repeat: 10 3; roughness: 1.0"></a-box>
+
+            <!-- Brick Stairs leading up to the Granary Mound -->
+            <a-box position="-20 4.15 15" width="6" height="0.3" depth="1" material="src: #brick-texture; repeat: 6 1; roughness: 1.0"></a-box>
+            <a-box position="-20 4.75 14" width="6" height="0.3" depth="1" material="src: #brick-texture; repeat: 6 1; roughness: 1.0"></a-box>
+            <a-box position="-20 5.35 13" width="6" height="0.3" depth="1" material="src: #brick-texture; repeat: 6 1; roughness: 1.0"></a-box>
+            <a-box position="-20 5.95 12" width="6" height="0.3" depth="1" material="src: #brick-texture; repeat: 6 1; roughness: 1.0"></a-box>
+            <a-box position="-20 6.55 11" width="6" height="0.3" depth="1" material="src: #brick-texture; repeat: 6 1; roughness: 1.0"></a-box>
+
+            <a-box position="0 2 25" rotation="15 0 0" width="10" height="2" depth="15" material="src: #brick-texture; repeat: 10 3"></a-box>
+        </a-entity>
+
+        <!-- The Great Bath (pool model only, no base/rooms/gate) -->
+        <a-entity id="great-bath-complex" position="60 0 -29">
+            <!-- GLTF model lowered by 1.5m so its deck is flush with the ground and the base is buried -->
+            <a-entity id="greatbath-model"
+                gltf-model="#greatbath"
+                position="0 -1.5 0"
+                scale="1.4 1.4 1.4"
+                rotation="0 90 0"
+                brick-material-override="color: #8c5a3a; roughness: 0.96; metalness: 0.0; repeatX: 8; repeatY: 8">
+            </a-entity>
+
+            <!--
+                WATER — Three stacked a-box volumes.
+                The GLTF deck sits at Y≈0 (local). The pool opening is at Y≈0.
+                Raise water top to Y=0.35 so it sits visibly inside the pool,
+                fully covers the cavity, and is never occluded by the ground plane.
+            -->
+
+            <!-- DEEP water body — completely fills the pool from floor to surface -->
+            <a-box
+                id="bath-water-volume"
+                position="0 -0.45 0"
+                width="11.5"
+                height="1.5"
+                depth="19.5"
+                material="color: #0b4a60; opacity: 1.0; roughness: 0.0; metalness: 0.1">
+                <a-animation attribute="material.color"
+                    from="#0b4a60" to="#0d5f7a"
+                    dur="3000" repeat="indefinite" direction="alternate" easing="linear">
+                </a-animation>
+            </a-box>
+
+            <!-- SURFACE teal layer — sits ON TOP of the deep volume, animated colour -->
+            <a-box
+                id="bath-water-surface"
+                position="0 0.3 0"
+                width="11.5"
+                height="0.08"
+                depth="19.5"
+                material="color: #1a8faa; opacity: 0.88; transparent: true; roughness: 0.0; metalness: 0.4; side: double">
+                <a-animation attribute="material.color"
+                    from="#1a8faa" to="#2ab8d4"
+                    dur="2500" repeat="indefinite" direction="alternate" easing="linear">
+                </a-animation>
+                <a-animation attribute="position"
+                    from="0 0.30 0" to="0 0.33 0"
+                    dur="1800" repeat="indefinite" direction="alternate" easing="easeInOutSine">
+                </a-animation>
+            </a-box>
+
+            <!-- SHIMMER highlight — thin specular flash on the very top -->
+            <a-box
+                id="bath-water-shimmer"
+                position="0 0.35 0"
+                width="11.5"
+                height="0.025"
+                depth="19.5"
+                material="color: #7ef0ff; opacity: 0.18; transparent: true; roughness: 0.0; metalness: 0.9; side: double">
+                <a-animation attribute="material.opacity"
+                    from="0.10" to="0.28"
+                    dur="1500" repeat="indefinite" direction="alternate" easing="easeInOutSine">
+                </a-animation>
+            </a-box>
+
+
+
+            <!-- =============================================
+                 GREAT BATH CORBELLED DRAINAGE CHANNEL
+                 Historically: a corbelled brick drain ran Westward from
+                 the pool outlet, passing under the deck and exiting
+                 through the citadel wall to the main street sewer.
+                 Local coords: pool edge ~X=-5, runs to X=-16.5 along Z=6.
+                 ============================================= -->
+            <a-entity id="great-bath-drain">
+                <!-- Muddy waste water flowing inside the channel trench -->
+                <a-plane position="-11 -0.68 6" rotation="-90 0 0" width="11" height="0.65"
+                         material="color: #2e2018; roughness: 0.1; metalness: 0.2; transparent: true; opacity: 0.88"
+                         flowing-water="speed: 0.9; waveAmp: 0.015; waveFreq: 5; color1: #2e2018; color2: #1a1208">
+                </a-plane>
+                <!-- Channel Side Walls -->
+                <a-box position="-11 -0.2 5.55" width="11" height="1.0" depth="0.15" material="src: #brick-texture; color: #8c5a3a; repeat: 8 1; roughness: 1.0"></a-box>
+                <a-box position="-11 -0.2 6.45" width="11" height="1.0" depth="0.15" material="src: #brick-texture; color: #8c5a3a; repeat: 8 1; roughness: 1.0"></a-box>
+                <!-- Corbelled Roof — step-in bricks forming the cover -->
+                <a-box position="-11 0.38 5.7"  width="11" height="0.14" depth="0.28" material="src: #brick-texture; color: #7a4d33; repeat: 8 1; roughness: 1.0"></a-box>
+                <a-box position="-11 0.38 6.3"  width="11" height="0.14" depth="0.28" material="src: #brick-texture; color: #7a4d33; repeat: 8 1; roughness: 1.0"></a-box>
+                <a-box position="-11 0.48 6.0"  width="11" height="0.14" depth="0.52" material="src: #brick-texture; color: #6b4430; repeat: 8 1; roughness: 1.0"></a-box>
+                <!-- Open Inspection Shaft near the pool edge (X=-6.5) with interactive grating -->
+                <a-box position="-6.5 0.56 6" width="1.1" height="0.08" depth="1.1"
+                       material="color: #2b1e14; roughness: 1.0"
+                       class="clickable"
+                       data-info="Great Bath Corbelled Drain: This brick-lined channel discharged waste water from the pool into the main street sewer. An open inspection shaft allowed workers to clear silt blockages. One of the world's earliest planned sewage outlets.">
+                </a-box>
+            </a-entity>
+
+            <!-- =============================================
+                 CIRCULAR PILLARS ENCLOSING THE GREAT BATH (OUTWARD)
+                 ============================================= -->
+            <!-- Corners -->
+            <a-cylinder position="-13 2.75 -18.5" radius="0.4" height="5.5" material="src: #brick-texture; color: #8c5a3a; repeat: 2 8; roughness: 1.0"></a-cylinder>
+            <a-cylinder position="13 2.75 -18.5" radius="0.4" height="5.5" material="src: #brick-texture; color: #8c5a3a; repeat: 2 8; roughness: 1.0"></a-cylinder>
+            <a-cylinder position="-13 2.75 18.5" radius="0.4" height="5.5" material="src: #brick-texture; color: #8c5a3a; repeat: 2 8; roughness: 1.0"></a-cylinder>
+            <a-cylinder position="13 2.75 18.5" radius="0.4" height="5.5" material="src: #brick-texture; color: #8c5a3a; repeat: 2 8; roughness: 1.0"></a-cylinder>
+
+            <!-- West Side -->
+            <a-cylinder position="-13 2.75 -12.33" radius="0.4" height="5.5" material="src: #brick-texture; color: #8c5a3a; repeat: 2 8; roughness: 1.0"></a-cylinder>
+            <a-cylinder position="-13 2.75 -6.17" radius="0.4" height="5.5" material="src: #brick-texture; color: #8c5a3a; repeat: 2 8; roughness: 1.0"></a-cylinder>
+            <a-cylinder position="-13 2.75 0" radius="0.4" height="5.5" material="src: #brick-texture; color: #8c5a3a; repeat: 2 8; roughness: 1.0"></a-cylinder>
+            <a-cylinder position="-13 2.75 6.17" radius="0.4" height="5.5" material="src: #brick-texture; color: #8c5a3a; repeat: 2 8; roughness: 1.0"></a-cylinder>
+            <a-cylinder position="-13 2.75 12.33" radius="0.4" height="5.5" material="src: #brick-texture; color: #8c5a3a; repeat: 2 8; roughness: 1.0"></a-cylinder>
+
+            <!-- East Side -->
+            <a-cylinder position="13 2.75 -12.33" radius="0.4" height="5.5" material="src: #brick-texture; color: #8c5a3a; repeat: 2 8; roughness: 1.0"></a-cylinder>
+            <a-cylinder position="13 2.75 -6.17" radius="0.4" height="5.5" material="src: #brick-texture; color: #8c5a3a; repeat: 2 8; roughness: 1.0"></a-cylinder>
+            <a-cylinder position="13 2.75 0" radius="0.4" height="5.5" material="src: #brick-texture; color: #8c5a3a; repeat: 2 8; roughness: 1.0"></a-cylinder>
+            <a-cylinder position="13 2.75 6.17" radius="0.4" height="5.5" material="src: #brick-texture; color: #8c5a3a; repeat: 2 8; roughness: 1.0"></a-cylinder>
+            <a-cylinder position="13 2.75 12.33" radius="0.4" height="5.5" material="src: #brick-texture; color: #8c5a3a; repeat: 2 8; roughness: 1.0"></a-cylinder>
+
+            <!-- North Side -->
+            <a-cylinder position="-6.5 2.75 -18.5" radius="0.4" height="5.5" material="src: #brick-texture; color: #8c5a3a; repeat: 2 8; roughness: 1.0"></a-cylinder>
+            <a-cylinder position="0 2.75 -18.5" radius="0.4" height="5.5" material="src: #brick-texture; color: #8c5a3a; repeat: 2 8; roughness: 1.0"></a-cylinder>
+            <a-cylinder position="6.5 2.75 -18.5" radius="0.4" height="5.5" material="src: #brick-texture; color: #8c5a3a; repeat: 2 8; roughness: 1.0"></a-cylinder>
+
+            <!-- South Side (Front) -->
+            <a-cylinder position="-6.5 2.75 18.5" radius="0.4" height="5.5" material="src: #brick-texture; color: #8c5a3a; repeat: 2 8; roughness: 1.0"></a-cylinder>
+            <a-cylinder position="6.5 2.75 18.5" radius="0.4" height="5.5" material="src: #brick-texture; color: #8c5a3a; repeat: 2 8; roughness: 1.0"></a-cylinder>
+
+            <!-- =============================================
+                 TALL CORBELLED ARCH ENTRANCE AT THE FRONT (Z = 18.5, Y = 0)
+                 ============================================= -->
+            <a-entity id="entrance-archway" position="0 0 18.5">
+                <!-- Columns (height 5.5m, relative Y = 2.75) -->
+                <a-box position="-1.5 2.75 0" width="0.8" height="5.5" depth="0.8" material="src: #brick-texture; color: #8c5a3a; repeat: 1 5; roughness: 1.0"></a-box>
+                <a-box position="1.5 2.75 0" width="0.8" height="5.5" depth="0.8" material="src: #brick-texture; color: #8c5a3a; repeat: 1 5; roughness: 1.0"></a-box>
+                
+                <!-- 4 Stacked Brick Steps inside the archway corridor -->
+                <!-- Step 1 (lowest, furthest south) -->
+                <a-box position="0 0.15 0.9" width="2.2" height="0.3" depth="0.6" material="src: #brick-texture; color: #8c5a3a; repeat: 2 1; roughness: 1.0"></a-box>
+                <!-- Step 2 -->
+                <a-box position="0 0.45 0.3" width="2.2" height="0.3" depth="0.6" material="src: #brick-texture; color: #8c5a3a; repeat: 2 1; roughness: 1.0"></a-box>
+                <!-- Step 3 -->
+                <a-box position="0 0.75 -0.3" width="2.2" height="0.3" depth="0.6" material="src: #brick-texture; color: #8c5a3a; repeat: 2 1; roughness: 1.0"></a-box>
+                <!-- Step 4 (highest, furthest north) -->
+                <a-box position="0 1.05 -0.9" width="2.2" height="0.3" depth="0.6" material="src: #brick-texture; color: #8c5a3a; repeat: 2 1; roughness: 1.0"></a-box>
+
+                <!-- Corbelled Arch steps curving inward -->
+                <a-box position="-1.2 4.8 0" width="0.6" height="0.3" depth="0.8" material="src: #brick-texture; color: #8c5a3a; repeat: 1 1; roughness: 1.0"></a-box>
+                <a-box position="1.2 4.8 0" width="0.6" height="0.3" depth="0.8" material="src: #brick-texture; color: #8c5a3a; repeat: 1 1; roughness: 1.0"></a-box>
+                <a-box position="-0.9 5.1 0" width="0.6" height="0.3" depth="0.8" material="src: #brick-texture; color: #8c5a3a; repeat: 1 1; roughness: 1.0"></a-box>
+                <a-box position="0.9 5.1 0" width="0.6" height="0.3" depth="0.8" material="src: #brick-texture; color: #8c5a3a; repeat: 1 1; roughness: 1.0"></a-box>
+                
+                <!-- Keystone top block -->
+                <a-box position="0 5.4 0" width="2.2" height="0.3" depth="0.8" material="src: #brick-texture; color: #8c5a3a; repeat: 2 1; roughness: 1.0"></a-box>
+            </a-entity>
+
+            <!-- =============================================
+                 3-WALLED ROOM COMPARTMENTS (FACING INWARD)
+                 Elevated directly ON the Great Bath Deck (Y = 0 / Grounded)
+                 ============================================= -->
+            
+            <!-- WEST SIDE ROOMS (Opening faces EAST / Inward) -->
+            <!-- West Room 1 (North-West) -->
+            <a-entity position="-7.5 0 -7">
+                <a-box position="-0.8 1.25 0" width="0.2" height="2.5" depth="2.6" material="src: #brick-texture; color: #8c5a3a; repeat: 1 3; roughness: 1.0"></a-box> <!-- Back Wall -->
+                <a-box position="0 1.25 -1.2" width="1.6" height="2.5" depth="0.2" material="src: #brick-texture; color: #8c5a3a; repeat: 2 3; roughness: 1.0"></a-box> <!-- North Wall -->
+                <a-box position="0 1.25 1.2" width="1.6" height="2.5" depth="0.2" material="src: #brick-texture; color: #8c5a3a; repeat: 2 3; roughness: 1.0"></a-box> <!-- South Wall -->
+                <a-box position="0 2.45 0" width="1.8" height="0.1" depth="2.6" material="src: #wood-texture; repeat: 2 3"></a-box> <!-- Flat Wooden Roof -->
+            </a-entity>
+
+            <!-- West Room 2 (Mid-West) -->
+            <a-entity position="-7.5 0 0">
+                <a-box position="-0.8 1.25 0" width="0.2" height="2.5" depth="2.6" material="src: #brick-texture; color: #8c5a3a; repeat: 1 3; roughness: 1.0"></a-box>
+                <a-box position="0 1.25 -1.2" width="1.6" height="2.5" depth="0.2" material="src: #brick-texture; color: #8c5a3a; repeat: 2 3; roughness: 1.0"></a-box>
+                <a-box position="0 1.25 1.2" width="1.6" height="2.5" depth="0.2" material="src: #brick-texture; color: #8c5a3a; repeat: 2 3; roughness: 1.0"></a-box>
+                <a-box position="0 2.45 0" width="1.8" height="0.1" depth="2.6" material="src: #wood-texture; repeat: 2 3"></a-box>
+            </a-entity>
+
+            <!-- West Room 3 (South-West) -->
+            <a-entity position="-7.5 0 7">
+                <a-box position="-0.8 1.25 0" width="0.2" height="2.5" depth="2.6" material="src: #brick-texture; color: #8c5a3a; repeat: 1 3; roughness: 1.0"></a-box>
+                <a-box position="0 1.25 -1.2" width="1.6" height="2.5" depth="0.2" material="src: #brick-texture; color: #8c5a3a; repeat: 2 3; roughness: 1.0"></a-box>
+                <a-box position="0 1.25 1.2" width="1.6" height="2.5" depth="0.2" material="src: #brick-texture; color: #8c5a3a; repeat: 2 3; roughness: 1.0"></a-box>
+                <a-box position="0 2.45 0" width="1.8" height="0.1" depth="2.6" material="src: #wood-texture; repeat: 2 3"></a-box>
+            </a-entity>
+
+            <!-- EAST SIDE ROOMS (Opening faces WEST / Inward) -->
+            <!-- East Room 1 (North-East) -->
+            <a-entity position="7.5 0 -7">
+                <a-box position="0.8 1.25 0" width="0.2" height="2.5" depth="2.6" material="src: #brick-texture; color: #8c5a3a; repeat: 1 3; roughness: 1.0"></a-box> <!-- Back Wall -->
+                <a-box position="0 1.25 -1.2" width="1.6" height="2.5" depth="0.2" material="src: #brick-texture; color: #8c5a3a; repeat: 2 3; roughness: 1.0"></a-box> <!-- North Wall -->
+                <a-box position="0 1.25 1.2" width="1.6" height="2.5" depth="0.2" material="src: #brick-texture; color: #8c5a3a; repeat: 2 3; roughness: 1.0"></a-box> <!-- South Wall -->
+                <a-box position="0 2.45 0" width="1.8" height="0.1" depth="2.6" material="src: #wood-texture; repeat: 2 3"></a-box> <!-- Flat Wooden Roof -->
+            </a-entity>
+
+            <!-- East Room 2 (Mid-East) -->
+            <a-entity position="7.5 0 0">
+                <a-box position="0.8 1.25 0" width="0.2" height="2.5" depth="2.6" material="src: #brick-texture; color: #8c5a3a; repeat: 1 3; roughness: 1.0"></a-box>
+                <a-box position="0 1.25 -1.2" width="1.6" height="2.5" depth="0.2" material="src: #brick-texture; color: #8c5a3a; repeat: 2 3; roughness: 1.0"></a-box>
+                <a-box position="0 1.25 1.2" width="1.6" height="2.5" depth="0.2" material="src: #brick-texture; color: #8c5a3a; repeat: 2 3; roughness: 1.0"></a-box>
+                <a-box position="0 2.45 0" width="1.8" height="0.1" depth="2.6" material="src: #wood-texture; repeat: 2 3"></a-box>
+            </a-entity>
+
+            <!-- East Room 3 (South-East) -->
+            <a-entity position="7.5 0 7">
+                <a-box position="0.8 1.25 0" width="0.2" height="2.5" depth="2.6" material="src: #brick-texture; color: #8c5a3a; repeat: 1 3; roughness: 1.0"></a-box>
+                <a-box position="0 1.25 -1.2" width="1.6" height="2.5" depth="0.2" material="src: #brick-texture; color: #8c5a3a; repeat: 2 3; roughness: 1.0"></a-box>
+                <a-box position="0 1.25 1.2" width="1.6" height="2.5" depth="0.2" material="src: #brick-texture; color: #8c5a3a; repeat: 2 3; roughness: 1.0"></a-box>
+                <a-box position="0 2.45 0" width="1.8" height="0.1" depth="2.6" material="src: #wood-texture; repeat: 2 3"></a-box>
+            </a-entity>
+
+            <!-- NORTH SIDE ROOMS (Opening faces SOUTH / Inward) -->
+            <!-- North Room 1 (North-West corner) -->
+            <a-entity position="-3.5 0 -11.5">
+                <a-box position="0 1.25 -0.8" width="2.6" height="2.5" depth="0.2" material="src: #brick-texture; color: #8c5a3a; repeat: 3 3; roughness: 1.0"></a-box> <!-- Back Wall -->
+                <a-box position="-1.2 1.25 0" width="0.2" height="2.5" depth="1.6" material="src: #brick-texture; color: #8c5a3a; repeat: 1 3; roughness: 1.0"></a-box> <!-- Left Wall -->
+                <a-box position="1.2 1.25 0" width="0.2" height="2.5" depth="1.6" material="src: #brick-texture; color: #8c5a3a; repeat: 1 3; roughness: 1.0"></a-box> <!-- Right Wall -->
+                <a-box position="0 2.45 0" width="2.6" height="0.1" depth="1.8" material="src: #wood-texture; repeat: 3 2"></a-box> <!-- Flat Wooden Roof -->
+            </a-entity>
+
+            <!-- North Room 2 (North-East corner) -->
+            <a-entity position="3.5 0 -11.5">
+                <a-box position="0 1.25 -0.8" width="2.6" height="2.5" depth="0.2" material="src: #brick-texture; color: #8c5a3a; repeat: 3 3; roughness: 1.0"></a-box>
+                <a-box position="-1.2 1.25 0" width="0.2" height="2.5" depth="1.6" material="src: #brick-texture; color: #8c5a3a; repeat: 1 3; roughness: 1.0"></a-box>
+                <a-box position="1.2 1.25 0" width="0.2" height="2.5" depth="1.6" material="src: #brick-texture; color: #8c5a3a; repeat: 1 3; roughness: 1.0"></a-box>
+                <a-box position="0 2.45 0" width="2.6" height="0.1" depth="1.8" material="src: #wood-texture; repeat: 3 2"></a-box>
+            </a-entity>
+        </a-entity>
+
+
+
+        <!-- Public Well Complex on the Street Corner (Image 5) -->
+        <a-entity id="public-well" position="12 0 10">
+            <a-cylinder position="0 0.6 0" radius="0.9" height="1.2" open-ended="true" side="double" material="src: #brick-texture; repeat: 6 2; roughness: 1.0"></a-cylinder>
+            <a-cylinder position="0 0.2 0" radius="0.85" height="0.2" color="#1a3c5a" material="roughness: 0.3"></a-cylinder>
+            
+            <!-- Pulley Wooden Posts -->
+            <a-box position="-0.8 1.4 0" width="0.1" height="1.6" depth="0.1" material="src: #wood-texture; color: #8b5a2b"></a-box>
+            <a-box position="0.8 1.4 0" width="0.1" height="1.6" depth="0.1" material="src: #wood-texture; color: #8b5a2b"></a-box>
+            <a-box position="0 2.2 0" width="1.7" height="0.1" depth="0.1" material="src: #wood-texture; color: #8b5a2b"></a-box>
+            
+            <!-- Clay Pots next to the well -->
+            <a-sphere position="1.1 0.3 0.6" radius="0.3" material="src: #brick-texture; color: #d2691e; roughness: 1.0"></a-sphere>
+            <a-sphere position="1.4 0.25 0.2" radius="0.25" material="src: #brick-texture; color: #d2691e; roughness: 1.0"></a-sphere>
+        </a-entity>
+        
+
+
+        <!-- Sky -->
+        <a-sky color="#dcb394"></a-sky>
+
+        <a-entity id="rig" position="0 1.6 30" custom-controls="speed: 0.35; fly: false">
+            <a-entity id="camera" camera position="0 0 0" 
+                      look-controls="pointerLockEnabled: false"
+                      cursor="rayOrigin: mouse"
+                      raycaster="objects: .clickable">
+            </a-entity>
             <!-- Left VR Controller -->
             <a-entity id="left-controller" 
                       oculus-touch-controls="hand: left" 
@@ -556,482 +750,12 @@
                       line="color: #f4a460; opacity: 0.8; visible: true">
             </a-entity>
         </a-entity>
-
-        <!-- Ground with Grass Soil Texture -->
-        <a-entity 
-            gltf-model="#grassSoil"
-            position="0 0 0"
-            scale="20 20 20"
-            rotation="-90 0 0">
-        </a-entity>
-        
-        <!-- Additional Ground Plane for Fallback -->
-        <a-plane 
-            id="ground"
-            position="0 0 0" 
-            rotation="-90 0 0" 
-            width="200" 
-            height="200" 
-            src="#groundTexture"
-            repeat="10 10"
-            opacity="0.3">
-        </a-plane>
-
-        <!-- Mohenjo-daro (Main City) -->
-        <a-entity id="mohenjo-daro" class="clickable" position="0 0 -20">
-            <!-- Main Mohenjo-daro Model -->
-            <a-entity 
-                gltf-model="#mohenjoDaroModel"
-                position="0 0 0"
-                scale="2 2 2"
-                animation="property: rotation; to: 0 360 0; dur: 60000; loop: true; easing: linear">
-            </a-entity>
-            
-            <!-- Great Bath Model -->
-            <a-entity 
-                gltf-model="#greatBath"
-                position="0 0 0"
-                scale="1.5 1.5 1.5">
-            </a-entity>
-            
-            <!-- Ancient Houses -->
-            <a-entity 
-                gltf-model="#ancientHouses"
-                position="5 0 3"
-                scale="1.2 1.2 1.2">
-            </a-entity>
-            
-            <a-entity 
-                gltf-model="#ancientHouses"
-                position="-5 0 3"
-                scale="1.2 1.2 1.2">
-            </a-entity>
-            
-            <!-- Temple Ruins -->
-            <a-entity 
-                gltf-model="#templeRuin"
-                position="0 0 8"
-                scale="1.5 1.5 1.5">
-            </a-entity>
-            
-            <!-- Text Label -->
-            <a-text 
-                value="Mohenjo-daro\nAncient City" 
-                position="0 8 0" 
-                align="center" 
-                color="#f4a460"
-                width="8">
-            </a-text>
-        </a-entity>
-
-        <!-- Harappa -->
-        <a-entity id="harappa" class="clickable" position="-30 0 -15">
-            <!-- Old Village House (Granary) -->
-            <a-entity 
-                gltf-model="#oldVillageHouse"
-                position="0 0 0"
-                scale="2 2 2">
-            </a-entity>
-            
-            <!-- Additional Houses -->
-            <a-entity 
-                gltf-model="#ancientHouses"
-                position="5 0 0"
-                scale="1.5 1.5 1.5">
-            </a-entity>
-            
-            <a-entity 
-                gltf-model="#ancientHouses"
-                position="-5 0 0"
-                scale="1.5 1.5 1.5">
-            </a-entity>
-            
-            <!-- Trees -->
-            <a-entity 
-                gltf-model="#mapleTree"
-                position="3 0 3"
-                scale="1.2 1.2 1.2">
-            </a-entity>
-            
-            <a-entity 
-                gltf-model="#mapleTree"
-                position="-3 0 3"
-                scale="1.2 1.2 1.2">
-            </a-entity>
-            
-            <!-- Text Label -->
-            <a-text 
-                value="Harappa\nAncient Settlement" 
-                position="0 6 0" 
-                align="center" 
-                color="#f4a460"
-                width="6">
-            </a-text>
-        </a-entity>
-
-        <!-- Dholavira -->
-        <a-entity id="dholavira" class="clickable" position="25 0 -10">
-            <!-- Water Reservoir with Animation -->
-            <a-entity 
-                gltf-model="#waterAnimation"
-                position="0 0 0"
-                scale="2 2 2">
-            </a-entity>
-            
-            <!-- Streaming River -->
-            <a-entity 
-                gltf-model="#streamingRiver"
-                position="0 0 0"
-                scale="1.5 1.5 1.5">
-            </a-entity>
-            
-            <!-- German River for additional water features -->
-            <a-entity 
-                gltf-model="#germanRiver"
-                position="3 0 0"
-                scale="1.2 1.2 1.2">
-            </a-entity>
-            
-            <!-- Temple Ruins -->
-            <a-entity 
-                gltf-model="#templeRuin"
-                position="0 0 5"
-                scale="1.3 1.3 1.3">
-            </a-entity>
-            
-            <!-- Text Label -->
-            <a-text 
-                value="Dholavira\nWater Management" 
-                position="0 5 0" 
-                align="center" 
-                color="#f4a460"
-                width="6">
-            </a-text>
-        </a-entity>
-
-        <!-- Lothal (Port City) -->
-        <a-entity id="lothal" class="clickable" position="0 0 30">
-            <!-- Ancient Rome Model for Port Structures -->
-            <a-entity 
-                gltf-model="#ancientRome"
-                position="0 0 0"
-                scale="1.5 1.5 1.5">
-            </a-entity>
-            
-            <!-- Water Animation for Port -->
-            <a-entity 
-                gltf-model="#waterAnimation"
-                position="0 0 0"
-                scale="2 2 2">
-            </a-entity>
-            
-            <!-- Streaming River for Port Water -->
-            <a-entity 
-                gltf-model="#streamingRiver"
-                position="0 0 0"
-                scale="1.8 1.8 1.8">
-            </a-entity>
-            
-            <!-- Ancient Houses for Port Buildings -->
-            <a-entity 
-                gltf-model="#ancientHouses"
-                position="5 0 0"
-                scale="1.3 1.3 1.3">
-            </a-entity>
-            
-            <a-entity 
-                gltf-model="#ancientHouses"
-                position="-5 0 0"
-                scale="1.3 1.3 1.3">
-            </a-entity>
-            
-            <!-- Text Label -->
-            <a-text 
-                value="Lothal\nAncient Port" 
-                position="0 6 0" 
-                align="center" 
-                color="#f4a460"
-                width="6">
-            </a-text>
-        </a-entity>
-
-        <!-- Kalibangan -->
-        <a-entity id="kalibangan" class="clickable" position="-20 0 20">
-            <!-- Temple Ruins for Fire Altars -->
-            <a-entity 
-                gltf-model="#templeRuin"
-                position="0 0 0"
-                scale="1.5 1.5 1.5">
-            </a-entity>
-            
-            <!-- Additional Temple Ruins -->
-            <a-entity 
-                gltf-model="#templeRuin"
-                position="3 0 0"
-                scale="1.2 1.2 1.2">
-            </a-entity>
-            
-            <a-entity 
-                gltf-model="#templeRuin"
-                position="-3 0 0"
-                scale="1.2 1.2 1.2">
-            </a-entity>
-            
-            <!-- Ancient Houses -->
-            <a-entity 
-                gltf-model="#ancientHouses"
-                position="0 0 5"
-                scale="1.3 1.3 1.3">
-            </a-entity>
-            
-            <!-- Trees -->
-            <a-entity 
-                gltf-model="#mapleTree"
-                position="2 0 2"
-                scale="1.1 1.1 1.1">
-            </a-entity>
-            
-            <a-entity 
-                gltf-model="#mapleTree"
-                position="-2 0 2"
-                scale="1.1 1.1 1.1">
-            </a-entity>
-            
-            <!-- Text Label -->
-            <a-text 
-                value="Kalibangan\nFire Altars" 
-                position="0 5 0" 
-                align="center" 
-                color="#f4a460"
-                width="6">
-            </a-text>
-        </a-entity>
-
-        <!-- Environmental Trees -->
-        <a-entity id="environmental-trees">
-            <!-- Trees around Mohenjo-daro -->
-            <a-entity 
-                gltf-model="#mapleTree"
-                position="15 0 -25"
-                scale="1.5 1.5 1.5">
-            </a-entity>
-            <a-entity 
-                gltf-model="#mapleTree"
-                position="-15 0 -25"
-                scale="1.5 1.5 1.5">
-            </a-entity>
-            <a-entity 
-                gltf-model="#mapleTree"
-                position="0 0 -35"
-                scale="1.5 1.5 1.5">
-            </a-entity>
-            
-            <!-- Trees around Harappa -->
-            <a-entity 
-                gltf-model="#mapleTree"
-                position="-35 0 -10"
-                scale="1.3 1.3 1.3">
-            </a-entity>
-            <a-entity 
-                gltf-model="#mapleTree"
-                position="-25 0 -20"
-                scale="1.3 1.3 1.3">
-            </a-entity>
-            
-            <!-- Trees around Dholavira -->
-            <a-entity 
-                gltf-model="#mapleTree"
-                position="30 0 -5"
-                scale="1.3 1.3 1.3">
-            </a-entity>
-            <a-entity 
-                gltf-model="#mapleTree"
-                position="20 0 -15"
-                scale="1.3 1.3 1.3">
-            </a-entity>
-            
-            <!-- Trees around Lothal -->
-            <a-entity 
-                gltf-model="#mapleTree"
-                position="10 0 35"
-                scale="1.4 1.4 1.4">
-            </a-entity>
-            <a-entity 
-                gltf-model="#mapleTree"
-                position="-10 0 35"
-                scale="1.4 1.4 1.4">
-            </a-entity>
-            
-            <!-- Trees around Kalibangan -->
-            <a-entity 
-                gltf-model="#mapleTree"
-                position="-25 0 15"
-                scale="1.2 1.2 1.2">
-            </a-entity>
-            <a-entity 
-                gltf-model="#mapleTree"
-                position="-15 0 25"
-                scale="1.2 1.2 1.2">
-            </a-entity>
-        </a-entity>
-
-        <!-- Additional Water Features -->
-        <a-entity id="water-features">
-            <!-- Rivers connecting sites -->
-            <a-entity 
-                gltf-model="#germanRiver"
-                position="0 0 -10"
-                scale="3 1 1"
-                rotation="0 90 0">
-            </a-entity>
-            
-            <a-entity 
-                gltf-model="#germanRiver"
-                position="-15 0 5"
-                scale="2 1 1"
-                rotation="0 45 0">
-            </a-entity>
-            
-            <a-entity 
-                gltf-model="#germanRiver"
-                position="15 0 10"
-                scale="2 1 1"
-                rotation="0 -45 0">
-            </a-entity>
-        </a-entity>
-
-        <!-- Lighting -->
-        <a-light type="ambient" color="#87CEEB" intensity="0.4"></a-light>
-        <a-light type="directional" position="10 10 5" color="#ffffff" intensity="0.8"></a-light>
-
-        <!-- Sky -->
-        <a-sky color="#87CEEB"></a-sky>
     </a-scene>
 
-    <!-- Scripts -->
-    <script src="scripts/indus-data.js"></script>
-    <script src="scripts/indus-scene.js"></script>
+    <script src="scripts/data-loader.js"></script>
     <script src="scripts/tts.js"></script>
-    <script src="scripts/voice.js"></script>
-    
-    <script>
-        // Global variables
-        let currentLanguage = 'en';
-        let isTourActive = false;
-        let isExplorationMode = false;
-        let ttsManager;
-        let voiceManager;
-        let indusData;
-
-        // Initialize the experience
-        document.addEventListener('DOMContentLoaded', async () => {
-            console.log('🏛️ Indus Valley VR Experience Loading...');
-            
-            // Initialize managers
-            ttsManager = new TTSManager();
-            voiceManager = new VoiceManager();
-            
-            // Load Indus Valley data
-            indusData = new IndusData();
-            await indusData.loadData();
-            
-            // Initialize scene
-            const scene = new IndusScene();
-            scene.initialize();
-            
-            // Hide loading screen
-            setTimeout(() => {
-                document.getElementById('loadingScreen').classList.add('hidden');
-                updateInfo('Welcome to Indus Valley Civilization', 'Explore the ancient cities and learn about this remarkable civilization. Click on sites or use voice commands to learn more.');
-            }, 2000);
-            
-            console.log('✅ Indus Valley VR Experience Ready!');
-        });
-
-        // Tour and exploration functions
-        function startGuidedTour() {
-            isTourActive = true;
-            isExplorationMode = false;
-            console.log('🎬 Starting Indus Valley Guided Tour');
-            // Tour implementation will be added
-        }
-
-        function toggleExploration() {
-            isExplorationMode = !isExplorationMode;
-            isTourActive = false;
-            console.log('🔍 Exploration mode:', isExplorationMode ? 'ON' : 'OFF');
-        }
-
-        function showOverview() {
-            if (isTourActive) {
-                // Move camera to overview position
-                moveToPosition({x: 0, y: 15, z: 30}, 3000);
-                updateInfo('Indus Valley Overview', 'This ancient civilization spanned across modern-day Pakistan and northwest India, with major cities like Mohenjo-daro and Harappa.');
-            }
-        }
-
-        function changeLanguage(lang) {
-            currentLanguage = lang;
-            console.log('🌐 Language changed to:', lang);
-            // Update UI and reload content in new language
-        }
-
-        function toggleVR() {
-            const scene = document.querySelector('a-scene');
-            if (scene.is('vr-mode')) {
-                scene.exitVR();
-            } else {
-                scene.enterVR();
-            }
-        }
-
-        function toggleVoiceRecognition() {
-            if (voiceManager) {
-                voiceManager.toggle();
-            }
-        }
-
-        function updateInfo(title, text) {
-            document.getElementById('infoTitle').textContent = title;
-            document.getElementById('infoText').textContent = text;
-        }
-
-        // Smooth camera movement
-        function moveToPosition(targetPosition, duration = 3000, onComplete) {
-            const cameraRig = document.querySelector("#cameraRig");
-            if (!cameraRig) return;
-            
-            const startPos = cameraRig.object3D.position.clone();
-            const endPos = new THREE.Vector3(targetPosition.x, targetPosition.y, targetPosition.z);
-            let startTime = null;
-            
-            function animate(time) {
-                if (!startTime) startTime = time;
-                const elapsed = time - startTime;
-                const progress = Math.min(elapsed / duration, 1);
-                
-                cameraRig.object3D.position.lerpVectors(startPos, endPos, progress);
-                
-                if (progress < 1) {
-                    requestAnimationFrame(animate);
-                } else {
-                    console.log("📷 Camera move finished:", endPos);
-                    if (typeof onComplete === "function") {
-                        onComplete();
-                    }
-                }
-            }
-            requestAnimationFrame(animate);
-        }
-
-        // Site click handlers
-        document.addEventListener('click', (event) => {
-            if (event.target.classList.contains('clickable')) {
-                const siteId = event.target.id;
-                console.log('🏛️ Site clicked:', siteId);
-                // Handle site selection
-            }
-        });
-    </script>
+    <script src="scripts/world.js"></script>
+    <script src="scripts/city-builder.js"></script>
+    <script src="scripts/app.js"></script>
 </body>
 </html>

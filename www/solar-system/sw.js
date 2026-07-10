@@ -1,36 +1,19 @@
-const CACHE_NAME = "solar-vr-v3";
-const ASSETS = [
-  "./index.html",
-  "./vr-scene.js",
-  "./tts.js",
-  "./styles.css",
-  "./assets/planets/Sun.glb",
-  "./assets/planets/Mercury.glb",
-  "./assets/planets/Venus.glb",
-  "./assets/planets/Earth.glb",
-  "./assets/planets/Mars.glb",
-  "./assets/planets/Jupiter.glb",
-  "./assets/planets/Saturn.glb",
-  "./assets/planets/Uranus.glb",
-  "./assets/planets/Neptune.glb"
-];
-
-// Install & cache
-self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS);
-    })
-  );
+self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
 
-// Serve from cache if offline
-self.addEventListener("fetch", (event) => {
-  event.respondWith(
-    caches.match(event.request).then((cached) => {
-      return cached || fetch(event.request);
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((keys) => {
+      return Promise.all(keys.map((key) => caches.delete(key)));
+    }).then(() => {
+      return self.clients.claim();
+    }).then(() => {
+      return self.registration.unregister();
     })
   );
 });
 
+self.addEventListener('fetch', (event) => {
+  event.respondWith(fetch(event.request));
+});
